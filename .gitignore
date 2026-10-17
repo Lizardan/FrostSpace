@@ -12,6 +12,14 @@
 /[Uu]ser[Ss]ettings/
 *.log
 
+# Сырые архивы ассетов: остаются на диске, в git не коммитятся.
+# В проект импортируется только нужное: Assets/ThirdParty/<Pack>/.
+/AssetSource/
+
+# Python-кеш утилит в Tools/
+__pycache__/
+*.py[cod]
+
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
 /[Mm]emoryCaptures/
