@@ -71,6 +71,13 @@ Unity MCP `manage_build` или сначала создай Editor-метод с
 - **Раннер.** `F:\actions-runner-frostspace`, автозапуск — `FrostSpace WebGL Runner.cmd`
   в папке `Startup` пользователя. ПК должен быть включён: при выключенном раннере job
   ждёт в очереди.
+- **Кэш импорта.** В `actions/checkout` стоит `clean: false`: иначе action вычищает
+  workspace и удаляет `Library/`, и каждая сборка импортирует проект с нуля (~11 минут).
+  С кэшем инкрементальная сборка занимает 2–3 минуты.
+- **Не отменяй прогон вручную.** Отмена убивает Unity посреди `git clean`/импорта и
+  оставляет битый `Library/PackageCache` (симптом — ошибки компиляции в
+  `com.unity.collab-proxy`). Лечится удалением `Library` и `Temp` в
+  `F:\actions-runner-frostspace\_work\FrostSpace\FrostSpace` и повторным запуском.
 - **Почему не game-ci.** Unity 6 не пишет `.ulf`, который game-ci требует для
   Personal-лицензии; локальный редактор уже активирован, поэтому сборка идёт на этой
   машине.
