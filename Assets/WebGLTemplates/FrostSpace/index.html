@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>FrostSpace</title>
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0d1013;
+        overscroll-behavior: none;
+      }
+
+      #unity-canvas {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: #0d1013;
+        outline: none;
+        touch-action: none;
+      }
+
+      #loading {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #0d1013;
+        color: #e4edf6;
+        font: 600 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: opacity 0.35s ease;
+        z-index: 10;
+      }
+
+      #loading.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #loading-track {
+        width: min(280px, 60vw);
+        height: 6px;
+        border-radius: 3px;
+        background: #1c232b;
+        overflow: hidden;
+      }
+
+      #loading-bar {
+        width: 0;
+        height: 100%;
+        border-radius: 3px;
+        background: #7fa8cf;
+        transition: width 0.15s linear;
+      }
+
+      #loading-error {
+        max-width: min(560px, 80vw);
+        color: #f0a08c;
+        font-weight: 500;
+        letter-spacing: 0;
+        text-transform: none;
+        text-align: center;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="unity-canvas" width="1280" height="720" tabindex="-1"></canvas>
+
+    <div id="loading">
+      <div>FrostSpace</div>
+      <div id="loading-track"><div id="loading-bar"></div></div>
+      <div id="loading-error"></div>
+    </div>
+
+    <script src="Build/{{{ LOADER_FILENAME }}}"></script>
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+      var loading = document.getElementById("loading");
+      var bar = document.getElementById("loading-bar");
+      var error = document.getElementById("loading-error");
+
+      function hideLoading() {
+        loading.classList.add("is-hidden");
+        setTimeout(function () { loading.style.display = "none"; }, 400);
+      }
+
+      createUnityInstance(canvas, {
+        arguments: [],
+#if PROGRESSIVE_ASSET_LOADING
+        primaryDataUrls: {{{ JSON.stringify(PRIMARY_DATA_FILES) }}},
+        secondaryDataUrls: {{{ JSON.stringify(SECONDARY_DATA_FILES) }}},
+#else
+        dataUrl: "Build/{{{ DATA_FILENAME }}}",
+#endif
+        frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_WASM
+        codeUrl: "Build/{{{ CODE_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: "Build/{{{ SYMBOLS_FILENAME }}}",
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}}
+      }, function (progress) {
+        bar.style.width = (100 * progress) + "%";
+      }).then(function (unityInstance) {
+        window.unityInstance = unityInstance;
+        hideLoading();
+      }).catch(function (message) {
+        error.textContent = message;
+      });
+    </script>
+  </body>
+</html>

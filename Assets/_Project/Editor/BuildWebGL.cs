@@ -51,6 +51,9 @@ namespace FrostSpace.Editor
                 PlayerSettings.WebGL.decompressionFallback = true;
                 PlayerSettings.WebGL.linkerTarget = WebGLLinkerTarget.Wasm;
                 PlayerSettings.WebGL.dataCaching = true;
+                // Свой шаблон: канвас на всё окно, без футера Unity с кнопкой
+                // полноэкранного режима (Assets/WebGLTemplates/FrostSpace).
+                PlayerSettings.WebGL.template = "PROJECT:FrostSpace";
 
                 var options = new BuildPlayerOptions
                 {
