@@ -3,7 +3,7 @@
 ## Статус
 
 Проект находится на ранней стадии: есть играбельный вертикальный срез — снежный уровень
-`SnowLevel`, пять роботов из Blender, локомоция игрока и EditMode-тесты. Полноценного
+`SnowLevel`, двадцать роботов из Blender, локомоция игрока и EditMode-тесты. Полноценного
 игрового цикла, целей и баланса нет.
 
 Назначение игры, жанр, игровой цикл и целевые платформы **не зафиксированы**. Это не
@@ -26,7 +26,7 @@
 | Содержимое SnowLevel | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами | сцена `Assets/Scenes/SnowLevel.unity` |
 | Сцена-заготовка | `Assets/Scenes/Boot.unity`: Main Camera, Directional Light, Global Volume | Unity MCP `manage_scene` |
 | Код | `FrostSpace.Features` (локомоция, камера), `FrostSpace.Editor`, 3 EditMode-теста | `Assets/_Project/`, `run_tests` |
-| Роботы | 5 FBX, визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
+| Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-18 |
 | Blender | 5.2.2 LTS, аддон `blender_mcp` установлен | фактический запуск |
 

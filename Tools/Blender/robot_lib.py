@@ -41,6 +41,20 @@ PALETTE = {
     "rust": ("#8C4A32", 0.25, 0.72, 0.0),
     "cyan": ("#6FD6E8", 0.0, 0.35, 3.0),
     "yellow": ("#E8B84B", 0.0, 0.5, 0.0),
+    # Роли второй партии (R6–R20): ремесленные и «мусорные» материалы.
+    # Добавлять сюда, а не хардкодить hex по месту (правило STYLE.md).
+    "accent": ("#C9553A", 0.0, 0.50, 0.0),
+    "red": ("#B23A2E", 0.0, 0.52, 0.0),
+    "white": ("#DDE4E8", 0.0, 0.70, 0.0),
+    "wood": ("#6B4B31", 0.0, 0.86, 0.0),
+    "brass": ("#B08A4A", 0.75, 0.42, 0.0),
+    "copper": ("#A9673F", 0.55, 0.50, 0.0),
+    "patina": ("#6E9C86", 0.25, 0.66, 0.0),
+    "moss": ("#4A5E3C", 0.0, 0.92, 0.0),
+    "rope": ("#A98B5F", 0.0, 0.88, 0.0),
+    "rubber": ("#1A1D22", 0.0, 0.92, 0.0),
+    "warm": ("#FFC978", 0.0, 0.38, 2.2),
+    "glass": ("#BFE6EF", 0.0, 0.18, 1.2),
 }
 
 #: Скорости клипов в м/с, вычисленные из метаданных ActionForge:
@@ -372,11 +386,20 @@ def export_fbx(arm, mesh, path):
     print("EXPORT %s (%d bytes)" % (path, os.path.getsize(path)))
 
 
-def stats(obj):
+def stats(obj, arm=None):
     data = lowpoly.mesh_stats(obj)
     unweighted = sum(1 for v in obj.data.vertices if not v.groups)
     print("STATS %s verts=%d tris=%d shells=%d unweighted=%d"
           % (obj.name, data["verts"], data["tris"], data["shells"], unweighted))
     if unweighted:
         raise AssertionError("есть вершины без веса: %d" % unweighted)
+    if arm is not None:
+        # Группа с именем несуществующей кости не деформируется и деталь
+        # «зависает» в rest-позе. Опечатку в имени кости ловим здесь, а не
+        # глазами в Unity.
+        bones = {bone.name for bone in arm.data.bones}
+        unknown = sorted(group.name for group in obj.vertex_groups
+                         if group.name not in bones)
+        if unknown:
+            raise AssertionError("группы без костей: %s" % ", ".join(unknown))
     return data

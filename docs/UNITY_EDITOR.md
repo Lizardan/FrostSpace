@@ -113,7 +113,7 @@ so.ApplyModifiedPropertiesWithoutUndo();
 
 **Префаб из FBX-модели — вариант.** `PrefabUtility.SaveAsPrefabAsset(instanceRoot, path)`
 на инстансе модели даёт `PrefabAssetType.Variant`: префаб подхватывает изменения импорта
-FBX. Проверено на пяти роботах (2026-10-18).
+FBX. Проверено на 20 роботах (2026-10-18): пять принятых и 15 второй партии.
 
 **Префаб — визуал, логика — на сценовом объекте.** В префабе только меш и `Animator`;
 `CharacterController`, ввод и игровая логика живут на сценовом актёре (ADR 0004).

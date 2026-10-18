@@ -92,11 +92,13 @@ Headless-прогон — основной путь; GUI нужен только
 | Unity MCP Console | `read_console(types: ["error"])` | 0 ошибок |
 | Unity MCP сцена | `manage_scene(get_active)` | `SnowLevel`, `Player` + `NPC`, index 0 |
 | Unity MCP Build Settings | `manage_scene(get_build_settings)` | `SnowLevel`, index 0 |
-| Тесты Unity | `run_tests` + `get_test_job` | 3 EditMode — PASS (2026-10-18) |
+| Тесты Unity | `run_tests` + `get_test_job` | 4 EditMode — PASS (2026-10-18), покрывают все 20 роботов |
 | Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | базлайн 2026-10-18: walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° — **на ровном рельефе** |
 | Баланс шага на фасетном рельефе | длина клипа × клиповая скорость = путь за цикл (живой замер) | PASS (2026-10-18): клип 1.333 с × 0.912 м/с = 1.217 м против 1.215 м пути — стопа стоит |
 | Замер клипов роботов | `blender ... measure_locomotion.py -- R1_PolarMechanic.fbx` | walk 0.93, sprint 8.92 м/с |
-| Пересборка роботов | `blender ... build_robots.py` | не запускалась в этой сессии: FBX уже собраны |
+| Пересборка роботов | `blender ... build_robots.py -- R6 R7` | PASS (2026-10-18): 15 FBX второй партии, 0 вершин без веса |
+| Превью партии роботов | `blender ... render_robot_lineup.py -- <имена>` | PASS (2026-10-18): idle, спереди/сзади |
+| Контактный лист | `blender ... make_robot_sheet.py -- --cols 5 <имена>` | PASS (2026-10-18): 2400 px, с подписями |
 | Сборка Unity | `manage_build` | не запускалась: нет build-метода и платформы |
 
 ## Что не проверено

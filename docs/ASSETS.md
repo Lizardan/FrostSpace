@@ -52,12 +52,16 @@ FBX-экспортёр конвертирует оси. Не «поправля�
 
 ## Роботы FrostSpace: FBX с клипами
 
-Пять роботов собраны скриптом, а не импортированы из `AssetSource/`:
+Двадцать роботов собраны скриптом, а не импортированы из `AssetSource/`:
 
 - Генерация: `Tools/Blender/build_robots.py` (ядро `robot_lib.py`, дизайны
   `robot_designs.py`), выход — `Assets/_Project/Content/Models/Robots/R*.fbx`.
-- Имена не меняются: `R1_PolarMechanic.fbx`, `R2_Furnace.fbx`, `R3_Scout.fbx`,
-  `R4_Hauler.fbx`, `R5_Ranger.fbx`.
+- Имена не меняются. Принятая партия: `R1_PolarMechanic.fbx`, `R2_Furnace.fbx`,
+  `R3_Scout.fbx`, `R4_Hauler.fbx`, `R5_Ranger.fbx`. Вторая партия (принята
+  2026-10-18, все 15 остаются):
+  `R6_Smelter`, `R7_Drifter`, `R8_Bulwark`, `R9_Tinker`, `R10_Pipewright`,
+  `R11_Snowplow`, `R12_Beacon`, `R13_Prospector`, `R14_Medic`, `R15_Courier`,
+  `R16_Warden`, `R17_Hermit`, `R18_Forge`, `R19_Tide`, `R20_Cogsmith`.
 - В каждом FBX три клипа: `walk_loop`, `idle_loop`, `sprint_loop`; `RobotAssetPostprocessor`
   переименовывает их в `Walk`, `Idle`, `Sprint`, включает loop и конвертирует цвет
   материалов из sRGB в линейный (иначе роботы выглядят выбеленными). Из палитры цвет и

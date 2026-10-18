@@ -1,7 +1,7 @@
 # FrostSpace
 
 Unity-проект на ранней стадии: есть играбельный вертикальный срез — снежный уровень
-`SnowLevel`, пять роботов из Blender и локомоция игрока. Назначение игры, жанр и целевые
+`SnowLevel`, двадцать роботов из Blender и локомоция игрока. Назначение игры, жанр и целевые
 платформы пока не зафиксированы — см. [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
 
 | Параметр | Значение |
@@ -10,8 +10,8 @@ Unity-проект на ранней стадии: есть играбельны
 | Render pipeline | URP 17.6.0 |
 | Ввод | Input System |
 | Стартовая сцена | `Assets/Scenes/SnowLevel.unity` (build index 0) |
-| Роботы | 5 FBX, визуальные префабы `R*_Model`, движение kinematic |
-| Код и тесты | `FrostSpace.Features` + `FrostSpace.Editor`, 3 EditMode-теста |
+| Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model`, движение kinematic |
+| Код и тесты | `FrostSpace.Features` + `FrostSpace.Editor`, 4 EditMode-теста |
 
 ## С чего начать
 

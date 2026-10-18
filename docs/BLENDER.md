@@ -238,7 +238,7 @@ build_level.py -> Content/Models/Level/*.fbx (19 шт.) -> плоские нор
 
 ## Роботы FrostSpace
 
-Анимация в проекте уже есть — это пять роботов (`R1_PolarMechanic` … `R5_Ranger`).
+Анимация в проекте уже есть — это двадцать роботов (`R1_PolarMechanic` … `R20_Cogsmith`); R6–R20 — вторая партия, принята 2026-10-18.
 
 Конвейер:
 
@@ -247,6 +247,16 @@ Tools/Blender/                                     Unity: RobotAssetPostprocesso
 build_robots.py -> Content/Models/Robots/R*.fbx -> клипы Walk/Idle/Sprint, loop, sRGB
 (robot_lib.py, robot_designs.py)
 ```
+
+- Сборка по именам: `build_robots.py -- R6 R7` собирает только эти дизайны, без
+  аргументов — все 20. Пересборка перезаписывает FBX и не трогает Unity-контент.
+- `robot_lib.stats(obj, arm)` проверяет не только вершины без веса, но и группы с
+  именами несуществующих костей: опечатка в имени кости иначе даёт «зависшую» деталь.
+- Обзор партии: `render_robot_lineup.py -- R6_Smelter …` (idle, спереди и сзади) и
+  `make_robot_sheet.py -- --cols 5 R6_Smelter …` (контактный лист). Оба — headless,
+  без внешних зависимостей.
+- Координаты костей для новых деталей — `probes/probe_rig_points.py` (rest-точки после
+  `widen_rig`); проверка «где у модели перед» — `probes/probe_orientation.py`.
 
 - Скелет — T-поза ActionForge; детали жёстко привязаны к костям (rigid skinning), поэтому
   автоматические веса и протечки здесь не применяются.
@@ -295,7 +305,10 @@ build_robots.py -> Content/Models/Robots/R*.fbx -> клипы Walk/Idle/Sprint, 
 | `build_level.py` (уровень, 19 FBX) | **PASS** (2026-10-18): 19 файлов, 26698 трис; рельеф 90×90, дом/пропы в габарите |
 | Ориентация уровня после импорта в Unity | **PASS** (2026-10-18): крыльцо −1.40, фундамент +0.09, дверь −0.94, труба +1.42 — отражения нет (ADR 0007) |
 | `render_level_previews.py` | **PASS** (2026-10-18): 10 видов в `AssetSource/Previews/Level/` |
-| `build_robots.py` | не запускался в этой сессии: FBX уже собраны |
+| `build_robots.py` (вторая партия) | **PASS** (2026-10-18): 15 FBX, 2136–4604 трис, 0 вершин без веса |
+| `render_robot_lineup.py` | **PASS** (2026-10-18): 40 кадров (20 роботов × 2 вида) |
+| `make_robot_sheet.py` | **PASS** (2026-10-18): контактные листы 2400 px |
+| `build_robots.py` (R1–R5) | не запускался в этой сессии: FBX уже собраны |
 | `inspect_image.py` на PNG | **PASS**: размер, уникальные цвета, яркость |
 | `blender_boot.py` в `--background` | **PASS**: корректный отказ, код 0 |
 | `blender_bridge.py` с mock-сервером | **PASS**: ping/call получают ответ |

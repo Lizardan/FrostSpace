@@ -41,7 +41,7 @@ def main() -> int:
             bpy.data.objects.remove(obj, do_unlink=True)
             continue
         robot_lib.bind(obj, arm)
-        robot_lib.stats(obj)
+        robot_lib.stats(obj, arm)
         path = os.path.join(OUT, name + ".fbx")
         robot_lib.export_fbx(arm, obj, path)
         built.append(path)

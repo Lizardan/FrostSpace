@@ -16,17 +16,34 @@ namespace FrostSpace.Tests
         private const string ModelFolder = "Assets/_Project/Content/Models/Robots";
         private const string PrefabFolder = "Assets/_Project/Content/Prefabs/Robots";
 
-        private static readonly string[] Robots =
-        {
-            "R1_PolarMechanic", "R2_Furnace", "R3_Scout", "R4_Hauler", "R5_Ranger",
-        };
-
         private static readonly string[] States = { "Idle", "Walk", "Sprint" };
+
+        /// <summary>
+        /// Список роботов берётся из папки префабов, а не из константы: партия
+        /// расширяется и сокращается без правки теста. Имя префаба
+        /// <c>R*_Model</c> задаёт имя модели <c>R*</c>.
+        /// </summary>
+        private static string[] Robots()
+        {
+            return AssetDatabase.FindAssets("t:Prefab", new[] { PrefabFolder })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(path => path.EndsWith("_Model.prefab"))
+                .Select(path => System.IO.Path.GetFileNameWithoutExtension(path)
+                    .Replace("_Model", string.Empty))
+                .OrderBy(name => name)
+                .ToArray();
+        }
+
+        [Test]
+        public void RobotFolder_IsNotEmpty()
+        {
+            CollectionAssert.IsNotEmpty(Robots(), "В папке префабов нет ни одного робота");
+        }
 
         [Test]
         public void VisualPrefab_HasAnimatorWithoutGameplayLogic()
         {
-            foreach (var robot in Robots)
+            foreach (var robot in Robots())
             {
                 var path = PrefabFolder + "/" + robot + "_Model.prefab";
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -51,7 +68,7 @@ namespace FrostSpace.Tests
         [Test]
         public void VisualPrefab_ControllerHasLocomotionStates()
         {
-            foreach (var robot in Robots)
+            foreach (var robot in Robots())
             {
                 var path = PrefabFolder + "/" + robot + "_Model.prefab";
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -78,7 +95,7 @@ namespace FrostSpace.Tests
         [Test]
         public void RobotModel_HasThreeInPlaceClips()
         {
-            foreach (var robot in Robots)
+            foreach (var robot in Robots())
             {
                 var path = ModelFolder + "/" + robot + ".fbx";
                 var clips = AssetDatabase.LoadAllAssetsAtPath(path)
