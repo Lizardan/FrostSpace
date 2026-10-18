@@ -78,6 +78,11 @@ Unity MCP `manage_build` или сначала создай Editor-метод с
   оставляет битый `Library/PackageCache` (симптом — ошибки компиляции в
   `com.unity.collab-proxy`). Лечится удалением `Library` и `Temp` в
   `F:\actions-runner-frostspace\_work\FrostSpace\FrostSpace` и повторным запуском.
+- **Страница.** `Assets/WebGLTemplates/FrostSpace/index.html` — свой шаблон: канвас
+  растянут на всё окно (`position: fixed; inset: 0`), без футера Unity с логотипом и
+  кнопкой полноэкранного режима. Вместо него — экран загрузки с полосой прогресса,
+  который гаснет после старта. Включается в `BuildWebGL`:
+  `PlayerSettings.WebGL.template = "PROJECT:FrostSpace"`.
 - **Почему не game-ci.** Unity 6 не пишет `.ulf`, который game-ci требует для
   Personal-лицензии; локальный редактор уже активирован, поэтому сборка идёт на этой
   машине.
