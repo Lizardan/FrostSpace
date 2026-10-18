@@ -48,6 +48,28 @@ PALETTE = {
 #: playback speed в Unity, чтобы стопы не скользили.
 CLIP_SPEEDS = {"walk": 1.3 / (40.0 / 30.0), "sprint": 5.5 / (20.0 / 30.0)}
 
+#: Читаемость палитры в игровом свете (2026-10-18). В игре видимая сторона
+#: робота получает примерно половину альбедо (часть граней освещена только
+#: ambient), а снег занимает верх диапазона кадра — корпус читается почти
+#: чёрным. Поэтому светлота альбедо поднимается с затуханием к белому:
+#: снег, мех и акценты сохраняют свою роль, подъём достаётся корпусу и тёмной
+#: подложке. Оттенок не меняется — опознавательный цвет робота остаётся прежним.
+#: Правило и таблица пересчёта: `Tools/Blender/robot_palette_lift.py`.
+GAME_LIFT_GAIN = 0.85
+GAME_SAT_POWER = 0.80
+
+
+def lift_for_game(hex_color: str) -> str:
+    """Поднять светлоту альбедо под игровой свет, сохранив оттенок."""
+    import colorsys
+    value = hex_color.lstrip("#")
+    rgb = [int(value[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+    hue, sat, val = colorsys.rgb_to_hsv(*rgb)
+    val = min(1.0, val * (1.0 + GAME_LIFT_GAIN * (1.0 - val)))
+    sat = sat ** GAME_SAT_POWER
+    out = colorsys.hsv_to_rgb(hue, sat, val)
+    return "#%02X%02X%02X" % tuple(int(round(c * 255)) for c in out)
+
 
 def configure_stdout() -> None:
     import sys
@@ -78,7 +100,7 @@ def make_materials(prefix: str, keys: list[str], colors=None):
     mats, index = [], {}
     for key in keys:
         hex_color, metallic, roughness, emission = PALETTE[key]
-        hex_color = colors.get(key, hex_color)
+        hex_color = lift_for_game(colors.get(key, hex_color))
         mat = lowpoly.make_material("%s_%s" % (prefix, key), hex_color,
                                     roughness=roughness, metallic=metallic)
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
