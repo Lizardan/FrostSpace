@@ -60,7 +60,28 @@ jobs:
           Start-Process -FilePath $unity -ArgumentList $args -PassThru | Out-Null
 
           $deadline = (Get-Date).AddMinutes(60)
+          $goneSince = $null
+
+          # Unity может выйти, не дойдя до PerformBuild (ошибки компиляции,
+          # повреждённый кэш). Тогда файла-результата не будет — не ждём час.
+          function Test-UnityRunning {
+            $procs = Get-CimInstance Win32_Process -Filter "Name='Unity.exe'" -ErrorAction SilentlyContinue
+            foreach ($p in $procs) {
+              if ($p.CommandLine -and $p.CommandLine -like "*$ws*") { return $true }
+            }
+            return $false
+          }
+
           while (-not (Test-Path $result)) {
+            if (-not (Test-UnityRunning)) {
+              if ($null -eq $goneSince) { $goneSince = Get-Date }
+              elseif ((Get-Date) -gt $goneSince.AddSeconds(90)) {
+                if (Test-Path $log) { Get-Content $log -Tail 120 }
+                throw "Unity завершился, не записав результат сборки"
+              }
+            } else {
+              $goneSince = $null
+            }
             if ((Get-Date) -gt $deadline) {
               if (Test-Path $log) { Get-Content $log -Tail 120 }
               throw "Unity не записал результат за 60 минут"
