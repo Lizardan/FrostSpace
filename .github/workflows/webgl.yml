@@ -1,0 +1,70 @@
+name: WebGL build and deploy
+
+# Сборка идёт на self-hosted раннере этого ПК: он использует уже активированный
+# Unity 6000.6.6f1 и не требует лицензии в облаке (у Unity 6 нет .ulf, который
+# ждёт game-ci). Публикация — штатными действиями GitHub Pages.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build WebGL
+    runs-on: [self-hosted, Windows, X64, unity]
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        shell: pwsh
+        run: |
+          $unity = "F:\Unity\Editor\6000.6.6f1\Editor\Unity.exe"
+          if (-not (Test-Path $unity)) { throw "Unity не найден: $unity" }
+          Write-Host "Unity: $unity"
+          & $unity -quit -batchmode -projectPath "${{ github.workspace }}" `
+            -buildTarget WebGL `
+            -executeMethod FrostSpace.Editor.BuildWebGL.PerformBuild `
+            -logFile "${{ github.workspace }}\build-webgl.log"
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            Write-Host "=== последние строки лога ==="
+            Get-Content "${{ github.workspace }}\build-webgl.log" -Tail 120
+            throw "Unity завершился с кодом $code"
+          }
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webgl-build-log
+          path: build-webgl.log
+          if-no-files-found: ignore
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: Builds/WebGL
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
