@@ -2,8 +2,9 @@
 
 ## Статус
 
-Проект находится на стадии **заготовки**: есть Unity-проект, стартовая сцена и набор
-пакетов, но нет игрового кода, тестов и контента, импортированного в `Assets/`.
+Проект находится на ранней стадии: есть играбельный вертикальный срез — снежный уровень
+`SnowLevel`, пять роботов из Blender, локомоция игрока и EditMode-тесты. Полноценного
+игрового цикла, целей и баланса нет.
 
 Назначение игры, жанр, игровой цикл и целевые платформы **не зафиксированы**. Это не
 повод придумывать их по названию проекта или набору пакетов. Если задача требует
@@ -21,18 +22,21 @@
 | Ввод | только Input System | `activeInputHandler: 2` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
 | Play Mode | domain reload выключен, scene reload включён | `m_EnterPlayModeOptionsEnabled: 1`, `m_EnterPlayModeOptions: 1` |
-| Сцена | `Assets/Scenes/Boot.unity`, build index 0 | `EditorBuildSettings.asset`, Unity MCP |
-| Содержимое Boot | Main Camera, Directional Light, Global Volume | Unity MCP `manage_scene` |
-| Код | C#-скриптов, `.asmdef`, тестов нет | поиск по `Assets/` |
+| Игровая сцена | `Assets/Scenes/SnowLevel.unity`, build index 0 | `EditorBuildSettings.asset`, Unity MCP |
+| Содержимое SnowLevel | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами | сцена `Assets/Scenes/SnowLevel.unity` |
+| Сцена-заготовка | `Assets/Scenes/Boot.unity`: Main Camera, Directional Light, Global Volume | Unity MCP `manage_scene` |
+| Код | `FrostSpace.Features` (локомоция, камера), `FrostSpace.Editor`, 3 EditMode-теста | `Assets/_Project/`, `run_tests` |
+| Роботы | 5 FBX, визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-18 |
 | Blender | 5.2.2 LTS, аддон `blender_mcp` установлен | фактический запуск |
 
 ## Чего в проекте нет
 
-- Игрового цикла, персонажа, управления, UI, сохранений, сети, аудио-системы.
+- Игрового цикла, целей, UI, сохранений, сети и аудио.
+- Логики NPC: акторы `NPC_*` статичны и играют Idle, `NpcController` не написан.
 - Собственных ScriptableObject-конфигов и баланса.
-- Тестов, CI, build-скриптов и Editor-инструментов.
-- Импортированных моделей/материалов: исходники лежат архивами в `AssetSource/`.
+- CI и build-метода; из Editor-кода — только постпроцессор импорта FBX.
+- Импортированных сторонних моделей: `Assets/ThirdParty/` пуст, исходники — архивами в `AssetSource/`.
 
 Всё перечисленное — **не реализовано**, а не «сделано, но не описано». Не ссылайся на
 несуществующие системы в документации или отчётах.
@@ -41,6 +45,12 @@
 
 - **Linear color space.** Цвета материалов задаются в sRGB и конвертируются; иначе
   картинка молча темнеет. Подробности — `ASSETS.md`.
+- **Root Motion не используется.** Клипы роботов in-place, движение — kinematic через
+  `CharacterController`; стопа согласуется с корпусом через `Animator.speed` (ADR 0004).
+- **Префаб — визуал, логика — на сценовом актёре.** `R*_Model.prefab` не содержат
+  `CharacterController`, ввода и `RobotLocomotion`; всё это — только на `Player`.
+- **Play в редакторе тикает только при фокусе окна.** `runInBackground = 1` не заменяет
+  фокус: без него `Time.frameCount` стоит на месте (`UNITY_EDITOR.md` §5).
 - **Domain reload выключен.** Мутабельная статика переживает запуск Play Mode; её нужно
   сбрасывать через `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]`.
 - **Input System only.** Старый `Input.GetAxis` не работает; используй

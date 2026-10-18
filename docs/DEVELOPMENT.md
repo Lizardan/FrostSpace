@@ -46,8 +46,9 @@ Batch требует, чтобы редактор был **закрыт**: ин�
   -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тесты PlayMode — то же с `-testPlatform PlayMode`. Сейчас тестов нет: результат будет
-`total: 0`, это не ошибка, а отсутствие тестов.
+Тесты PlayMode — то же с `-testPlatform PlayMode`. EditMode-тесты живут в
+`FrostSpace.Tests.EditMode` (проверки префабов и клипов роботов). `total: 0` в отчёте
+означает, что тесты не найдены, а не что «всё прошло».
 
 Сборка: готового build-метода и build-профиля нет. Не выдумывай команду; используй
 Unity MCP `manage_build` или сначала создай Editor-метод сборки отдельной задачей.
@@ -61,6 +62,14 @@ Blender не обязателен для Unity-разработки. Если з
 # сборка/проверка без GUI
 "/g/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
   --python Tools/Blender/selftest.py
+
+# роботы: пересборка FBX (перезаписывает Content/Models/Robots — запускать осознанно)
+"/g/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
+  --python Tools/Blender/build_robots.py -- R1
+
+# роботы: замер скорости стопы в клипах
+"/g/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
+  --python Tools/Blender/measure_locomotion.py -- <file.fbx>
 
 # живой MCP — только GUI
 "/g/Steam/steamapps/common/Blender/blender.exe" --python Tools/Blender/blender_boot.py
@@ -81,19 +90,23 @@ Headless-прогон — основной путь; GUI нужен только
 | Анализ PNG | `blender --background ... inspect_image.py -- <file.png>` | работает |
 | Unity ping через мост | `python Tools/Unity/unity_bridge.py ping` | `pong` |
 | Unity MCP Console | `read_console(types: ["error"])` | 0 ошибок |
-| Unity MCP сцена | `manage_scene(get_active)` | Boot, 3 корневых объекта |
-| Unity MCP Build Settings | `manage_scene(get_build_settings)` | Boot, index 0 |
-| Тесты Unity | `run_tests` + `get_test_job` | не запускались: тестов нет |
-| Сборка Unity | `manage_build` | не запускалась |
+| Unity MCP сцена | `manage_scene(get_active)` | `SnowLevel`, `Player` + `NPC`, index 0 |
+| Unity MCP Build Settings | `manage_scene(get_build_settings)` | `SnowLevel`, index 0 |
+| Тесты Unity | `run_tests` + `get_test_job` | 3 EditMode — PASS (2026-10-18) |
+| Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° |
+| Замер клипов роботов | `blender ... measure_locomotion.py -- R1_PolarMechanic.fbx` | walk 0.93, sprint 8.92 м/с |
+| Пересборка роботов | `blender ... build_robots.py` | не запускалась в этой сессии: FBX уже собраны |
+| Сборка Unity | `manage_build` | не запускалась: нет build-метода и платформы |
 
 ## Что не проверено
 
 - Реальный end-to-end мост к живому Blender: GUI-Blender не запускался. Mock-тест
   проверяет клиент, но не совместимость с аддоном. Команда для проверки:
   `python Tools/Blender/blender_bridge.py ping` при открытом Blender.
-- Unity `run_tests`: в проекте нет тестов, поэтому проверять нечего.
+- PlayMode-тестов нет: движение проверяет стенд `LocomotionDiagnostics` (`PROBE`) вручную,
+  визуальную оценку заноса и кросфейдов делает человек.
 - Unity build: нет build-метода и целевой платформы.
-- Импорт моделей из `AssetSource/`: архивы не распакованы, в `Assets/` ничего не добавлено.
+- Импорт моделей из `AssetSource/`: архивы не распакованы, `Assets/ThirdParty/` пуст.
 
 ## Правила проверки
 

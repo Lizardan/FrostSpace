@@ -1,21 +1,24 @@
 # FrostSpace
 
-Unity-проект на стадии заготовки. Назначение игры, жанр и целевые платформы пока не
-зафиксированы — см. [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
+Unity-проект на ранней стадии: есть играбельный вертикальный срез — снежный уровень
+`SnowLevel`, пять роботов из Blender и локомоция игрока. Назначение игры, жанр и целевые
+платформы пока не зафиксированы — см. [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
 
 | Параметр | Значение |
 |---|---|
 | Unity | 6000.6.6f1 |
 | Render pipeline | URP 17.6.0 |
 | Ввод | Input System |
-| Стартовая сцена | `Assets/Scenes/Boot.unity` |
-| Код и тесты | пока отсутствуют |
+| Стартовая сцена | `Assets/Scenes/SnowLevel.unity` (build index 0) |
+| Роботы | 5 FBX, визуальные префабы `R*_Model`, движение kinematic |
+| Код и тесты | `FrostSpace.Features` + `FrostSpace.Editor`, 3 EditMode-теста |
 
 ## С чего начать
 
 1. [AGENTS.md](AGENTS.md) — обязательные правила для человека и AI-агента.
 2. [docs/README.md](docs/README.md) — индекс документации и порядок чтения.
 3. [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) — где что лежит.
+4. [Plans/README.md](Plans/README.md) — как ведётся текущий план работ.
 
 ## Инструменты
 

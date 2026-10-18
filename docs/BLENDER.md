@@ -15,6 +15,7 @@
 | Порт моста | **9876** | по конфигурации; в этой сессии не слушал |
 | Наш мост | `Tools/Blender/blender_bridge.py` | mock-тест |
 | Загрузчик | `Tools/Blender/blender_boot.py` | headless-отказ проверен |
+| Роботы | `robot_lib.py`, `robot_designs.py`, `build_robots.py`, `measure_locomotion.py` | сборка и замер прогоняются headless |
 
 Путь и версия — **параметр окружения**, а не константа в коде. На другой машине они
 будут другими; скрипты должны принимать их через env/CLI.
@@ -211,10 +212,25 @@ BLENDER_HOST=127.0.0.1 BLENDER_PORT=9876 BLENDER_TIMEOUT=300 \
 | Превью Quaternius пустое | `Alpha = 0` при `HASHED` | Принудительная непрозрачность только для превью; в Unity не переносить |
 | Кириллица падает на печати | Windows-консоль cp1251 | `PYTHONUTF8=1`; в наших скриптах stdout переконфигурируется в UTF-8 |
 
-## Когда появится персонажная анимация
+## Роботы FrostSpace
 
-Это **условный** раздел: в проекте пока нет персонажа. Правила ниже — общие принципы,
-без имён костей и замеров конкретной модели.
+Анимация в проекте уже есть — это пять роботов (`R1_PolarMechanic` … `R5_Ranger`).
+
+Конвейер:
+
+```
+Tools/Blender/                                     Unity: RobotAssetPostprocessor
+build_robots.py -> Content/Models/Robots/R*.fbx -> клипы Walk/Idle/Sprint, loop, sRGB
+(robot_lib.py, robot_designs.py)
+```
+
+- Скелет — T-поза ActionForge; детали жёстко привязаны к костям (rigid skinning), поэтому
+  автоматические веса и протечки здесь не применяются.
+- Клипы in-place; скорость стопы в контакте меряется `measure_locomotion.py` (Blender).
+  Числа и контракт — в `ASSETS.md`.
+- Разделение «визуальный префаб / сценовый актёр» — ADR 0004.
+
+Общие правила ниже остаются в силе для будущих персонажей:
 
 - **Автоматические веса не гарантируют полноту.** Bone-heat на многокомпонентном меше
   может оставить вершины без весов. Проверяй отчёт и добивай сирот; не считай
@@ -230,8 +246,6 @@ BLENDER_HOST=127.0.0.1 BLENDER_PORT=9876 BLENDER_TIMEOUT=300 \
 - **Ретаргет с разными rest-позами** копирует абсолютную ориентацию кости, а не дельту
   от rest. Иначе рука из T-позы уходит за спину.
 - **≤4 влияния на вершину** — требование Unity-скина; проверяй перед экспортом.
-
-Если персонажной задачи нет — не добавляй эти правила в код «на будущее».
 
 ## Чего нельзя
 
@@ -252,6 +266,9 @@ BLENDER_HOST=127.0.0.1 BLENDER_PORT=9876 BLENDER_TIMEOUT=300 \
 | `probe_action_api.py` | **PASS**: `HAS fcurves: False`, 1 layer, 1 channelbag |
 | `fbx_units.py` на экспортированном FBX | **PASS**: `UnitScaleFactor=1.0` |
 | `probe_fbx_import.py` | **PASS**: видит `scale=0.01`, поворот 90°, мировой габарит верный |
+| `measure_locomotion.py` на `R1_PolarMechanic.fbx` | **PASS** (2026-10-18): walk 0.927, sprint 8.917 м/с |
+| `probe_fbx_import.py` на `R1_PolarMechanic.fbx` | **PASS** (2026-10-18): компенсация 0.01/90°, габарит верный |
+| `build_robots.py` | не запускался в этой сессии: FBX уже собраны |
 | `inspect_image.py` на PNG | **PASS**: размер, уникальные цвета, яркость |
 | `blender_boot.py` в `--background` | **PASS**: корректный отказ, код 0 |
 | `blender_bridge.py` с mock-сервером | **PASS**: ping/call получают ответ |

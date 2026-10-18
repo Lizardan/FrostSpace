@@ -42,6 +42,26 @@ FBX-экспортёр конвертирует оси. Не «поправля�
 - После экспорта проверь имена клипов и число каналов (например, разбором GLB), а не
   только факт создания файла.
 
+## Роботы FrostSpace: FBX с клипами
+
+Пять роботов собраны скриптом, а не импортированы из `AssetSource/`:
+
+- Генерация: `Tools/Blender/build_robots.py` (ядро `robot_lib.py`, дизайны
+  `robot_designs.py`), выход — `Assets/_Project/Content/Models/Robots/R*.fbx`.
+- Имена не меняются: `R1_PolarMechanic.fbx`, `R2_Furnace.fbx`, `R3_Scout.fbx`,
+  `R4_Hauler.fbx`, `R5_Ranger.fbx`.
+- В каждом FBX три клипа: `walk_loop`, `idle_loop`, `sprint_loop`; `RobotAssetPostprocessor`
+  переименовывает их в `Walk`, `Idle`, `Sprint`, включает loop и конвертирует цвет
+  материалов из sRGB в линейный (иначе роботы выглядят выбеленными).
+- Клипы **in-place** (корневое смещение обнулено). Root Motion выключен, движение в игре —
+  kinematic; согласование стопы и корпуса — через `Animator.speed` (ADR 0004).
+- Скорость стопы в контакте, м/с: Blender `measure_locomotion.py` даёт walk 0.93 /
+  sprint 8.92; разовый замер в Unity — 0.91 / 8.92. Источник истины для сцены — замер
+  Unity: значения зафиксированы в скрытых полях `_walkClipSpeed`/`_sprintClipSpeed`
+  компонента `RobotLocomotion`. Инструмента для повторного замера в проекте нет.
+- Визуальные префабы `R*_Model.prefab` — варианты FBX-модели (`PrefabAssetType.Variant`)
+  с `Animator` и `R*.controller`; без `CharacterController`, ввода и логики.
+
 ## Unity: импорт FBX
 
 | Параметр | Значение |
@@ -137,7 +157,12 @@ Unity это не проблема** — не переноси этот workarou
 - `bake_space_transform=True` и совпадение габарита до/после импорта;
 - компенсация масштаба на корне при обратном импорте (локальный меш в см,
   `scale = 0.01`, поворот 90° — мировой габарит при этом верный);
-- существование типа `UniversalAdditionalCameraData` в URP-сборке (через `unity_reflect`).
+- существование типа `UniversalAdditionalCameraData` в URP-сборке (через `unity_reflect`);
+- клипы роботов: `Idle`/`Walk`/`Sprint` нужной длины, in-place (EditMode-тесты, 2026-10-18);
+- замер скорости стопы клипов в Blender и Unity: 0.93 / 8.92 против 0.91 / 8.92 м/с
+  (2026-10-18);
+- компенсация масштаба у FBX робота: локальный меш со `scale = 0.01` и поворотом 90°,
+  мировой габарит верный (`probes/probe_fbx_import.py`).
 
 Перенесено из проверок проекта-предшественника и **в FrostSpace не перепроверялось**:
 

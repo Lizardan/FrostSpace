@@ -16,6 +16,9 @@
 # В проект импортируется только нужное: Assets/ThirdParty/<Pack>/.
 /AssetSource/
 
+# Локальные данные opencode (агент): сессии, кэш
+/.opencode/
+
 # Python-кеш утилит в Tools/
 __pycache__/
 *.py[cod]

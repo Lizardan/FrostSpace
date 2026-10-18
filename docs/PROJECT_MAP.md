@@ -9,41 +9,52 @@
 FrostSpace/
 ├─ AGENTS.md                     # обязательные правила для агентов
 ├─ README.md                     # краткий статус и вход
+├─ Plans/                        # текущие многошаговые планы (README — правила)
 ├─ docs/                         # документация (этот файл — карта)
 ├─ Tools/
-│  ├─ Blender/                   # headless-сборка, мост, пробы, lowpoly-ядро
+│  ├─ Blender/                   # сборка роботов, пробы, мост, lowpoly-ядро
 │  └─ Unity/                     # прямой клиент к мосту Unity MCP
 ├─ AssetSource/                  # сырые архивы ассетов, ВНЕ git и вне Unity
 └─ Assets/
    ├─ Scenes/                    # ЕДИНСТВЕННАЯ папка сцен
-   │  └─ Boot.unity              # текущая стартовая сцена
+   │  ├─ Boot.unity              # заготовка шаблона, в игре не участвует
+   │  └─ SnowLevel.unity         # игровой уровень, build index 0
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
-   │  │  ├─ Core/
-   │  │  ├─ Features/<Feature>/
-   │  │  └─ Infrastructure/
-   │  ├─ Editor/                 # только #if UNITY_EDITOR
+   │  │  ├─ Features/            # сборка FrostSpace.Features
+   │  │  │  ├─ Locomotion/       # RobotLocomotion, LocomotionDiagnostics
+   │  │  │  └─ Camera/           # TopDownCamera (namespace FrostSpace.Features.View)
+   │  │  ├─ Core/                # пока пусто
+   │  │  └─ Infrastructure/      # пока пусто
+   │  ├─ Editor/                 # сборка FrostSpace.Editor, только редактор
+   │  │  └─ RobotAssetPostprocessor.cs # клипы, loop, sRGB при импорте FBX
    │  ├─ Tests/
-   │  │  ├─ EditMode/
-   │  │  └─ PlayMode/
+   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode
    │  └─ Content/
-   │     ├─ Art/  Audio/  Materials/  Models/
-   │     ├─ Prefabs/  UI/  VFX/
-   │     └─ Data/                # ScriptableObject-конфиги и баланс
-   ├─ ThirdParty/<Pack>/         # импортированное из AssetSource, с SOURCE.md
+   │     ├─ Animation/Controllers/  # R*.controller
+   │     ├─ Models/Robots/          # R*.fbx
+   │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал
+   │     ├─ Materials/Level/        # материалы уровня
+   │     └─ Art|Audio|UI|VFX|Data/  # по мере появления
+   ├─ ThirdParty/<Pack>/         # импортированное из AssetSource, с SOURCE.md; пока пусто
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
    ├─ Plugins/Roslyn/            # DLL для execute_code Unity MCP
    └─ InputSystem_Actions.inputactions
 ```
 
-Папки `_Project/**` пока могут отсутствовать: они создаются с первым содержимым.
-Не создавай пустые каталоги «для структуры» — git и Unity их не сохраняют.
+Папки `_Project/**` появляются вместе с первым содержимым: пустые каталоги git и Unity
+не сохраняют.
 
 ## С чего начинается выполнение
 
-1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0).
-2. В сцене три корневых объекта: `Main Camera`, `Directional Light`, `Global Volume`.
-3. Скриптов и bootstrap-логики **нет**. Значит «старт игры» сейчас = пустая сцена.
+1. Unity открывает `Assets/Scenes/SnowLevel.unity` (build index 0) — игровой уровень;
+   `Boot.unity` — заготовка и в игре не участвует.
+2. Сцена `SnowLevel` — обычный сохранённый ассет: земля, дом, деревья, забор, свет, туман,
+   камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
+3. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
+   внутри — визуальный префаб `R1_PolarMechanic_Model`.
+4. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
+   `NPC_R5_Ranger`: только `Transform` и визуальный ребёнок, без ввода и физики.
 
 Когда появится composition root, он должен жить в `Assets/_Project/Scripts/Core/`, а
 точка входа — быть явной (сцена или bootstrap-объект), а не размазанной по `Awake`.
@@ -59,8 +70,12 @@ FrostSpace/
 | Play Mode / сериализация | `ProjectSettings/EditorSettings.asset` |
 | Ввод | `Assets/InputSystem_Actions.inputactions` |
 | Сцены в сборке | `ProjectSettings/EditorBuildSettings.asset` |
-| Теги и слои | `ProjectSettings/TagManager.asset` (пока стандартные) |
+| Визуальные префабы роботов | `Assets/_Project/Content/Prefabs/Robots/R*_Model.prefab` |
+| FBX и контроллеры роботов | `Content/Models/Robots/`, `Content/Animation/Controllers/` |
+| Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `SnowLevel`) |
+| Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |
+| Планы работ | `Plans/` (правила — `Plans/README.md`) |
 | Blender-тулинг | `Tools/Blender/`, документация — `BLENDER.md` |
 | Unity-мост | `Tools/Unity/unity_bridge.py`, документация — `UNITY_MCP.md` |
 | Исходные архивы | `AssetSource/` (в git не входит) |
@@ -68,8 +83,9 @@ FrostSpace/
 
 ## Поисковые подсказки
 
-- Код: `rg "class |struct |interface " Assets/_Project` (когда появится).
+- Код: `rg "class |struct |interface " Assets/_Project`.
 - Сцены и префабы: `rg "guid:" Assets/Scenes Assets/_Project/Content`.
+- Роботы: `rg "R[1-5]_" Assets/_Project/Content Tools/Blender`.
 - Пакеты: `rg "com\\." Packages/manifest.json`.
 - Blender-скрипты: `rg "bpy\\.|export_scene" Tools/Blender`.
 - Unity-мост: `rg "FRAMING|read_console|refresh_unity" Tools/Unity docs`.

@@ -11,6 +11,8 @@
 | [0001](0001-blender-authoring.md) | Blender — authoring, bpy-скрипт — источник истины | Accepted |
 | [0002](0002-fbx-unity-contract.md) | Контракт FBX → Unity: метры, оси, `bake_space_transform` | Accepted |
 | [0003](0003-automation-modes.md) | Headless primary, GUI-MCP secondary; Unity live-MCP vs batch | Accepted |
+| [0004](0004-visual-prefabs-and-scene-actors.md) | Визуальные префабы без логики; логика — на сценовых акторах | Accepted |
+| [0005](0005-no-content-rebuild-menus.md) | Никаких меню-сборщиков контента; правка — вручную в Unity | Accepted |
 
 ## Когда создавать ADR
 

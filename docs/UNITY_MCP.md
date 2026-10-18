@@ -13,8 +13,8 @@
 | Сервер в клиенте | `unityMCP` |
 | Порт | `127.0.0.1:6400` |
 | Unity | 6000.6.6f1 |
-| Активная сцена | `Assets/Scenes/Boot.unity` |
-| Состояние | редактор запущен, компиляция завершена, ошибок в Console нет |
+| Активная сцена | `Assets/Scenes/SnowLevel.unity` (build index 0) |
+| Состояние | редактор запущен, компиляция завершена, EditMode-тесты 3/3, ошибок в Console нет |
 
 `manifest.json` ссылается на ветку `#main`, поэтому версия сервера может измениться при
 перерезолве. Hash в lockfile фиксирует текущую; имена инструментов проверяй по схеме,
@@ -33,10 +33,13 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 
 | Вызов | Фактический результат |
 |---|---|
-| `manage_scene(action: "get_active")` | `Boot`, `Assets/Scenes/Boot.unity`, buildIndex 0, 3 корневых объекта |
-| `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 2)` | Main Camera, Directional Light, Global Volume; `next_cursor: null` |
-| `manage_scene(action: "get_build_settings")` | только `Assets/Scenes/Boot.unity`, enabled, index 0 |
-| `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` |
+| `manage_scene(action: "get_active")` | `SnowLevel`, `Assets/Scenes/SnowLevel.unity`, buildIndex 0 |
+| `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 2)` | 10 корней (`Player`, `NPC`, дом, деревья, забор, свет...); `next_cursor: null` |
+| `manage_scene(action: "get_build_settings")` | только `Assets/Scenes/SnowLevel.unity`, enabled, index 0 |
+| `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` после сборки уровня и тестов |
+| `run_tests` + `get_test_job` | 3 EditMode-теста — `succeeded` (2026-10-18) |
+| `execute_code(action: "execute")` | работает, `compiler: roslyn`; видит типы проектных сборок (`FrostSpace.Features`, `FrostSpace.Editor`) |
+| `manage_asset(action: "delete")` | папка `Assets/Screenshots` удалена (2026-10-18) |
 | `refresh_unity(mode: "if_dirty", scope: "all", compile: "request", wait_for_ready: true)` | `refresh_triggered: true`, `compile_started: true`, `resulting_state: compiling` |
 | `unity_reflect(action: "get_type", class_name: "UniversalAdditionalCameraData")` | тип найден в `Unity.RenderPipelines.Universal.Runtime` |
 | `manage_tools(action: "list_groups")` | группы и состав инструментов получены |
@@ -53,9 +56,9 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 | Группа | Инструменты | enabled |
 |---|---|---|
 | `core` | 25: сцены, скрипты, ассеты, редактор, камера, материалы, префабы, build, `read_console`, `refresh_unity`, `batch_execute` | true |
-| `testing` | `run_tests`, `get_test_job` | false |
-| `docs` | `unity_reflect`, `unity_docs` | false |
-| `scripting_ext` | `execute_code`, `manage_scriptable_object` | false |
+| `testing` | `run_tests`, `get_test_job` | используются (`true`) |
+| `docs` | `unity_reflect`, `unity_docs` | `unity_reflect` используется (`true`) |
+| `scripting_ext` | `execute_code`, `manage_scriptable_object` | `execute_code` используется (`true`) |
 | `asset_gen` | `generate_*`, `import_model*` | false |
 | `animation` | `manage_animation` | false |
 | `probuilder` | `manage_probuilder` | false |
@@ -63,11 +66,10 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 | `ui` | `manage_ui` | false |
 | `vfx` | `manage_shader`, `manage_texture`, `manage_vfx` | false |
 
-В этой сессии `unity_reflect` из группы `docs` вызвался успешно, несмотря на
-`enabled: false`: клиент получил список при подключении. `run_tests` и `execute_code`
-в этой сессии **не вызывались** — сверяйся со схемой. После перезапуска клиента
-витрина может измениться; тогда включи группу через
-`manage_tools(action: "activate", group: "<name>")`.
+Изначально витрина показывала `enabled: false` для этих групп, но вызовы проходили:
+клиент получил список при подключении. `unity_reflect`, `run_tests` и `execute_code`
+вызывались успешно. После перезапуска клиента витрина может измениться; тогда включи
+группу через `manage_tools(action: "activate", group: "<name>")`.
 
 ## Golden loop
 
@@ -101,7 +103,8 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 ```
 
 Только `status: succeeded`/`failed` является результатом. `job_id` — не результат.
-`total: 0` — не ошибка, а отсутствие тестов (сейчас в проекте тестов нет).
+`total: 0` — не «тесты прошли», а «тесты не найдены»: сверь, что сборка тестов
+(`FrostSpace.Tests.EditMode`) видна и в ней есть тесты.
 
 Для PlayMode после domain reload может понадобиться `init_timeout` (например, 120000).
 Точные параметры сверяй со схемой.
@@ -121,7 +124,9 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 | Скриншот камеры попадает в `Assets/Screenshots/` | После проверки удалить папку, иначе попадёт в импорт/сборку |
 | `apply_text_edits` соблазняет править YAML | Нельзя: `.unity`, `.prefab`, `.mat`, `.asset` — только через инструменты Unity |
 | `HTTP 429` в логе сервера | Телеметрия, на работу не влияет (наблюдение из другого проекта) |
-| `total: 0` в тестах | Тестов нет; это не ошибка |
+| `total: 0` в тестах | Тесты не найдены: проверь asmdef и классы тестов, это не «прошло» |
+| Play не тикает: `frameCount` стоит | Вернуть фокус окну редактора (ALT-трюк, `UNITY_EDITOR.md` §5); `runInBackground` не помогает |
+| Play-стенд (диагностика) молчит | Добавлять компонент после стабилизации перехода в Play, а не в момент `is_changing`; проверить стартовый лог |
 
 Пункты про загрузку сцены в Play Mode, `execute_menu_item`, лимит `batch_execute` и
 папку скриншотов перенесены из проверок проекта-предшественника; в FrostSpace они **не
@@ -159,11 +164,11 @@ python Tools/Unity/unity_bridge.py call manage_scene '{"action": "get_active"}'
 
 ## Что не проверено в этом проекте
 
-- `run_tests` с реальными тестами — тестов нет.
 - `manage_build` / сборка — не запускалась, целевая платформа не выбрана.
+- `manage_prefabs`, `import_model_file`, `manage_animation`, `manage_probuilder` —
+  не вызывались.
+- `unity_docs` — не вызывался (используется `unity_reflect`).
 - `manage_camera(action: "screenshot")` — не вызывался.
-- `execute_code`, `manage_asset`, `manage_prefabs`, `import_model_file` — не вызывались.
-- `unity_docs` — не вызывался.
 - Поведение после перезапуска клиента и перерезолва пакета — не проверялось.
 
 Если используешь что-то из этого впервые — сверься со схемой, выполни один пробный
