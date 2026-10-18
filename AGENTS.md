@@ -59,7 +59,7 @@
 ## Карта документации
 
 - `docs/PROJECT_OVERVIEW.md`, `ARCHITECTURE.md`, `PROJECT_MAP.md` — проект, слои, пути.
-- `docs/DEVELOPMENT.md`, `ASSETS.md`, `BLENDER.md`, `UNITY_MCP.md` — работа и инструменты.
+- `docs/DEVELOPMENT.md`, `ASSETS.md`, `BLENDER.md`, `UNITY_MCP.md`, `UNITY_EDITOR.md` — работа и инструменты.
 - `docs/README.md` — индекс; `docs/decisions/` — принятые решения и их причины.
 
 Не дублируй содержимое этих документов в новых файлах: ссылайся на источник.
@@ -126,7 +126,8 @@
 ## Проверка
 
 **Unity:**
-1. `refresh_unity` → `read_console(types: ["error"])`.
+1. `refresh_unity` → `read_console(types: ["error"])`; сомневаешься в свежести
+   сборки — `docs/UNITY_EDITOR.md` §1.
 2. Только если ошибок нет — `run_tests` → дождаться `get_test_job`. Не тестируй при
    ошибках компиляции: будет ложный `Passed` на старой сборке.
 

@@ -1,7 +1,8 @@
 # Unity MCP: проверенный порядок работы
 
 Документ описывает **управление живым Unity-редактором** через MCP. Сборка и batch-режим
-— `DEVELOPMENT.md`. Blender-мост — `BLENDER.md`.
+— `DEVELOPMENT.md`. Перекомпиляция, `execute_code`, авторинг сцен и проверка результата —
+`UNITY_EDITOR.md`. Blender-мост — `BLENDER.md`.
 
 ## Статус: подключён и проверен (2026-10-18)
 
@@ -114,7 +115,8 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 | `manage_scene(get_hierarchy)` без `page_size` даёт огромный ответ | Всегда передавать `page_size` |
 | `manage_scene(action: "load")` в Play Mode падает | Сначала `manage_editor(action: "stop")` |
 | `execute_menu_item` не ждёт компиляции | После правки скрипта дождаться компиляции; иначе выполнится старый код |
-| `execute_code` падает на старом компиляторе | Нужны Roslyn DLL в `Assets/Plugins/Roslyn/`; в проекте они есть |
+| `execute_code` падает на старом компиляторе | Нужны Roslyn DLL в `Assets/Plugins/Roslyn/`; в проекте они есть. Ограничения и запрет `using` — `UNITY_EDITOR.md` §2 |
+| Тесты «зелёные», а правка не влияет | Проверить mtime `Library/ScriptAssemblies/*.dll` — `UNITY_EDITOR.md` §1 |
 | `batch_execute` ограничен | Лимит 25 команд за вызов (сверяйся со схемой) |
 | Скриншот камеры попадает в `Assets/Screenshots/` | После проверки удалить папку, иначе попадёт в импорт/сборку |
 | `apply_text_edits` соблазняет править YAML | Нельзя: `.unity`, `.prefab`, `.mat`, `.asset` — только через инструменты Unity |

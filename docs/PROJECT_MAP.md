@@ -75,7 +75,8 @@ FrostSpace/
 - Unity-мост: `rg "FRAMING|read_console|refresh_unity" Tools/Unity docs`.
 
 Не открывай `Library/`, `Temp/`, `Logs/`, `obj/` и сгенерированные IDE-файлы: это
-производные данные, они не описывают проект.
+производные данные, они не описывают проект. Исключение — `Logs/Editor.log` для
+диагностики (`UNITY_EDITOR.md` §8).
 
 ## Своё и стороннее
 
