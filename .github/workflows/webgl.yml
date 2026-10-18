@@ -30,6 +30,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Не чистить workspace: Library/ — кэш импорта Unity. С clean: true
+          # checkout удаляет его, и каждая сборка импортирует проект с нуля.
+          clean: false
+          fetch-depth: 1
 
       - name: Build
         shell: pwsh
