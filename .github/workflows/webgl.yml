@@ -3,6 +3,10 @@ name: WebGL build and deploy
 # Сборка идёт на self-hosted раннере этого ПК: он использует уже активированный
 # Unity 6000.6.6f1 и не требует лицензии в облаке (у Unity 6 нет .ulf, который
 # ждёт game-ci). Публикация — штатными действиями GitHub Pages.
+#
+# Важно: Unity.exe на Windows — лончер, он завершается сразу с кодом 1, а реальный
+# редактор продолжает работу. Поэтому ждём не код возврата, а файл
+# Builds/webgl-result.json, который пишет BuildWebGL.PerformBuild.
 
 on:
   push:
@@ -22,7 +26,7 @@ jobs:
   build:
     name: Build WebGL
     runs-on: [self-hosted, Windows, X64, unity]
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,16 +36,40 @@ jobs:
         run: |
           $unity = "F:\Unity\Editor\6000.6.6f1\Editor\Unity.exe"
           if (-not (Test-Path $unity)) { throw "Unity не найден: $unity" }
+
+          $ws = "${{ github.workspace }}"
+          $log = Join-Path $ws "build-webgl.log"
+          $result = Join-Path $ws "Builds\webgl-result.json"
+          if (Test-Path $result) { Remove-Item $result -Force }
+
           Write-Host "Unity: $unity"
-          & $unity -quit -batchmode -projectPath "${{ github.workspace }}" `
-            -buildTarget WebGL `
-            -executeMethod FrostSpace.Editor.BuildWebGL.PerformBuild `
-            -logFile "${{ github.workspace }}\build-webgl.log"
-          $code = $LASTEXITCODE
-          if ($code -ne 0) {
-            Write-Host "=== последние строки лога ==="
-            Get-Content "${{ github.workspace }}\build-webgl.log" -Tail 120
-            throw "Unity завершился с кодом $code"
+          Write-Host "Project: $ws"
+
+          $args = @(
+            "-quit", "-batchmode",
+            "-projectPath", $ws,
+            "-buildTarget", "WebGL",
+            "-executeMethod", "FrostSpace.Editor.BuildWebGL.PerformBuild",
+            "-logFile", $log
+          )
+          Start-Process -FilePath $unity -ArgumentList $args -PassThru | Out-Null
+
+          $deadline = (Get-Date).AddMinutes(60)
+          while (-not (Test-Path $result)) {
+            if ((Get-Date) -gt $deadline) {
+              if (Test-Path $log) { Get-Content $log -Tail 120 }
+              throw "Unity не записал результат за 60 минут"
+            }
+            Start-Sleep -Seconds 5
+          }
+          Start-Sleep -Seconds 3
+
+          $json = Get-Content $result -Raw
+          Write-Host "Результат сборки: $json"
+          $data = $json | ConvertFrom-Json
+          if ($data.result -ne "Succeeded") {
+            if (Test-Path $log) { Get-Content $log -Tail 120 }
+            throw "Сборка не удалась: $($data.message)"
           }
 
       - name: Upload build log on failure
