@@ -181,6 +181,23 @@ def beveled_box(center, size, bevel):
     return verts, faces
 
 
+def icosphere(center, radius, subdivisions=1):
+    """Икосаэдр: 20 × 4^subdivisions треугольников, вершины на сфере.
+
+    Возвращает (verts, faces) в том же формате, что `beveled_box`. Форма
+    фасетная за счёт flat shading; для «камней» вершины дополнительно
+    искажаются вызывающим кодом.
+    """
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=subdivisions, radius=radius)
+    bm.verts.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+    verts = [Vector(center) + v.co.copy() for v in bm.verts]
+    faces = [tuple(v.index for v in f.verts) for f in bm.faces]
+    bm.free()
+    return verts, faces
+
+
 # --------------------------------------------------------------- сборщик
 
 
@@ -317,7 +334,7 @@ class MeshBuilder:
 
     # -- сборка объекта
 
-    def build(self, name: str, materials, collection=None):
+    def build(self, name: str, materials, collection=None, recalc: bool = True):
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata([tuple(v) for v in self.verts], [], self.faces)
         mesh.validate(verbose=False)
@@ -332,12 +349,13 @@ class MeshBuilder:
                 poly.material_index = self.mats[i]
             poly.use_smooth = False
 
-        bm = bmesh.new()
-        bm.from_mesh(mesh)
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-        bm.to_mesh(mesh)
-        bm.free()
-        mesh.update()
+        if recalc:
+            bm = bmesh.new()
+            bm.from_mesh(mesh)
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            bm.to_mesh(mesh)
+            bm.free()
+            mesh.update()
         return obj
 
 

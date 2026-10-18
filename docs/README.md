@@ -13,6 +13,7 @@
 | Как собрать, запустить тесты, проверить | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Как ассеты переходят из Blender в Unity | [ASSETS.md](ASSETS.md) |
 | Как работать с Blender и его MCP | [BLENDER.md](BLENDER.md) |
+| Какой у проекта визуальный стиль и как его повторять | [STYLE.md](STYLE.md) |
 | Как работать с Unity MCP | [UNITY_MCP.md](UNITY_MCP.md) |
 | Как перекомпилировать, собирать сцены и проверять результат в живом редакторе | [UNITY_EDITOR.md](UNITY_EDITOR.md) |
 | Почему принято то или иное решение | [decisions/README.md](decisions/README.md) |
@@ -35,7 +36,7 @@
 - **Один источник истины.** Дерево структуры — только `PROJECT_MAP.md`; Blender-грабли —
   только `BLENDER.md`; Unity MCP — только `UNITY_MCP.md`; Editor-грабли — только
   `UNITY_EDITOR.md`; контракт ассетов — только `ASSETS.md`; сборка/тесты — только
-  `DEVELOPMENT.md`.
+  `DEVELOPMENT.md`; визуальный стиль и палитры — только `STYLE.md`.
 - **Расхождение с кодом — дефект.** Исправь документ или явно зафиксируй причину.
 - **Не копируй `AGENTS.md`.** Ссылайся на него.
 - **Устаревший документ удаляй**, а не оставляй «на всякий случай».

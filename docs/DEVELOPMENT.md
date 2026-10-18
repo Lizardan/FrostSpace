@@ -93,7 +93,8 @@ Headless-прогон — основной путь; GUI нужен только
 | Unity MCP сцена | `manage_scene(get_active)` | `SnowLevel`, `Player` + `NPC`, index 0 |
 | Unity MCP Build Settings | `manage_scene(get_build_settings)` | `SnowLevel`, index 0 |
 | Тесты Unity | `run_tests` + `get_test_job` | 3 EditMode — PASS (2026-10-18) |
-| Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° |
+| Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | базлайн 2026-10-18: walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° — **на ровном рельефе** |
+| Баланс шага на фасетном рельефе | длина клипа × клиповая скорость = путь за цикл (живой замер) | PASS (2026-10-18): клип 1.333 с × 0.912 м/с = 1.217 м против 1.215 м пути — стопа стоит |
 | Замер клипов роботов | `blender ... measure_locomotion.py -- R1_PolarMechanic.fbx` | walk 0.93, sprint 8.92 м/с |
 | Пересборка роботов | `blender ... build_robots.py` | не запускалась в этой сессии: FBX уже собраны |
 | Сборка Unity | `manage_build` | не запускалась: нет build-метода и платформы |
@@ -105,6 +106,11 @@ Headless-прогон — основной путь; GUI нужен только
   `python Tools/Blender/blender_bridge.py ping` при открытом Blender.
 - PlayMode-тестов нет: движение проверяет стенд `LocomotionDiagnostics` (`PROBE`) вручную,
   визуальную оценку заноса и кросфейдов делает человек.
+  **Стенд меряет контакт относительно минимальной высоты стопы за прогон, поэтому на
+  фасетном рельефе и заносах его «скольжение» завышено** — в окно 3 см попадают фазы не
+  только опоры. На фасетном уровне проверяй баланс шага: клип `L` секунд при скорости
+  клипа `v` сдвигает стопу на `L·v` за цикл, и столько же должен проходить персонаж
+  (`скорость × L / animSpeed`); расхождение = скольжение. Стенд гоняй на ровной зоне.
 - Unity build: нет build-метода и целевой платформы.
 - Импорт моделей из `AssetSource/`: архивы не распакованы, `Assets/ThirdParty/` пуст.
 

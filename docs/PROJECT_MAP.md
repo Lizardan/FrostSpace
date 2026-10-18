@@ -12,7 +12,7 @@ FrostSpace/
 ├─ Plans/                        # текущие многошаговые планы (README — правила)
 ├─ docs/                         # документация (этот файл — карта)
 ├─ Tools/
-│  ├─ Blender/                   # сборка роботов, пробы, мост, lowpoly-ядро
+│  ├─ Blender/                   # сборка роботов и уровня, пробы, мост, lowpoly-ядро
 │  └─ Unity/                     # прямой клиент к мосту Unity MCP
 ├─ AssetSource/                  # сырые архивы ассетов, ВНЕ git и вне Unity
 └─ Assets/
@@ -23,18 +23,21 @@ FrostSpace/
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
    │  │  │  ├─ Locomotion/       # RobotLocomotion, LocomotionDiagnostics
-   │  │  │  └─ Camera/           # TopDownCamera (namespace FrostSpace.Features.View)
+   │  │  │  ├─ Camera/           # TopDownCamera, CameraOcclusionFader; ns ...Features.View
+   │  │  │  └─ Npc/              # NpcController (маршрут, паузы, антизастревание)
    │  │  ├─ Core/                # пока пусто
    │  │  └─ Infrastructure/      # пока пусто
    │  ├─ Editor/                 # сборка FrostSpace.Editor, только редактор
-   │  │  └─ RobotAssetPostprocessor.cs # клипы, loop, sRGB при импорте FBX
+   │  │  ├─ RobotAssetPostprocessor.cs # клипы, loop, sRGB при импорте FBX роботов
+   │  │  └─ LevelAssetPostprocessor.cs # нормали, sRGB и палитра Level_* для уровня
    │  ├─ Tests/
    │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller
    │     ├─ Models/Robots/          # R*.fbx
+   │     ├─ Models/Level/           # FBX уровня: рельеф, дом, интерьер, деревья, пропы
    │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал
-   │     ├─ Materials/Level/        # материалы уровня
+   │     ├─ Materials/Level/        # материалы уровня Level_*
    │     └─ Art|Audio|UI|VFX|Data/  # по мере появления
    ├─ ThirdParty/<Pack>/         # импортированное из AssetSource, с SOURCE.md; пока пусто
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
@@ -49,12 +52,14 @@ FrostSpace/
 
 1. Unity открывает `Assets/Scenes/SnowLevel.unity` (build index 0) — игровой уровень;
    `Boot.unity` — заготовка и в игре не участвует.
-2. Сцена `SnowLevel` — обычный сохранённый ассет: земля, дом, деревья, забор, свет, туман,
-   камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
+2. Сцена `SnowLevel` — обычный сохранённый ассет: рельеф, дом с интерьером, деревья,
+   забор, пропы (FBX из `Content/Models/Level/`), свет, туман, камера, `Player`, `NPC`.
+   Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
 3. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
    внутри — визуальный префаб `R1_PolarMechanic_Model`.
 4. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
-   `NPC_R5_Ranger`: только `Transform` и визуальный ребёнок, без ввода и физики.
+   `NPC_R5_Ranger`: кинематический `CharacterController`, `NpcController` (маршрут из
+   вейпоинтов) и визуальный ребёнок; без ввода и без обычной физики.
 
 Когда появится composition root, он должен жить в `Assets/_Project/Scripts/Core/`, а
 точка входа — быть явной (сцена или bootstrap-объект), а не размазанной по `Awake`.
@@ -72,7 +77,11 @@ FrostSpace/
 | Сцены в сборке | `ProjectSettings/EditorBuildSettings.asset` |
 | Визуальные префабы роботов | `Assets/_Project/Content/Prefabs/Robots/R*_Model.prefab` |
 | FBX и контроллеры роботов | `Content/Models/Robots/`, `Content/Animation/Controllers/` |
+| Модели уровня (FBX) | `Content/Models/Level/`, палитра — `Content/Materials/Level/` |
+| Сборка уровня (Blender) | `Tools/Blender/build_level.py` (+ `level_lib/parts/layout`), превью — `AssetSource/Previews/Level/` |
 | Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `SnowLevel`) |
+| Маршрут NPC | список вейпоинтов в `NpcController` на `NPC_R*`; точки — дочерние `WP_*` |
+| Скрытие перекрытий | компоненты `CameraOcclusionFader` и `CameraOcclusionFadeGroup` (ADR 0006) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |
 | Планы работ | `Plans/` (правила — `Plans/README.md`) |
@@ -88,6 +97,7 @@ FrostSpace/
 - Роботы: `rg "R[1-5]_" Assets/_Project/Content Tools/Blender`.
 - Пакеты: `rg "com\\." Packages/manifest.json`.
 - Blender-скрипты: `rg "bpy\\.|export_scene" Tools/Blender`.
+- Уровень: `rg "SnowCabin|level_parts|Level_" Tools/Blender Assets/_Project/Content`.
 - Unity-мост: `rg "FRAMING|read_console|refresh_unity" Tools/Unity docs`.
 
 Не открывай `Library/`, `Temp/`, `Logs/`, `obj/` и сгенерированные IDE-файлы: это

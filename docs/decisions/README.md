@@ -13,6 +13,8 @@
 | [0003](0003-automation-modes.md) | Headless primary, GUI-MCP secondary; Unity live-MCP vs batch | Accepted |
 | [0004](0004-visual-prefabs-and-scene-actors.md) | Визуальные префабы без логики; логика — на сценовых акторах | Accepted |
 | [0005](0005-no-content-rebuild-menus.md) | Никаких меню-сборщиков контента; правка — вручную в Unity | Accepted |
+| [0006](0006-camera-occlusion.md) | Скрытие геометрии между камерой и игроком — по лучам, с группами частей | Accepted |
+| [0007](0007-static-export-mirrors-x.md) | Зеркало X при экспорте статики: `bake_space_transform` даёт отражение | Accepted |
 
 ## Когда создавать ADR
 
