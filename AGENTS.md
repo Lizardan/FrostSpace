@@ -19,7 +19,7 @@
 
 | Параметр | Значение |
 |---|---|
-| Unity | **6000.6.6f1**, редактор `F:\Unity\Editor\Unity.exe` |
+| Unity | **6000.6.6f1**, редактор `F:\Unity\Editor\6000.6.6f1\Editor\Unity.exe` |
 | Render pipeline | URP **17.6.0**, Quality `PC`/`Mobile` |
 | Цвет | Linear |
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |

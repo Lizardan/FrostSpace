@@ -53,6 +53,35 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 Сборка: готового build-метода и build-профиля нет. Не выдумывай команду; используй
 Unity MCP `manage_build` или сначала создай Editor-метод сборки отдельной задачей.
 
+## WebGL и публикация
+
+Играбельная сборка: **https://lizardan.github.io/FrostSpace/** — обновляется сама
+после пуша в `main`.
+
+- **Сборка.** `Assets/_Project/Editor/BuildWebGL.cs`, метод
+  `FrostSpace.Editor.BuildWebGL.PerformBuild`. Меню нет — только CLI. Настройки: IL2CPP,
+  Brotli + decompression fallback (Pages не позволяет задавать заголовки, иначе браузер
+  не распакует `.unityweb`), включённое кэширование данных. Выход — `Builds/WebGL`
+  (в git не попадает), отчёт — `Builds/webgl-result.json`.
+- **Почему файл-результат, а не код возврата.** `Unity.exe` на Windows — лончер: он
+  завершается сразу с кодом 1, а реальный редактор продолжает работу. Workflow ждёт
+  `Builds/webgl-result.json`, иначе считает сборку упавшей и убивает процесс.
+- **Workflow.** `.github/workflows/webgl.yml`: job `build` на self-hosted раннере
+  (`self-hosted, Windows, X64, unity`), job `deploy` — `actions/deploy-pages`.
+- **Раннер.** `F:\actions-runner-frostspace`, автозапуск — `FrostSpace WebGL Runner.cmd`
+  в папке `Startup` пользователя. ПК должен быть включён: при выключенном раннере job
+  ждёт в очереди.
+- **Почему не game-ci.** Unity 6 не пишет `.ulf`, который game-ci требует для
+  Personal-лицензии; локальный редактор уже активирован, поэтому сборка идёт на этой
+  машине.
+- **Локальная проверка** (редактор должен быть закрыт, иначе `Temp/UnityLockfile`):
+
+  ```bash
+  "F:/Unity/Editor/6000.6.6f1/Editor/Unity.exe" -quit -batchmode \
+    -projectPath "F:/Unity Projects/FrostSpace" -buildTarget WebGL \
+    -executeMethod FrostSpace.Editor.BuildWebGL.PerformBuild
+  ```
+
 ## Blender
 
 Blender не обязателен для Unity-разработки. Если задача про 3D-ассеты — читай

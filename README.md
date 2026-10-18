@@ -4,6 +4,9 @@ Unity-проект на ранней стадии: есть играбельны
 `SnowLevel`, двадцать роботов из Blender и локомоция игрока. Назначение игры, жанр и целевые
 платформы пока не зафиксированы — см. [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
 
+**Играбельная WebGL-сборка:** https://lizardan.github.io/FrostSpace/ — собирается и
+публикуется автоматически после пуша в `main` (см. `docs/DEVELOPMENT.md`).
+
 | Параметр | Значение |
 |---|---|
 | Unity | 6000.6.6f1 |
