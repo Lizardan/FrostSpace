@@ -1,12 +1,17 @@
 name: WebGL build and deploy
 
-# Сборка идёт на self-hosted раннере этого ПК: он использует уже активированный
-# Unity 6000.6.6f1 и не требует лицензии в облаке (у Unity 6 нет .ulf, который
-# ждёт game-ci). Публикация — штатными действиями GitHub Pages.
+# Сборка идёт на GitHub-hosted раннере через game-ci: редактор поднимается в
+# контейнере unityci/editor и активируется лицензией из секретов
+# (Personal: UNITY_LICENSE + UNITY_EMAIL + UNITY_PASSWORD).
 #
-# Важно: Unity.exe на Windows — лончер, он завершается сразу с кодом 1, а реальный
-# редактор продолжает работу. Поэтому ждём не код возврата, а файл
-# Builds/webgl-result.json, который пишет BuildWebGL.PerformBuild.
+# Свой buildMethod обязателен: FrostSpace.Editor.BuildWebGL.PerformBuild
+# выставляет PlayerSettings.WebGL (Brotli + decompressionFallback, шаблон
+# PROJECT:FrostSpace). Без decompressionFallback браузер не распакует .unityweb —
+# GitHub Pages не отдаёт Content-Encoding.
+#
+# Раньше сборка шла на self-hosted раннере этого ПК: ПК должен был быть включён,
+# иначе job висел в очереди, а Unity брался уже активированным. Подробности —
+# docs/DEPLOY.md.
 
 on:
   push:
@@ -25,86 +30,45 @@ concurrency:
 jobs:
   build:
     name: Build WebGL
-    runs-on: [self-hosted, Windows, X64, unity]
-    timeout-minutes: 75
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Не чистить workspace: Library/ — кэш импорта Unity. С clean: true
-          # checkout удаляет его, и каждая сборка импортирует проект с нуля.
-          clean: false
           fetch-depth: 1
 
-      - name: Build
-        shell: pwsh
-        run: |
-          $unity = "F:\Unity\Editor\6000.6.6f1\Editor\Unity.exe"
-          if (-not (Test-Path $unity)) { throw "Unity не найден: $unity" }
-
-          $ws = "${{ github.workspace }}"
-          $log = Join-Path $ws "build-webgl.log"
-          $result = Join-Path $ws "Builds\webgl-result.json"
-          if (Test-Path $result) { Remove-Item $result -Force }
-
-          Write-Host "Unity: $unity"
-          Write-Host "Project: $ws"
-
-          $args = @(
-            "-quit", "-batchmode",
-            "-projectPath", $ws,
-            "-buildTarget", "WebGL",
-            "-executeMethod", "FrostSpace.Editor.BuildWebGL.PerformBuild",
-            "-logFile", $log
-          )
-          Start-Process -FilePath $unity -ArgumentList $args -PassThru | Out-Null
-
-          $deadline = (Get-Date).AddMinutes(60)
-          $goneSince = $null
-
-          # Unity может выйти, не дойдя до PerformBuild (ошибки компиляции,
-          # повреждённый кэш). Тогда файла-результата не будет — не ждём час.
-          function Test-UnityRunning {
-            $procs = Get-CimInstance Win32_Process -Filter "Name='Unity.exe'" -ErrorAction SilentlyContinue
-            foreach ($p in $procs) {
-              if ($p.CommandLine -and $p.CommandLine -like "*$ws*") { return $true }
-            }
-            return $false
-          }
-
-          while (-not (Test-Path $result)) {
-            if (-not (Test-UnityRunning)) {
-              if ($null -eq $goneSince) { $goneSince = Get-Date }
-              elseif ((Get-Date) -gt $goneSince.AddSeconds(90)) {
-                if (Test-Path $log) { Get-Content $log -Tail 120 }
-                throw "Unity завершился, не записав результат сборки"
-              }
-            } else {
-              $goneSince = $null
-            }
-            if ((Get-Date) -gt $deadline) {
-              if (Test-Path $log) { Get-Content $log -Tail 120 }
-              throw "Unity не записал результат за 60 минут"
-            }
-            Start-Sleep -Seconds 5
-          }
-          Start-Sleep -Seconds 3
-
-          $json = Get-Content $result -Raw
-          Write-Host "Результат сборки: $json"
-          $data = $json | ConvertFrom-Json
-          if ($data.result -ne "Succeeded") {
-            if (Test-Path $log) { Get-Content $log -Tail 120 }
-            throw "Сборка не удалась: $($data.message)"
-          }
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
+      # Кэш импорта. Без него каждый прогон заново импортирует 39 FBX,
+      # 20 префабов и все материалы — минуты впустую.
+      - name: Cache Unity Library
+        uses: actions/cache@v4
         with:
-          name: webgl-build-log
-          path: build-webgl.log
-          if-no-files-found: ignore
+          path: Library
+          key: Library-${{ runner.os }}-${{ hashFiles('Assets/**', 'Packages/packages-lock.json', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ runner.os }}-
+
+      - name: Build WebGL
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          # auto = версия из ProjectSettings/ProjectVersion.txt (6000.6.6f1):
+          # расхождение проекта и контейнера невозможно.
+          unityVersion: auto
+          projectPath: .
+          # Совпадает с путями внутри BuildWebGL.PerformBuild.
+          buildsPath: Builds
+          buildName: WebGL
+          buildMethod: FrostSpace.Editor.BuildWebGL.PerformBuild
+          # Builds/ в .gitignore, но результат сборки делает рабочее дерево
+          # «грязным» для проверок билдера — разрешаем явно.
+          allowDirtyBuild: true
+          # Версионированием занимается дефолтный скрипт билдера, у нас свой метод.
+          versioning: None
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
