@@ -19,8 +19,16 @@
 # Локальные данные opencode (агент): сессии, кэш
 /.opencode/
 
+# Локальный id проекта Freebuff
+/.freebuff/
+
 # Локальная память и кэш агента WorkBuddy: журналы сессий, заметки по проекту
 /.workbuddy-ai/
+
+# Текущие планы работ — локальные, в git не идут.
+# README.md остаётся: на него ссылается AGENTS.md.
+/Plans/*
+!/Plans/README.md
 
 # Python-кеш утилит в Tools/
 __pycache__/
