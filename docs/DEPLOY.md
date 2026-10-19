@@ -25,16 +25,22 @@ git push в main
 
 ## Рабочий цикл деплоя (делать каждый раз)
 
-### 1. Поднять раннер (без окна)
+### 1. Поднять раннер
+
+**Человеку:** двойной клик по `F:\actions-runner-frostspace\start-runner.cmd` — откроется
+консоль раннера (её можно свернуть). После деплоя окно просто закрыть.
+
+**Агенту:** запустить `run.cmd` фоновой задачей и держать её до конца деплоя:
 
 ```bash
-powershell -NoProfile -Command "Start-Process -FilePath 'F:\actions-runner-frostspace\bin\Runner.Listener.exe' -ArgumentList 'run' -WorkingDirectory 'F:\actions-runner-frostspace' -WindowStyle Hidden"
+cd /f/actions-runner-frostspace && ./run.cmd    # run_in_background: true
 ```
 
-> В песочнице WorkBuddy `powershell.exe` из Bash заблокирован — те же команды
-> выполняй через PowerShell-инструмент. Из обычного терминала команда выше работает.
+> `Start-Process -WindowStyle Hidden` из песочницы **не годится**: процесс умирает
+> вместе с вызовом инструмента, и job остаётся в очереди. В обычном терминале такая
+> команда работает, но для агента надёжнее фоновая задача.
 
-Проверка, что он вышел на связь (10–20 секунд):
+Проверка, что раннер вышел на связь (10–20 секунд):
 
 ```bash
 gh api repos/Lizardan/FrostSpace/actions/runners --jq '.runners[] | "\(.name) \(.status)"'
@@ -69,6 +75,11 @@ curl -s https://lizardan.github.io/FrostSpace/ | grep -o "<title>[^<]*</title>"
 HTML кешируется GitHub Pages до 10 минут — в браузере может понадобиться Ctrl+F5.
 
 ### 5. Погасить раннер (обязательно)
+
+Агент: остановить фоновую задачу (`TaskStop`) — вместе с ней умирает раннер.
+Человек: закрыть окно консоли.
+
+Если процесс остался — добить:
 
 ```bash
 powershell -NoProfile -Command "Get-Process Runner.Listener -ErrorAction SilentlyContinue | Stop-Process -Force"
@@ -114,6 +125,7 @@ tasklist /fi "imagename eq Runner.Listener.exe"     # «Задачи… отсу
 | Симптом | Причина | Что делать |
 |---|---|---|
 | Job висит в очереди, сборки нет | раннер не запущен | поднять раннер (шаг 1) |
+| Раннер `online`, а job всё равно `queued` | job поставлен, пока раннер был офлайн | отменить прогон и запустить заново: `gh run cancel <id>` → `gh workflow run webgl.yml` |
 | `Runner connect error: Conflict` | старая сессия раннера ещё жива на GitHub | убить процесс, подождать ~1 мин, запустить снова |
 | Сборка «упала» сразу, лог обрывается на старте | `Unity.exe` — лончер, выходит с кодом 1 | workflow ждёт `Builds/webgl-result.json`, а не код возврата |
 | Каждая сборка 11–12 минут | `actions/checkout` вычистил `Library/` | в workflow стоит `clean: false` — не убирать |
