@@ -11,6 +11,7 @@
 | Как устроены слои и зависимости | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Где что лежит, с чего начинается игра | [PROJECT_MAP.md](PROJECT_MAP.md) |
 | Как собрать, запустить тесты, проверить | [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Как собрать и выложить WebGL на GitHub Pages | [DEPLOY.md](DEPLOY.md) |
 | Как ассеты переходят из Blender в Unity | [ASSETS.md](ASSETS.md) |
 | Как работать с Blender и его MCP | [BLENDER.md](BLENDER.md) |
 | Какой у проекта визуальный стиль и как его повторять | [STYLE.md](STYLE.md) |

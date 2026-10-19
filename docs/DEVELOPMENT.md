@@ -55,37 +55,21 @@ Unity MCP `manage_build` или сначала создай Editor-метод с
 
 ## WebGL и публикация
 
-Играбельная сборка: **https://lizardan.github.io/FrostSpace/** — обновляется сама
-после пуша в `main`.
+Сборка и публикация на GitHub Pages описаны отдельно — `DEPLOY.md` (раннер, workflow,
+гашение процесса, ловушки). Здесь только то, что относится к самой сборке.
 
 - **Сборка.** `Assets/_Project/Editor/BuildWebGL.cs`, метод
   `FrostSpace.Editor.BuildWebGL.PerformBuild`. Меню нет — только CLI. Настройки: IL2CPP,
   Brotli + decompression fallback (Pages не позволяет задавать заголовки, иначе браузер
   не распакует `.unityweb`), включённое кэширование данных. Выход — `Builds/WebGL`
   (в git не попадает), отчёт — `Builds/webgl-result.json`.
-- **Почему файл-результат, а не код возврата.** `Unity.exe` на Windows — лончер: он
-  завершается сразу с кодом 1, а реальный редактор продолжает работу. Workflow ждёт
-  `Builds/webgl-result.json`, иначе считает сборку упавшей и убивает процесс.
-- **Workflow.** `.github/workflows/webgl.yml`: job `build` на self-hosted раннере
-  (`self-hosted, Windows, X64, unity`), job `deploy` — `actions/deploy-pages`.
-- **Раннер.** `F:\actions-runner-frostspace`, автозапуск — `FrostSpace WebGL Runner.cmd`
-  в папке `Startup` пользователя. ПК должен быть включён: при выключенном раннере job
-  ждёт в очереди.
-- **Кэш импорта.** В `actions/checkout` стоит `clean: false`: иначе action вычищает
-  workspace и удаляет `Library/`, и каждая сборка импортирует проект с нуля (~11 минут).
-  С кэшем инкрементальная сборка занимает 2–3 минуты.
-- **Не отменяй прогон вручную.** Отмена убивает Unity посреди `git clean`/импорта и
-  оставляет битый `Library/PackageCache` (симптом — ошибки компиляции в
-  `com.unity.collab-proxy`). Лечится удалением `Library` и `Temp` в
-  `F:\actions-runner-frostspace\_work\FrostSpace\FrostSpace` и повторным запуском.
 - **Страница.** `Assets/WebGLTemplates/FrostSpace/index.html` — свой шаблон: канвас
   растянут на всё окно (`position: fixed; inset: 0`), без футера Unity с логотипом и
-  кнопкой полноэкранного режима. Вместо него — экран загрузки с полосой прогресса,
-  который гаснет после старта. Включается в `BuildWebGL`:
-  `PlayerSettings.WebGL.template = "PROJECT:FrostSpace"`.
-- **Почему не game-ci.** Unity 6 не пишет `.ulf`, который game-ci требует для
-  Personal-лицензии; локальный редактор уже активирован, поэтому сборка идёт на этой
-  машине.
+  кнопкой полноэкранного режима. Вместо него — экран загрузки с полосой прогресса.
+  Включается в `BuildWebGL`: `PlayerSettings.WebGL.template = "PROJECT:FrostSpace"`.
+- **Почему файл-результат, а не код возврата.** `Unity.exe` на Windows — лончер: он
+  завершается сразу с кодом 1, а реальный редактор продолжает работу. И workflow, и
+  человек должны ждать `Builds/webgl-result.json`, а не код возврата.
 - **Локальная проверка** (редактор должен быть закрыт, иначе `Temp/UnityLockfile`):
 
   ```bash

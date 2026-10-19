@@ -64,6 +64,7 @@
 
 - `docs/PROJECT_OVERVIEW.md`, `ARCHITECTURE.md`, `PROJECT_MAP.md` — проект, слои, пути.
 - `docs/DEVELOPMENT.md`, `ASSETS.md`, `BLENDER.md`, `UNITY_MCP.md`, `UNITY_EDITOR.md` — работа и инструменты.
+- `docs/DEPLOY.md` — публикация WebGL на GitHub Pages: раннер, деплой, гашение процесса.
 - `docs/STYLE.md` — визуальный стиль и дизайн-код ассетов: правила, палитры, проверка.
 - `docs/README.md` — индекс; `docs/decisions/` — принятые решения и их причины.
 - `Plans/README.md` — правила ведения текущих планов; `Plans/` — сами планы.
