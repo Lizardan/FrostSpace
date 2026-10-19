@@ -20,7 +20,7 @@
 | Параметр | Значение |
 |---|---|
 | Unity | **6000.6.6f1**, редактор `F:\Unity\Editor\6000.6.6f1\Editor\Unity.exe` |
-| Render pipeline | URP **17.6.0**, Quality `PC`/`Mobile` |
+| Render pipeline | URP **17.6.0**, Quality `Default` (единый) |
 | Цвет | Linear |
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |
 | Play Mode | domain reload **выключен**, scene reload включён; Play тикает только при фокусе окна (`runInBackground` не заменяет) |

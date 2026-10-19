@@ -28,14 +28,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Выполнить C#-сниппет в Unity через MCP.")
     parser.add_argument("path", help="файл с C#-кодом сниппета")
     parser.add_argument("--raw", action="store_true", help="печатать полный ответ")
+    parser.add_argument("--no-safety", action="store_true",
+                        help="передать safety_checks=false (разрешить удаление ассетов)")
     args = parser.parse_args(argv)
 
     with open(args.path, "r", encoding="utf-8") as handle:
         code = handle.read()
 
+    params = {"action": "execute", "code": code}
+    if args.no_safety:
+        params["safety_checks"] = False
+
     try:
         with Bridge() as bridge:
-            result = bridge.call("execute_code", {"action": "execute", "code": code})
+            result = bridge.call("execute_code", params)
     except (OSError, RuntimeError) as exc:
         print("МОСТ НЕ ОТВЕТИЛ: %s" % exc)
         return 1

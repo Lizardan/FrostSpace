@@ -55,6 +55,12 @@ namespace FrostSpace.Editor
                 // полноэкранного режима (Assets/WebGLTemplates/FrostSpace).
                 PlayerSettings.WebGL.template = "PROJECT:FrostSpace";
 
+                // В проекте ровно один уровень качества (ADR 0008), так что это
+                // просто страховка: m_PerPlatformDefaultQuality не перезаписывается
+                // при удалении уровней, и старый индекс 1 для WebGL остаётся в файле.
+                // В батче активная цель — WebGL, поэтому запись идёт именно в неё.
+                QualitySettings.SetQualityLevel(0, true);
+
                 var options = new BuildPlayerOptions
                 {
                     scenes = scenes,
