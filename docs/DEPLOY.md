@@ -31,6 +31,9 @@ git push в main
 powershell -NoProfile -Command "Start-Process -FilePath 'F:\actions-runner-frostspace\bin\Runner.Listener.exe' -ArgumentList 'run' -WorkingDirectory 'F:\actions-runner-frostspace' -WindowStyle Hidden"
 ```
 
+> В песочнице WorkBuddy `powershell.exe` из Bash заблокирован — те же команды
+> выполняй через PowerShell-инструмент. Из обычного терминала команда выше работает.
+
 Проверка, что он вышел на связь (10–20 секунд):
 
 ```bash
