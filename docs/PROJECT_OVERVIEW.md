@@ -3,8 +3,8 @@
 ## Статус
 
 Проект находится на ранней стадии: есть играбельный вертикальный срез — снежный уровень
-`SnowLevel`, двадцать роботов из Blender, локомоция игрока и EditMode-тесты. Полноценного
-игрового цикла, целей и баланса нет.
+`SnowLevel`, двадцать роботов и 13 робо-животных из Blender, локомоция игрока и
+EditMode-тесты. Полноценного игрового цикла, целей и баланса нет.
 
 Назначение игры, жанр, игровой цикл и целевые платформы **не зафиксированы**. Это не
 повод придумывать их по названию проекта или набору пакетов. Если задача требует
@@ -17,16 +17,17 @@
 | Unity | 6000.6.6f1 | `ProjectSettings/ProjectVersion.txt` |
 | Редактор | `F:\Unity\Editor\Unity.exe` | Unity Hub / фактический запуск |
 | Render pipeline | URP 17.6.0 | `Packages/manifest.json`, `Assets/Settings/*_RPAsset` |
-| Качество | `PC` и `Mobile`, текущий `PC` | `ProjectSettings/QualitySettings.asset` |
+| Качество | один уровень `Default`, один URP-ассет | `ProjectSettings/QualitySettings.asset` (ADR 0008) |
 | Цветовое пространство | Linear | `ProjectSettings/ProjectSettings.asset` |
 | Ввод | только Input System | `activeInputHandler: 2` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
 | Play Mode | domain reload выключен, scene reload включён | `m_EnterPlayModeOptionsEnabled: 1`, `m_EnterPlayModeOptions: 1` |
 | Игровая сцена | `Assets/Scenes/SnowLevel.unity`, build index 0 | `EditorBuildSettings.asset`, Unity MCP |
-| Содержимое SnowLevel | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами | сцена `Assets/Scenes/SnowLevel.unity` |
+| Содержимое SnowLevel | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами и животными | сцена `Assets/Scenes/SnowLevel.unity` |
 | Сцена-заготовка | `Assets/Scenes/Boot.unity`: Main Camera, Directional Light, Global Volume | Unity MCP `manage_scene` |
-| Код | `FrostSpace.Features` (локомоция, камера), `FrostSpace.Editor`, 3 EditMode-теста | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Features` (локомоция, камера, NPC), `FrostSpace.Editor`, EditMode-тесты | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
+| Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
 | Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-18 |
 | Blender | 5.2.2 LTS, аддон `blender_mcp` установлен | фактический запуск |
 

@@ -8,11 +8,16 @@
   `Locomotion/RobotLocomotion.cs` — движение через kinematic `CharacterController`,
   `Locomotion/LocomotionDiagnostics.cs` — стенд замера (`PROBE`) в Play Mode,
   `Camera/TopDownCamera.cs` — камера сверху-сзади,
-  `Camera/CameraOcclusionFader.cs` — растворение геометрии между камерой и игроком
-  (+ `CameraOcclusionFadeGroup.cs` — части составного объекта, гаснущие вместе),
-  `Npc/NpcController.cs` — NPC по маршруту: точка → пауза 2–10 с → следующая.
+  `Camera/CameraOcclusionFader.cs` — круговой вырез в геометрии между камерой и игроком
+  (шейдер `Content/VFX/Shaders/OcclusionReveal.shader`, осколки
+  `Camera/OcclusionRevealDebris.cs`; `CameraOcclusionFadeGroup.cs` — части составного
+  объекта, получающие вырез вместе),
+  `Npc/NpcController.cs` — NPC по маршруту: точка → пауза 2–10 с → следующая;
+  `Npc/AirPatrolController.cs` — воздушный NPC (орёл, пиранья) по маршруту с высотой,
+  поворот только по рысканью.
 - `FrostSpace.Editor` (`Assets/_Project/Editor/`): `RobotAssetPostprocessor` — импорт FBX
-  роботов (имена клипов, loop, sRGB); `LevelAssetPostprocessor` — импорт моделей уровня
+  роботов (имена клипов, loop, sRGB); `AnimalAssetPostprocessor` — импорт FBX животных
+  (клипы `Idle`/`Move`, loop, sRGB); `LevelAssetPostprocessor` — импорт моделей уровня
   (плоские нормали, sRGB→linear, палитра `Level_*`). Меню-сборки уровня и префабов удалены
   намеренно (ADR 0005): контент не пересобирается скриптом.
 - **Уровень — набор моделей Blender**: 19 статических FBX в `Content/Models/Level/`
@@ -20,14 +25,19 @@
   Источник геометрии — скрипты `Tools/Blender/level_*.py`; в сцене они расставлены
   вручную и далее правятся только в Unity (ADR 0005).
 - `FrostSpace.Tests.EditMode` (`Assets/_Project/Tests/EditMode/`) — проверки префабов и
-  клипов.
+  клипов роботов и животных.
 - **Префаб — визуал, логика — на сценовом актёре.** `R*_Model.prefab` — варианты
   FBX-модели с `Animator` и `R*.controller`, без `CharacterController` и ввода.
   `Player` (тег, CC, `RobotLocomotion`) и `NPC_R*` (кинематический CC, `NpcController`,
   визуальный ребёнок) — объекты сцены; причину фиксирует ADR 0004.
-- **Что не видно из-за геометрии, решает камера, а не триггеры.** Группу «перекрытие →
-  растворение» определяют лучи из камеры в игрока; части составных объектов связаны
-  `CameraOcclusionFadeGroup`. Причину фиксирует ADR 0006.
+- **Животные — тот же контракт** (ADR 0009): `RA_<Species>_Model.prefab` — варианты FBX с
+  `Animator` и `RA_<Species>.controller`; актёры `NPC/Animals/AN_<Species>` несут
+  `NpcController` (наземные) или `AirPatrolController` (орёл, пиранья), клипы `Idle`/`Move`
+  in-place, движение кинематическое.
+- **Что не видно из-за геометрии, решает камера, а не триггеры.** Лучи из камеры в
+  игрока помечают перекрытие; экранный круговой вырез вокруг персонажа делает
+  `OcclusionReveal` только с ближними к камере пикселями. Части составных объектов
+  связаны `CameraOcclusionFadeGroup`. Причину фиксирует ADR 0008.
 - Локомоция: клипы in-place, Root Motion выключен, `Animator.speed` = фактическая скорость
   / скорость клипа.
 - `Assets/Scenes/Boot.unity` — неиспользуемая заготовка шаблона.
@@ -91,7 +101,8 @@ Core ──→ ничего из FrostSpace.*
    которые зависят от жанра (сеть, сохранения, камера, масштаб мира).
 2. **NPC без поведения кроме маршрута.** `NpcController` водит актёра по точкам с
    паузами 2–10 с; реакций на игрока, работ и диалогов нет. Компонент вешается на
-   сценовый актёр, а не на префаб.
+   сценовый актёр, а не на префаб. У животных (13 актёров `NPC/Animals`) поведение то же:
+   маршрут, пауза, поворот — `NpcController` или `AirPatrolController`.
 3. **Нет UI, сохранений, сети и конфигов.** Появятся вместе с требованиями; не создавай
    слои и сборки заранее.
 4. **`Boot.unity` — заготовка** и лежит в `Assets/Scenes/`. Не перемещаем существующий

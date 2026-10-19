@@ -13,8 +13,11 @@
 | [0003](0003-automation-modes.md) | Headless primary, GUI-MCP secondary; Unity live-MCP vs batch | Accepted |
 | [0004](0004-visual-prefabs-and-scene-actors.md) | Визуальные префабы без логики; логика — на сценовых акторах | Accepted |
 | [0005](0005-no-content-rebuild-menus.md) | Никаких меню-сборщиков контента; правка — вручную в Unity | Accepted |
-| [0006](0006-camera-occlusion.md) | Скрытие геометрии между камерой и игроком — по лучам, с группами частей | Accepted |
+| [0006](0006-camera-occlusion.md) | Скрытие геометрии между камерой и игроком — по лучам, с группами частей | Superseded by 0008 |
 | [0007](0007-static-export-mirrors-x.md) | Зеркало X при экспорте статики: `bake_space_transform` даёт отражение | Accepted |
+| [0008](0008-camera-occlusion-aperture.md) | Круговой экранный вырез перекрытий с кубическим растворением | Accepted |
+| [0008](0008-unified-graphics-preset.md) | Единый пресет графики: один уровень качества и один URP-ассет | Accepted |
+| [0009](0009-robot-animals.md) | Робо-животные на ригах Quaternius: гибрид с бронёй, срез стоячего хвоста | Accepted |
 
 ## Когда создавать ADR
 

@@ -1,0 +1,236 @@
+[
+  {
+    "species": "Wolf",
+    "name": "RA_Wolf",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Wolf\\RA_Wolf.fbx",
+    "verts": 1080,
+    "tris": 1932,
+    "clips": {
+      "idle": 39,
+      "move": 39
+    },
+    "clip_speed_source": 3.567,
+    "clip_speed_unity": 0.773,
+    "unity_scale": 0.21674,
+    "source_size": 5.306,
+    "target": 1.15,
+    "metric": "height",
+    "mode": "walk"
+  },
+  {
+    "species": "Cat",
+    "name": "RA_Cat",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Cat\\RA_Cat.fbx",
+    "verts": 1080,
+    "tris": 1932,
+    "clips": {
+      "idle": 39,
+      "move": 40
+    },
+    "clip_speed_source": 2.474,
+    "clip_speed_unity": 0.346,
+    "unity_scale": 0.1398,
+    "source_size": 4.435,
+    "target": 0.62,
+    "metric": "height",
+    "mode": "walk"
+  },
+  {
+    "species": "Dog",
+    "name": "RA_Dog",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Dog\\RA_Dog.fbx",
+    "verts": 1128,
+    "tris": 2020,
+    "clips": {
+      "idle": 39,
+      "move": 39
+    },
+    "clip_speed_source": 2.774,
+    "clip_speed_unity": 0.57,
+    "unity_scale": 0.20534,
+    "source_size": 4.383,
+    "target": 0.9,
+    "metric": "height",
+    "mode": "walk"
+  },
+  {
+    "species": "Cow",
+    "name": "RA_Cow",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Cow\\RA_Cow.fbx",
+    "verts": 1156,
+    "tris": 2068,
+    "clips": {
+      "idle": 149,
+      "move": 40
+    },
+    "clip_speed_source": 3.678,
+    "clip_speed_unity": 2.25,
+    "unity_scale": 0.61175,
+    "source_size": 2.452,
+    "target": 1.5,
+    "metric": "height",
+    "mode": "walk"
+  },
+  {
+    "species": "Horse",
+    "name": "RA_Horse",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Horse\\RA_Horse.fbx",
+    "verts": 1200,
+    "tris": 2152,
+    "clips": {
+      "idle": 149,
+      "move": 32
+    },
+    "clip_speed_source": 4.637,
+    "clip_speed_unity": 3.489,
+    "unity_scale": 0.75242,
+    "source_size": 2.791,
+    "target": 2.1,
+    "metric": "height",
+    "mode": "walk"
+  },
+  {
+    "species": "Zebra",
+    "name": "RA_Zebra",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Zebra\\RA_Zebra.fbx",
+    "verts": 1200,
+    "tris": 2152,
+    "clips": {
+      "idle": 149,
+      "move": 32
+    },
+    "clip_speed_source": 4.637,
+    "clip_speed_unity": 2.693,
+    "unity_scale": 0.58076,
+    "source_size": 2.755,
+    "target": 1.6,
+    "metric": "height",
+    "mode": "walk"
+  },
+  {
+    "species": "Llama",
+    "name": "RA_Llama",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Llama\\RA_Llama.fbx",
+    "verts": 1148,
+    "tris": 2068,
+    "clips": {
+      "idle": 149,
+      "move": 26
+    },
+    "clip_speed_source": 1.0,
+    "clip_speed_unity": 0.308,
+    "unity_scale": 0.30785,
+    "source_size": 5.847,
+    "target": 1.8,
+    "metric": "height",
+    "mode": "hop"
+  },
+  {
+    "species": "Pig",
+    "name": "RA_Pig",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Pig\\RA_Pig.fbx",
+    "verts": 1086,
+    "tris": 1956,
+    "clips": {
+      "idle": 149,
+      "move": 35
+    },
+    "clip_speed_source": 1.0,
+    "clip_speed_unity": 0.186,
+    "unity_scale": 0.18551,
+    "source_size": 4.582,
+    "target": 0.85,
+    "metric": "height",
+    "mode": "hop"
+  },
+  {
+    "species": "Sheep",
+    "name": "RA_Sheep",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Sheep\\RA_Sheep.fbx",
+    "verts": 1100,
+    "tris": 1968,
+    "clips": {
+      "idle": 149,
+      "move": 26
+    },
+    "clip_speed_source": 1.0,
+    "clip_speed_unity": 0.218,
+    "unity_scale": 0.21829,
+    "source_size": 4.352,
+    "target": 0.95,
+    "metric": "height",
+    "mode": "hop"
+  },
+  {
+    "species": "Pug",
+    "name": "RA_Pug",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Pug\\RA_Pug.fbx",
+    "verts": 1086,
+    "tris": 1956,
+    "clips": {
+      "idle": 149,
+      "move": 35
+    },
+    "clip_speed_source": 1.0,
+    "clip_speed_unity": 0.169,
+    "unity_scale": 0.16936,
+    "source_size": 2.657,
+    "target": 0.45,
+    "metric": "height",
+    "mode": "hop"
+  },
+  {
+    "species": "Eagle",
+    "name": "RA_Eagle",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Eagle\\RA_Eagle.fbx",
+    "verts": 528,
+    "tris": 932,
+    "clips": {
+      "idle": 39,
+      "move": 29
+    },
+    "clip_speed_source": 1.0,
+    "clip_speed_unity": 0.144,
+    "unity_scale": 0.14445,
+    "source_size": 12.461,
+    "target": 1.8,
+    "metric": "width",
+    "mode": "fly"
+  },
+  {
+    "species": "Piranha",
+    "name": "RA_Piranha",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Piranha\\RA_Piranha.fbx",
+    "verts": 264,
+    "tris": 468,
+    "clips": {
+      "idle": 38,
+      "move": 38
+    },
+    "clip_speed_source": 1.0,
+    "clip_speed_unity": 0.08,
+    "unity_scale": 0.08038,
+    "source_size": 8.709,
+    "target": 0.7,
+    "metric": "length",
+    "mode": "swim"
+  },
+  {
+    "species": "Spider",
+    "name": "RA_Spider",
+    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\RobotAnimals\\Spider\\RA_Spider.fbx",
+    "verts": 824,
+    "tris": 1396,
+    "clips": {
+      "idle": 60,
+      "move": 30
+    },
+    "clip_speed_source": 0.8,
+    "clip_speed_unity": 0.8,
+    "unity_scale": 1.0,
+    "source_size": 0.55,
+    "target": 0.55,
+    "metric": "height",
+    "mode": "walk"
+  }
+]

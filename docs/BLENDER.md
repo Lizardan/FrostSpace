@@ -265,6 +265,39 @@ build_robots.py -> Content/Models/Robots/R*.fbx -> клипы Walk/Idle/Sprint, 
   Числа и контракт — в `ASSETS.md`.
 - Разделение «визуальный префаб / сценовый актёр» — ADR 0004.
 
+## Робо-животные FrostSpace
+
+13 робо-животных для `SnowLevel`: 12 видов — гибрид на ригах CC0-паков Quaternius
+(оболочка источника + наш череп и броня), паук собран целиком процедурно. Источник,
+лицензия и что именно взято — `SOURCE.md` рядом с моделями; контракт ассетов — `ASSETS.md`;
+причина решения — ADR 0009.
+
+```
+Tools/Blender/                                                Unity: AnimalAssetPostprocessor
+build_animals.py -> Content/Models/RobotAnimals/<S>/RA_<S>.fbx -> клипы Idle/Move, loop, sRGB
+(animal_lib.py, animal_designs.py)      + animal_manifest.json
+```
+
+- Сборка по именам: `build_animals.py -- Wolf Cow`; без аргументов — все 13. Пересборка
+  перезаписывает FBX и обновляет манифест (`target`, `metric`, длины клипов, скорость стопы).
+- `animal_lib.py` — извлечение рига из архива `AssetSource/*.zip`, роли костей по именам
+  (они обезличены: у Wolf/Cat/Dog голова — `Bone.003`, у фермерских — `Head`), два take
+  (`idle_loop`, `move_loop`), обнуление корневого смещения, нормировка размера, замер
+  скорости стопы в контакте.
+- `animal_designs.py` — гибрид: срез органической головы по весам, квадратный череп с
+  визором, панели корпуса, броня суставов и хвоста; паук — свой риг и своя геометрия.
+- **Стоячий хвост клипа.** У фермерской пачки Quaternius `Walk` вдвое длиннее цикла:
+  после шагов идут ключи стояния (линейный дрейф ~0.0002 на кадр). `_static_tail` режет
+  хвост ≥ 8 кадров (≥ 25 % длины), но только если поза на срезе замыкает петлю с остатком
+  ≤ 5 % амплитуды; из равно хороших кандидатов берётся самый ранний. Гейт «нет пауз» —
+  `probes/probe_animal_cycles.py` (смещение костей по кадрам, HOLDS, разрыв петли).
+- Превью — `render_animal_previews.py` (rest/idle/move каждого вида) →
+  `AssetSource/Previews/Animals/`; крупные планы головы и спины —
+  `probes/probe_animal_geometry.py` (принимает один FBX за прогон).
+- Разведка ригов — `probes/probe_animal_rigs.py` (кости, rest-точки, клипы, оси, fps),
+  целостность мешей — `probes/probe_animal_mesh_health.py`. Первый проход «голый риг +
+  процедурная геометрия» отклонён: модель читалась как стол на ножках.
+
 Общие правила ниже остаются в силе для будущих персонажей:
 
 - **Автоматические веса не гарантируют полноту.** Bone-heat на многокомпонентном меше
@@ -309,6 +342,11 @@ build_robots.py -> Content/Models/Robots/R*.fbx -> клипы Walk/Idle/Sprint, 
 | `build_robots.py` (вторая партия) | **PASS** (2026-10-18): 15 FBX, 2136–4604 трис, 0 вершин без веса |
 | `render_robot_lineup.py` | **PASS** (2026-10-18): 40 кадров (20 роботов × 2 вида) |
 | `make_robot_sheet.py` | **PASS** (2026-10-18): контактные листы 2400 px |
+| `build_animals.py` (13 животных) | **PASS** (2026-10-19): 13 FBX, у каждого 2 клипа Idle/Move, манифест обновлён |
+| `probes/probe_animal_cycles.py` | **PASS** (2026-10-19): 13 клипов без HOLDS и разрыва петли — пауз в шаге нет |
+| `probes/probe_animal_geometry.py` | **PASS** (2026-10-19): 13 прогонов по одному FBX; открытых границ, вырожденных и нулевых граней нет |
+| `probes/probe_animal_mesh_health.py` | **PASS** (2026-10-19): `RESULT PASS`, 0 вершин без веса |
+| `render_animal_previews.py` | **PASS** (2026-10-19): rest/idle/move каждого вида в `AssetSource/Previews/Animals/` |
 | `build_robots.py` (R1–R5) | не запускался в этой сессии: FBX уже собраны |
 | `inspect_image.py` на PNG | **PASS**: размер, уникальные цвета, яркость |
 | `blender_boot.py` в `--background` | **PASS**: корректный отказ, код 0 |

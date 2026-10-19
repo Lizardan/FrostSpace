@@ -103,6 +103,31 @@ def beveled_box(center, size, bevel):
     a, b, c = size[0] * 0.5, size[1] * 0.5, size[2] * 0.5
     e = min(bevel, a * 0.49, b * 0.49, c * 0.49)
 
+    if e <= 1e-9:
+        # Без фаски 24-вершинная схема даёт 20 граней нулевой площади:
+        # угловые треугольники и рёберные квады вырождаются в отрезки.
+        # В Unity такие грани дают «стеклянные» артефакты и NaN-нормали,
+        # поэтому для нулевой фаски строим обычный шестигранный бокс.
+        verts = [
+            Vector((cx - a, cy - b, cz - c)),
+            Vector((cx + a, cy - b, cz - c)),
+            Vector((cx + a, cy + b, cz - c)),
+            Vector((cx - a, cy + b, cz - c)),
+            Vector((cx - a, cy - b, cz + c)),
+            Vector((cx + a, cy - b, cz + c)),
+            Vector((cx + a, cy + b, cz + c)),
+            Vector((cx - a, cy + b, cz + c)),
+        ]
+        faces = [
+            (0, 3, 2, 1),  # −Z
+            (4, 5, 6, 7),  # +Z
+            (0, 1, 5, 4),  # −Y
+            (3, 7, 6, 2),  # +Y
+            (0, 4, 7, 3),  # −X
+            (1, 2, 6, 5),  # +X
+        ]
+        return verts, faces
+
     verts: list[Vector] = []
     faces: list[tuple[int, ...]] = []
 

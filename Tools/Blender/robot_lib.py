@@ -359,18 +359,20 @@ def bind(obj, arm):
     return obj
 
 
-def export_fbx(arm, mesh, path):
+def export_fbx(arm, mesh, path, global_scale=1.0):
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    meshes = list(mesh) if isinstance(mesh, (list, tuple)) else [mesh]
     bpy.ops.object.select_all(action="DESELECT")
     arm.select_set(True)
-    mesh.select_set(True)
+    for item in meshes:
+        item.select_set(True)
     bpy.context.view_layer.objects.active = arm
     arm.animation_data.action = None
     bpy.ops.export_scene.fbx(
         filepath=path,
         use_selection=True,
         object_types={"ARMATURE", "MESH"},
-        global_scale=1.0,
+        global_scale=global_scale,
         apply_unit_scale=True,
         bake_space_transform=True,
         mesh_smooth_type="FACE",

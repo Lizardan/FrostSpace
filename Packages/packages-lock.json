@@ -24,6 +24,16 @@
       },
       "hash": "aa5fc638d623f56178d50329d9ad8c541a57fe66"
     },
+    "com.ramenvr.aura-unity": {
+      "version": "https://github.com/ramenvr/AuraForUnityPlugin.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.inputsystem": "1.1.1",
+        "com.unity.cloud.gltfast": "6.12.1"
+      },
+      "hash": "406a8d058db2ec1708d4c4087deea334f7a92aa0"
+    },
     "com.unity.2d.animation": {
       "version": "16.0.1",
       "depth": 1,
