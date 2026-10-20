@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using FrostSpace.Features.View;
 
 namespace FrostSpace.Features.Locomotion
 {
@@ -22,6 +23,8 @@ namespace FrostSpace.Features.Locomotion
         [SerializeField] private Transform _camera;
         [Tooltip("Animator визуальной модели — дочерний объект, например R1_PolarMechanic_Model")]
         [SerializeField] private Animator _animator;
+        [Tooltip("Риг камеры: в прицеле и в первом лице корпус смотрит по камере, а WASD становится стрейфом")]
+        [SerializeField] private PlayerCameraRig _rig;
 
         [Header("Скорости, м/с")]
         [SerializeField] private float _walkSpeed = 1.2f;
@@ -52,6 +55,8 @@ namespace FrostSpace.Features.Locomotion
         private bool _inputOverridden;
         private Vector2 _overrideMove;
         private bool _overrideSprint;
+        private float _basisYaw;
+        private bool _basisLocked;
 
         public float PlanarSpeed => _planarVelocity.magnitude;
         public float AnimatorSpeed => _animatorSpeed;
@@ -141,7 +146,15 @@ namespace FrostSpace.Features.Locomotion
                 : currentDirection;
             _planarVelocity = newDirection * newSpeed;
 
-            if (_planarVelocity.sqrMagnitude > 0.0025f)
+            if (_rig != null && _rig.FacesCamera)
+            {
+                // Прицел и первое лицо: корпус доворачивается по рысканию камеры,
+                // поэтому WASD читается как стрейф, как в шутере.
+                var facing = Quaternion.Euler(0f, _rig.ViewYaw, 0f);
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation, facing, _turnSpeed * Time.deltaTime);
+            }
+            else if (_planarVelocity.sqrMagnitude > 0.0025f)
             {
                 var rotation = Quaternion.LookRotation(
                     _planarVelocity.normalized, Vector3.up);
@@ -198,16 +211,51 @@ namespace FrostSpace.Features.Locomotion
 
         private Vector3 CameraRelative(Vector2 input)
         {
+            // Базис обновляется и на простое: именно там он выравнивается по камере
+            // после выхода из первого лица или прицела.
+            var yaw = MovementBasisYaw(input);
             if (input.sqrMagnitude < 0.001f)
                 return Vector3.zero;
 
-            var forward = _camera != null ? _camera.forward : Vector3.forward;
-            forward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
-            if (forward.sqrMagnitude < 0.001f)
-                forward = Vector3.forward;
+            var basis = Quaternion.Euler(0f, yaw, 0f);
+            return (basis * new Vector3(input.x, 0f, input.y)).normalized;
+        }
 
-            var right = Vector3.Cross(Vector3.up, forward);
-            return (forward * input.y + right * input.x).normalized;
+        /// <summary>
+        /// Рыскание, по которому читается WASD.
+        ///
+        /// В первом лице и прицеле — рыскание камеры. В третьем лице — плоское «вперёд»
+        /// камеры, но переключается на него только после того, как игрок отпустил клавиши:
+        /// иначе, выходя из дома с зажатым W, игрок в тот же кадр пошёл бы в обратную
+        /// сторону (в третьем лице W — это «вверх по экрану», а не «вперёд по взгляду»)
+        /// и снова вошёл бы в дверь.
+        /// </summary>
+        private float MovementBasisYaw(Vector2 input)
+        {
+            if (_rig != null && _rig.FacesCamera)
+            {
+                _basisYaw = _rig.ViewYaw;
+                _basisLocked = true;
+                return _basisYaw;
+            }
+
+            var cameraForward = _camera != null ? _camera.forward : Vector3.forward;
+            var flat = Vector3.ProjectOnPlane(cameraForward, Vector3.up);
+            var cameraYaw = flat.sqrMagnitude > 1e-4f
+                ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg
+                : 0f;
+
+            if (_rig == null || input.sqrMagnitude < 0.001f)
+            {
+                _basisYaw = cameraYaw;
+                _basisLocked = false;
+            }
+            else if (!_basisLocked)
+            {
+                _basisYaw = cameraYaw;
+            }
+
+            return _basisYaw;
         }
     }
 }

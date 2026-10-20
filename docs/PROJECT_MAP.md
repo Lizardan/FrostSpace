@@ -23,8 +23,9 @@ FrostSpace/
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
-   │  │  │  ├─ Locomotion/       # RobotLocomotion, LocomotionDiagnostics
-   │  │  │  ├─ Camera/           # TopDownCamera, CameraOcclusionFader; ns ...Features.View
+   │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
+   │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, InteriorZone, PlayerSilhouette,
+   │  │  │  │                    # PlayerLocalView, CameraOcclusionFader; ns ...Features.View
    │  │  │  └─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
    │  │  ├─ Core/                # пока пусто
    │  │  └─ Infrastructure/      # пока пусто
@@ -33,7 +34,7 @@ FrostSpace/
    │  │  ├─ AnimalAssetPostprocessor.cs # клипы Idle/Move, loop, sRGB при импорте FBX животных
    │  │  └─ LevelAssetPostprocessor.cs # нормали, sRGB и палитра Level_* для уровня
    │  ├─ Tests/
-   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode
+   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode (в т.ч. CameraModeTests)
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller; RobotAnimals/<Species>/RA_<Species>.controller
    │     ├─ Models/Robots/          # R*.fbx
@@ -42,7 +43,7 @@ FrostSpace/
    │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал
    │     ├─ Materials/Level/        # материалы уровня Level_*
-   │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionDebris
+   │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
    │     └─ Art|Audio|UI|Data/      # по мере появления
    ├─ ThirdParty/<Pack>/         # импортированное из AssetSource, с SOURCE.md; пока пусто
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
@@ -95,7 +96,8 @@ FrostSpace/
 | Сборка уровня (Blender) | `Tools/Blender/build_level.py` (+ `level_lib/parts/layout`), превью — `AssetSource/Previews/Level/` |
 | Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `SnowLevel`) |
 | Маршрут NPC и животных | вейпоинты в `NpcController` на `NPC_R*` и `AN_<Species>`; у `AN_Eagle`/`AN_Piranha` — `AirPatrolController` с высотой; точки — дочерние `WP_*` |
-| Скрытие перекрытий | `CameraOcclusionFader` + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008) |
+| Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView`, прицел — `PlayerAimPose` (ADR 0010) |
+| Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |
 | Планы работ | `Assets/.Aura/plans/` — единственное место; Aura пишет туда нативно (правила — `Assets/.Aura/plans/README.md`) |

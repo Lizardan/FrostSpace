@@ -1883,6 +1883,16 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1310819456}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &233466521 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 568210920245853865, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  m_PrefabInstance: {fileID: 2070505281}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &246975044 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8762173568095027105, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  m_PrefabInstance: {fileID: 2070505281}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &252157015
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4773,6 +4783,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1235398367}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1235398369}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1235398368}
     - targetCorrespondingSourceObject: {fileID: -5898584250744311565, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 373934640}
@@ -5357,6 +5373,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1616425482}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &516772888 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5673267517736287187, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  m_PrefabInstance: {fileID: 2070505281}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &525752889
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8249,6 +8270,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6050317177788394138, guid: d67c336d7a2ea444abc9a6cdbd936d4b, type: 3}
   m_PrefabInstance: {fileID: 1131368495}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1132999294 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8607284553877343864, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  m_PrefabInstance: {fileID: 2070505281}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1133231505
 GameObject:
   m_ObjectHideFlags: 0
@@ -8685,6 +8711,40 @@ MonoBehaviour:
   - {fileID: 373934645}
   - {fileID: 373934642}
   - {fileID: 1991595028}
+--- !u!114 &1235398368
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235398364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c77b4814a34da843ac5beec9aaae902, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.InteriorZone
+  _shrink: 0.15
+--- !u!65 &1235398369
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235398364}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 7, y: 3.2, z: 6.8}
+  m_Center: {x: 0, y: 1.6, z: -0.6}
 --- !u!64 &1235398370
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -9085,6 +9145,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1835705379}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &1287695384 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6253475220018178907, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  m_PrefabInstance: {fileID: 2070505281}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1292940787
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10673,6 +10738,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: bfc6099f4dd6bf646ad1e1b0f0937a24, type: 3}
   m_PrefabInstance: {fileID: 1574177637}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1604790306 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3499272442182967246, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  m_PrefabInstance: {fileID: 2070505281}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1608349327
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10925,6 +10995,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1491490876}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!137 &1631612972 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2804839555605525824, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  m_PrefabInstance: {fileID: 2070505281}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1656232488
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11947,6 +12022,9 @@ GameObject:
   - component: {fileID: 1786677825}
   - component: {fileID: 1786677827}
   - component: {fileID: 1786677826}
+  - component: {fileID: 1786677830}
+  - component: {fileID: 1786677829}
+  - component: {fileID: 1786677828}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -11985,6 +12063,7 @@ MonoBehaviour:
   _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   _camera: {fileID: 1896362463}
   _animator: {fileID: 2070505283}
+  _rig: {fileID: 1896362467}
   _walkSpeed: 1.5
   _sprintSpeed: 6.5
   _acceleration: 16
@@ -12018,6 +12097,74 @@ CharacterController:
   m_SkinWidth: 0.04
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.95, z: 0}
+--- !u!114 &1786677828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786677824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e5034c9f79e50a4d84952ff10ec2ef2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Locomotion.PlayerAimPose
+  _rig: {fileID: 1896362467}
+  _animator: {fileID: 2070505283}
+  _spine: {fileID: 233466521}
+  _clavicle: {fileID: 1604790306}
+  _upperArm: {fileID: 1287695384}
+  _lowerArm: {fileID: 1132999294}
+  _hand: {fileID: 516772888}
+  _weightSpeed: 5
+  _clavicleWeight: 0.35
+  _spineWeight: 1
+  _maxTwist: 40
+  _maxBoneAngle: 110
+--- !u!114 &1786677829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786677824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd7f807f9d9c7ae49ae8711ee87577e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.PlayerLocalView
+  _rig: {fileID: 1896362467}
+  _headBone: {fileID: 246975044}
+  _silhouette: {fileID: 1786677830}
+  _isLocalPlayer: 1
+  _headCollapse: 0.001
+--- !u!114 &1786677830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786677824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 886bd75b61eaf234dbfeaaf106e2c726, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.PlayerSilhouette
+  _view: {fileID: 1896362462}
+  _target: {fileID: 1786677825}
+  _rig: {fileID: 1896362467}
+  _source: {fileID: 1631612972}
+  _shader: {fileID: 4800000, guid: 6fb969c3b23ea9349908979be03aa530, type: 3}
+  _color: {r: 0.3, g: 0.9, b: 1, a: 0.55}
+  _intensity: 1.6
+  _targetOffset: {x: 0, y: 0.95, z: 0}
+  _bodyRadius: 0.45
+  _occluders:
+    serializedVersion: 2
+    m_Bits: 4294967231
+  _fadeSeconds: 0.16
+  _holdSeconds: 0.1
+  _isLocalPlayer: 1
 --- !u!1 &1805958810
 GameObject:
   m_ObjectHideFlags: 0
@@ -12911,6 +13058,7 @@ GameObject:
   - component: {fileID: 1896362464}
   - component: {fileID: 1896362465}
   - component: {fileID: 1896362466}
+  - component: {fileID: 1896362467}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -12930,10 +13078,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb426b053f1c7f94d8718e02856f842e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FrostSpace.Features.View.TopDownCamera
-  _target: {fileID: 1786677825}
-  _offset: {x: 0, y: 11, z: -9}
-  _smoothing: 8
-  _lookHeight: 1
 --- !u!81 &1896362461
 AudioListener:
   m_ObjectHideFlags: 0
@@ -13021,19 +13165,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.CameraOcclusionFader
   _view: {fileID: 1896362462}
+  _rig: {fileID: 1896362467}
   _target: {fileID: 1786677825}
-  _targetOffset: {x: 0, y: 0.95, z: 0}
-  _bodyRadius: 0.45
   _occluders:
     serializedVersion: 2
-    m_Bits: 51
+    m_Bits: 4294967231
   _revealShader: {fileID: 4800000, guid: c75c2881ce94b0342aa12d058e674040, type: 3}
-  _apertureRadius: 1.8
+  _apertureRadius: 0.9
+  _maxAimDistance: 60
+  _penetration: 2.5
+  _floorMargin: 0.15
   _edgeSoftness: 0.4
   _cellSize: 0.24
   _cellJitter: 0.55
   _pixelBlock: 5
-  _floorMargin: 0.3
   _edgeColor: {r: 0.3, g: 0.9, b: 1, a: 1}
   _edgeIntensity: 4
   _fadeSeconds: 0.22
@@ -13106,6 +13251,39 @@ MonoBehaviour:
   _gravity: -3.2
   _drag: 1.6
   _lifeRange: {x: 0.35, y: 0.65}
+--- !u!114 &1896362467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1896362459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a12c8a01c2749db409b2d79ff0328555, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.PlayerCameraRig
+  _target: {fileID: 1786677825}
+  _camera: {fileID: 1896362462}
+  _headBone: {fileID: 246975044}
+  _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  _thirdPersonOffset: {x: 0, y: 11, z: -9}
+  _thirdPersonLookHeight: 1
+  _thirdPersonSmoothing: 8
+  _aimOffset: {x: 0.6, y: 0.35, z: -3.1}
+  _aimLookHeight: 1.45
+  _aimCollisionRadius: 0.25
+  _aimDistance: 60
+  _headOffset: {x: 0, y: 0.12, z: 0.08}
+  _enterSeconds: 0.22
+  _exitSeconds: 0.38
+  _sensitivity: 0.12
+  _minPitch: -80
+  _maxPitch: 80
+  _startPitch: 10
+  _blockers:
+    serializedVersion: 2
+    m_Bits: 4294967231
 --- !u!1 &1896362969
 GameObject:
   m_ObjectHideFlags: 0

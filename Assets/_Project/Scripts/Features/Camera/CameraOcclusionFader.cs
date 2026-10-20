@@ -5,18 +5,18 @@ using UnityEngine.Rendering;
 namespace FrostSpace.Features.View
 {
     /// <summary>
-    /// Вырезает вокруг игрока круглое «окно», когда геометрия закрывает его от камеры.
+    /// Круговой вырез в геометрии по перекрестию прицела.
     ///
-    /// Каждый кадр из камеры в несколько точек игрока летят лучи. Рендереры, в которые
-    /// попали лучи, получают материал с шейдером <c>FrostSpace/VFX/OcclusionReveal</c>.
-    /// Шейдер вырезает не объект целиком, а только круг на экране вокруг персонажа,
-    /// причём лишь те пиксели, что ближе к камере, чем игрок: пол под ногами и дальняя
-    /// стена остаются. Край круга ступенчатый, распадается кубическими ячейками, по
-    /// кромке идёт холодное свечение.
+    /// Работает только в режиме <see cref="CameraMode.Aim"/>. Из камеры в точку прицела
+    /// и по краям круга летят лучи; рендереры, в которые они попали, получают материал
+    /// с шейдером <c>FrostSpace/VFX/OcclusionReveal</c>. Шейдер вырезает круг в экранном
+    /// пространстве вокруг перекрестия и только те пиксели, что ближе к камере, чем точка
+    /// прицела: сквозь дерево или стену видно то, во что целимся. Край круга ступенчатый,
+    /// распадается кубическими ячейками, по кромке идёт холодное свечение.
     ///
-    /// Круг считается в экранном пространстве намеренно: крыша дома висит в 4–5 м над
-    /// игроком и в мировую сферу вокруг него не попадает, а на экране всегда
-    /// проецируется вокруг персонажа.
+    /// Спокойный режим больше ничего не прорезает: крыша дома остаётся целой, а игрока
+    /// за перекрытием показывает силуэт (<see cref="PlayerSilhouette"/>). Поэтому глубина
+    /// отсечки здесь берётся из прицельного луча, а ограничение по высоте пола снято.
     ///
     /// Материалы подменяются копиями (общие палитровые ассеты не трогаются) и
     /// возвращаются, когда сила эффекта дошла до нуля. Рендереры и тени не выключаются.
@@ -36,24 +36,28 @@ namespace FrostSpace.Features.View
         private static readonly int RevealFloorYId = Shader.PropertyToID("_RevealFloorY");
 
         [Header("Ссылки")]
-        [Tooltip("Камера, из которой смотрим на игрока")]
+        [Tooltip("Камера, из которой смотрим")]
         [SerializeField] private Camera _view;
-        [Tooltip("Игрок, которого не должна закрывать геометрия")]
+        [Tooltip("Риг камеры: вырез живёт только в режиме прицела")]
+        [SerializeField] private PlayerCameraRig _rig;
+        [Tooltip("Игрок — его коллайдеры не считаются перекрытием")]
         [SerializeField] private Transform _target;
-        [Tooltip("Точка на игроке, вокруг которой строится вырез")]
-        [SerializeField] private Vector3 _targetOffset = new(0f, 0.95f, 0f);
-        [Tooltip("Разброс пробных лучей по телу игрока, м")]
-        [SerializeField] private float _bodyRadius = 0.45f;
 
         [Header("Что скрывать")]
-        [Tooltip("Слои, которые могут вырезаться (игрок и NPC исключены)")]
+        [Tooltip("Слои, которые могут вырезаться (слой Player исключить)")]
         [SerializeField] private LayerMask _occluders = ~0;
         [Tooltip("Шейдер FrostSpace/VFX/OcclusionReveal")]
         [SerializeField] private Shader _revealShader;
 
-        [Header("Вырез")]
-        [Tooltip("Радиус круга в метрах на глубине игрока")]
-        [SerializeField] private float _apertureRadius = 1.8f;
+        [Header("Круг в перекрестии")]
+        [Tooltip("Радиус круга в метрах на глубине точки прицела")]
+        [SerializeField] private float _apertureRadius = 0.9f;
+        [Tooltip("Максимальная дальность прицельного луча, м")]
+        [SerializeField] private float _maxAimDistance = 60f;
+        [Tooltip("Насколько глубоко за точку прицела режется геометрия, м: стена прорезается насквозь")]
+        [SerializeField] private float _penetration = 2.5f;
+        [Tooltip("Запас над полом под игроком, м: пол и снег не вырезаются")]
+        [SerializeField] private float _floorMargin = 0.15f;
         [Tooltip("Доля радиуса, занятая ступенчатым градиентом")]
         [SerializeField, Range(0.01f, 1f)] private float _edgeSoftness = 0.4f;
         [Tooltip("Размер кубической ячейки растворения, м")]
@@ -62,8 +66,6 @@ namespace FrostSpace.Features.View
         [SerializeField, Range(0f, 1f)] private float _cellJitter = 0.55f;
         [Tooltip("Размер экранного пикселя выреза, px")]
         [SerializeField] private float _pixelBlock = 5f;
-        [Tooltip("Запас над полом, ниже которого геометрия не вырезается, м")]
-        [SerializeField] private float _floorMargin = 0.3f;
         [SerializeField] private Color _edgeColor = new(0.3f, 0.9f, 1f, 1f);
         [SerializeField] private float _edgeIntensity = 4f;
 
@@ -101,11 +103,21 @@ namespace FrostSpace.Features.View
         private readonly HashSet<Renderer> _blocking = new();
         private readonly HashSet<Renderer> _wasBlocking = new();
         private readonly List<Renderer> _lost = new();
-        private readonly Vector3[] _points = new Vector3[5];
-        private readonly Vector3[] _hitPoints = new Vector3[5];
-        private readonly Vector3[] _hitNormals = new Vector3[5];
+        private readonly Vector3[] _points = new Vector3[13];
+        private readonly Vector3[] _hitPoints = new Vector3[13];
+        private readonly Vector3[] _hitNormals = new Vector3[13];
         private int _hitCount;
         private bool _warnedNoShader;
+
+        private void Awake()
+        {
+            if (_view == null)
+                _view = GetComponent<Camera>();
+            if (_view == null)
+                _view = Camera.main;
+            if (_rig == null)
+                _rig = FindFirstObjectByType<PlayerCameraRig>();
+        }
 
         private void LateUpdate()
         {
@@ -125,51 +137,23 @@ namespace FrostSpace.Features.View
                 return;
             }
 
-            UpdateGlobals();
-            CollectSamples();
+            var aiming = _rig != null && _rig.Mode == CameraMode.Aim;
+            var distance = _maxAimDistance;
+            var point = _view.transform.position + _view.transform.forward * _maxAimDistance;
 
-            var origin = _view.transform.position;
+            // Неба в перекрестии вырезать нечего: без попадания круга нет вообще.
+            if (aiming)
+                aiming = _rig.TryGetAim(out point, out distance);
+
+            UpdateGlobals(aiming, distance);
+
             _blocking.Clear();
             _hitCount = 0;
 
-            for (var i = 0; i < _points.Length; i++)
+            if (aiming)
             {
-                var delta = _points[i] - origin;
-                var distance = delta.magnitude;
-                if (distance < 0.01f)
-                    continue;
-
-                var count = Physics.RaycastNonAlloc(
-                    origin, delta / distance, _hits, distance, _occluders,
-                    QueryTriggerInteraction.Ignore);
-
-                for (var h = 0; h < count; h++)
-                {
-                    var target = Resolve(_hits[h].collider);
-                    if (target == null)
-                        continue;
-
-                    if (target.Group == null)
-                    {
-                        _blocking.Add(target.Renderer);
-                    }
-                    else
-                    {
-                        var parts = target.Group.Renderers;
-                        for (var p = 0; p < parts.Length; p++)
-                        {
-                            if (parts[p] != null)
-                                _blocking.Add(parts[p]);
-                        }
-                    }
-
-                    if (_hitCount < _hitPoints.Length)
-                    {
-                        _hitPoints[_hitCount] = _hits[h].point;
-                        _hitNormals[_hitCount] = _hits[h].normal;
-                        _hitCount++;
-                    }
-                }
+                CollectSamples(point);
+                TraceOccluders();
             }
 
             EmitDebris();
@@ -192,37 +176,110 @@ namespace FrostSpace.Features.View
         }
 
         /// <summary>Глобальные параметры кадра: центр и радиус круга, пиксели, ячейки.</summary>
-        private void UpdateGlobals()
+        private void UpdateGlobals(bool aiming, float distance)
         {
-            var world = _target.position + _targetOffset;
-            var viewport = _view.WorldToViewportPoint(world);
-            var eyeDepth = Mathf.Max(0.01f, viewport.z);
-            var radius = ScreenAperture.RadiusFraction(
-                _apertureRadius, eyeDepth, _view.fieldOfView);
+            var depth = Mathf.Max(0.5f, distance);
+            var radius = aiming
+                ? ScreenAperture.RadiusFraction(_apertureRadius, depth, _view.fieldOfView)
+                : 0f;
             var pixelStep = ScreenAperture.PixelStep(Screen.height, _pixelBlock);
             var aspect = ScreenAperture.Aspect(Screen.width, Screen.height);
 
+            // Центр — перекрестие: круг всегда там, куда смотрит игрок. Глубина отсечки —
+            // точка прицела плюс заглубление: без него режется только то, что ближе цели,
+            // и стена в перекрестии остаётся целой — круга как будто нет.
+            var cutDepth = aiming ? depth + _penetration : depth;
             Shader.SetGlobalVector(
-                RevealCenterId, new Vector4(viewport.x, viewport.y, radius, eyeDepth));
+                RevealCenterId, new Vector4(0.5f, 0.5f, radius, cutDepth - 0.03f));
             Shader.SetGlobalVector(
                 RevealSetupId,
                 new Vector4(aspect, Mathf.Max(pixelStep, 1e-5f), Mathf.Max(0.01f, _cellSize), Time.time));
-            Shader.SetGlobalFloat(RevealFloorYId, _target.position.y + _floorMargin);
+
+            // Пол и снег под игроком не вырезаются: иначе в земле появляется дыра.
+            var floorY = _target != null ? _target.position.y + _floorMargin : -10000f;
+            Shader.SetGlobalFloat(RevealFloorYId, floorY);
             Shader.SetGlobalColor(EdgeColorId, _edgeColor);
             Shader.SetGlobalFloat(EdgeIntensityId, _edgeIntensity);
             Shader.SetGlobalFloat(EdgeSoftnessId, _edgeSoftness);
             Shader.SetGlobalFloat(CellJitterId, _cellJitter);
         }
 
-        /// <summary>Пять пробных точек: центр, голова, ноги и бока игрока.</summary>
-        private void CollectSamples()
+        /// <summary>
+        /// Тринадцать проб: центр, полрадиуса и кольцо. Пяти лучей не хватало: рендерер,
+        /// пересекающий круг углом, не попадал ни в один луч и оставался целым —
+        /// вырез выглядел прорезанным только частично.
+        /// </summary>
+        private void CollectSamples(Vector3 point)
         {
-            var center = _target.position + _targetOffset;
-            _points[0] = center;
-            _points[1] = center + Vector3.up * (_bodyRadius * 1.2f);
-            _points[2] = center + Vector3.down * (_targetOffset.y * 0.85f);
-            _points[3] = center + _view.transform.right * _bodyRadius;
-            _points[4] = center - _view.transform.right * _bodyRadius;
+            var right = _view.transform.right * _apertureRadius;
+            var up = _view.transform.up * _apertureRadius;
+            const float diagonal = 0.7071068f;
+
+            _points[0] = point;
+            _points[1] = point + up * 0.5f;
+            _points[2] = point - up * 0.5f;
+            _points[3] = point + right * 0.5f;
+            _points[4] = point - right * 0.5f;
+            _points[5] = point + up;
+            _points[6] = point - up;
+            _points[7] = point + right;
+            _points[8] = point - right;
+            _points[9] = point + (right + up) * diagonal;
+            _points[10] = point + (right - up) * diagonal;
+            _points[11] = point - (right + up) * diagonal;
+            _points[12] = point - (right - up) * diagonal;
+        }
+
+        /// <summary>Лучи в точки прицела: кто перекрывает круг, тот получает шейдер выреза.</summary>
+        private void TraceOccluders()
+        {
+            var origin = _view.transform.position;
+
+            for (var i = 0; i < _points.Length; i++)
+            {
+                var delta = _points[i] - origin;
+                var distance = delta.magnitude;
+                if (distance < 0.01f)
+                    continue;
+
+                var count = Physics.RaycastNonAlloc(
+                    origin, delta / distance, _hits, distance, _occluders,
+                    QueryTriggerInteraction.Ignore);
+
+                for (var h = 0; h < count; h++)
+                {
+                    var hit = _hits[h];
+                    if (hit.collider == null)
+                        continue;
+                    if (_target != null && hit.collider.transform.IsChildOf(_target))
+                        continue;
+
+                    var target = Resolve(hit.collider);
+                    if (target == null)
+                        continue;
+
+                    if (target.Group == null)
+                    {
+                        _blocking.Add(target.Renderer);
+                    }
+                    else
+                    {
+                        var parts = target.Group.Renderers;
+                        for (var p = 0; p < parts.Length; p++)
+                        {
+                            if (parts[p] != null)
+                                _blocking.Add(parts[p]);
+                        }
+                    }
+
+                    if (_hitCount < _hitPoints.Length)
+                    {
+                        _hitPoints[_hitCount] = hit.point;
+                        _hitNormals[_hitCount] = hit.normal;
+                        _hitCount++;
+                    }
+                }
+            }
         }
 
         private void EmitDebris()

@@ -6,12 +6,20 @@
 
 - `FrostSpace.Features` (`Assets/_Project/Scripts/Features/`):
   `Locomotion/RobotLocomotion.cs` — движение через kinematic `CharacterController`,
+  базис WASD фиксируется при выходе из 1-го лица/прицела (`_basisYaw`/`_basisLocked`),
+  `Locomotion/PlayerAimPose.cs` — поворот шеи и головы к прицелу (рука и корпус остаются
+  за Animator; порядок выполнения 200),
   `Locomotion/LocomotionDiagnostics.cs` — стенд замера (`PROBE`) в Play Mode,
-  `Camera/TopDownCamera.cs` — камера сверху-сзади,
-  `Camera/CameraOcclusionFader.cs` — круговой вырез в геометрии между камерой и игроком
-  (шейдер `Content/VFX/Shaders/OcclusionReveal.shader`, осколки
-  `Camera/OcclusionRevealDebris.cs`; `CameraOcclusionFadeGroup.cs` — части составного
-  объекта, получающие вырез вместе),
+  `Camera/PlayerCameraRig.cs` — единственный владелец `Main Camera`: три режима
+  (`ThirdPerson`/`Aim`/`FirstPerson`), блендинг поз, mouse-look, курсор, отвод от стен;
+  `Camera/CameraMode.cs` — `enum CameraMode`, `CameraPose` и чистая `ViewBlend`;
+  `Camera/InteriorZone.cs` — объём интерьера на `BoxCollider`-триггере;
+  `Camera/PlayerSilhouette.cs` — x-ray силуэт локального игрока (`ZTest Greater`);
+  `Camera/PlayerLocalView.cs` — скрытие головы в 1-м лице (только у своей модели);
+  `Camera/CameraOcclusionFader.cs` — круговой вырез в геометрии в режиме прицела
+  (шейдеры `Content/VFX/Shaders/OcclusionReveal.shader` и `OcclusionSilhouette.shader`,
+  осколки `Camera/OcclusionRevealDebris.cs`; `CameraOcclusionFadeGroup.cs` — части
+  составного объекта, получающие вырез вместе),
   `Npc/NpcController.cs` — NPC по маршруту: точка → пауза 2–10 с → следующая;
   `Npc/AirPatrolController.cs` — воздушный NPC (орёл, пиранья) по маршруту с высотой,
   поворот только по рысканью.
@@ -25,7 +33,8 @@
   Источник геометрии — скрипты `Tools/Blender/level_*.py`; в сцене они расставлены
   вручную и далее правятся только в Unity (ADR 0005).
 - `FrostSpace.Tests.EditMode` (`Assets/_Project/Tests/EditMode/`) — проверки префабов и
-  клипов роботов и животных.
+  клипов роботов и животных, математики выреза (`ScreenApertureTests`) и перехода
+  режимов камеры (`CameraModeTests`).
 - **Префаб — визуал, логика — на сценовом актёре.** `R*_Model.prefab` — варианты
   FBX-модели с `Animator` и `R*.controller`, без `CharacterController` и ввода.
   `Player` (тег, CC, `RobotLocomotion`) и `NPC_R*` (кинематический CC, `NpcController`,
@@ -34,10 +43,15 @@
   `Animator` и `RA_<Species>.controller`; актёры `NPC/Animals/AN_<Species>` несут
   `NpcController` (наземные) или `AirPatrolController` (орёл, пиранья), клипы `Idle`/`Move`
   in-place, движение кинематическое.
-- **Что не видно из-за геометрии, решает камера, а не триггеры.** Лучи из камеры в
-  игрока помечают перекрытие; экранный круговой вырез вокруг персонажа делает
-  `OcclusionReveal` только с ближними к камере пикселями. Части составных объектов
-  связаны `CameraOcclusionFadeGroup`. Причину фиксирует ADR 0008.
+- **Что не видно из-за геометрии, решает камера, а не триггеры.** В спокойном режиме
+  перекрытие не вырезается: силуэт игрока рисуется сквозь геометрию (`ZTest Greater`),
+  поэтому крыша дома остаётся целой. Круговой вырез (`OcclusionReveal`) работает только
+  в прицеле — центром в перекрестии сквозь объекты — и по-прежнему оставляет ближние
+  к камере пиксели; части составных объектов связаны `CameraOcclusionFadeGroup`.
+  Внутри `InteriorZone` камера уходит в 1-е лицо, корпус доворачивается по её рысканью;
+  выход из интерьера имеет гистерезис `_interiorExitMargin`, а WASD после смены режима
+  читается по зафиксированному базису — иначе выход из дома с зажатым W разворачивал бы
+  игрока обратно в дверь. Причины фиксируют ADR 0008 и ADR 0010.
 - Локомоция: клипы in-place, Root Motion выключен, `Animator.speed` = фактическая скорость
   / скорость клипа.
 - `Assets/Scenes/Boot.unity` — стартовая сцена (build index 0): Main Camera, Directional Light, Global Volume. Загрузка сервисов и переход в `SnowLevel` ещё не реализованы.
