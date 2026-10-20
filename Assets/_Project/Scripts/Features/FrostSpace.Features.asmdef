@@ -2,7 +2,10 @@
     "name": "FrostSpace.Features",
     "rootNamespace": "FrostSpace.Features",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "FrostSpace.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

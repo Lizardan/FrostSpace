@@ -3,8 +3,9 @@
 ## Статус
 
 Проект находится на ранней стадии: есть играбельный вертикальный срез — снежный уровень
-`SnowLevel`, двадцать роботов и 13 робо-животных из Blender, локомоция игрока и
-EditMode-тесты. Полноценного игрового цикла, целей и баланса нет.
+`Game`, двадцать роботов и 13 робо-животных из Blender, локомоция игрока, sci-fi экран
+загрузки в `Boot`, главное меню с 3D-диорамой и EditMode-тесты. Полноценного игрового
+цикла, целей и баланса нет.
 
 Назначение игры, жанр, игровой цикл и целевые платформы **не зафиксированы**. Это не
 повод придумывать их по названию проекта или набору пакетов. Если задача требует
@@ -22,9 +23,11 @@ EditMode-тесты. Полноценного игрового цикла, це�
 | Ввод | только Input System | `activeInputHandler: 1` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
 | Play Mode | domain reload выключен, scene reload включён | `m_EnterPlayModeOptionsEnabled: 1`, `m_EnterPlayModeOptions: 1` |
-| Игровая сцена | `Assets/Scenes/SnowLevel.unity`, build index 1 | `EditorBuildSettings.asset`, Unity MCP |
-| Содержимое SnowLevel | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами и животными | сцена `Assets/Scenes/SnowLevel.unity` |
-| Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: Main Camera, Directional Light, Global Volume; загрузка сервисов и переход в игру ещё не реализованы | Unity MCP `manage_scene` |
+| Игровая сцена | `Assets/Scenes/Game.unity`, build index 2 | `EditorBuildSettings.asset`, Unity MCP |
+| Содержимое Game | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами и животными | сцена `Assets/Scenes/Game.unity` |
+| Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
+| Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
+| Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
 | Код | `FrostSpace.Features` (локомоция, камера, NPC), `FrostSpace.Editor`, EditMode-тесты | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |

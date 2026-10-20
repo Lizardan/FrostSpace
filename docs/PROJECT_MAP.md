@@ -18,8 +18,9 @@ FrostSpace/
 └─ Assets/
    ├─ .Aura/plans/               # планы работ всех агентов (README — правила); Unity dot-папки не импортирует
    ├─ Scenes/                    # ЕДИНСТВЕННАЯ папка сцен
-   │  ├─ Boot.unity              # стартовая сцена, build index 0 (переход в игру ещё не реализован)
-   │  └─ SnowLevel.unity         # игровой уровень, build index 1
+   │  ├─ Boot.unity              # стартовая сцена, build index 0: загрузка сервисов → MainMenu
+   │  ├─ MainMenu.unity          # главное меню с диорамой, build index 1
+   │  └─ Game.unity              # игровой уровень, build index 2
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
@@ -27,7 +28,9 @@ FrostSpace/
    │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, InteriorZone, PlayerSilhouette,
    │  │  │  │                    # PlayerLocalView, CameraOcclusionFader; ns ...Features.View
    │  │  │  └─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
-   │  │  ├─ Core/                # пока пусто
+   │  │  ├─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
+   │  │  │                       # перехода и единственный вызывающий SceneManager),
+   │  │  │                       # SceneFlowSettings (ScriptableObject с фазами и цветами перехода)
    │  │  └─ Infrastructure/      # пока пусто
    │  ├─ Editor/                 # сборка FrostSpace.Editor, только редактор
    │  │  ├─ RobotAssetPostprocessor.cs # клипы, loop, sRGB при импорте FBX роботов
@@ -44,6 +47,7 @@ FrostSpace/
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал
    │     ├─ Materials/Level/        # материалы уровня Level_*
    │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
+   │     ├─ Settings/               # SceneFlowSettings.asset — общие тайминги перехода
    │     └─ Art|Audio|UI|Data/      # по мере появления
    ├─ ThirdParty/<Pack>/         # импортированное из AssetSource, с SOURCE.md; пока пусто
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
@@ -56,18 +60,21 @@ FrostSpace/
 
 ## С чего начинается выполнение
 
-1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0) — стартовая сцена для
-   инициализации сервисов; переход в `Assets/Scenes/SnowLevel.unity` (build index 1) пока
-   не реализован, поэтому игра стартует прямо с уровня в редакторе.
-2. Сцена `SnowLevel` — обычный сохранённый ассет: рельеф, дом с интерьером, деревья,
-   забор, пропы (FBX из `Content/Models/Level/`), свет, туман, камера, `Player`, `NPC`.
-   Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
-3. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
+1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0): корневой `SceneController`
+   уходит в `DontDestroyOnLoad`, `BootScreen` три секунды показывает консоль загрузки
+   сервисов и отдаёт переход `SceneController` → `MainMenu`.
+2. `Assets/Scenes/MainMenu.unity` (build index 1) — `MenuFlow` с `MainMenuScreen`,
+   камера-облёт `MenuCameraOrbit`, диорама `MenuDiorama`, снег, Volume.
+   НАЧАТЬ → белый переход → `Game`.
+3. Сцена `Game` (build index 2, бывший `SnowLevel`) — обычный сохранённый ассет: рельеф,
+   дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
+   камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
+4. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
    внутри — визуальный префаб `R1_PolarMechanic_Model`.
-4. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
+5. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
    `NPC_R5_Ranger`: кинематический `CharacterController`, `NpcController` (маршрут из
    вейпоинтов) и визуальный ребёнок; без ввода и без обычной физики.
-5. `NPC/Animals` — 13 актёров `AN_<Species>`: наземные с кинематическим
+6. `NPC/Animals` — 13 актёров `AN_<Species>`: наземные с кинематическим
    `CharacterController` и `NpcController`, `AN_Eagle` и `AN_Piranha` — с
    `AirPatrolController` и маршрутом с высотой; визуальный ребёнок —
    `RA_<Species>_Model` (ADR 0009).
@@ -94,7 +101,7 @@ FrostSpace/
 | Происхождение ригов животных | `Content/Models/RobotAnimals/SOURCE.md` |
 | Модели уровня (FBX) | `Content/Models/Level/`, палитра — `Content/Materials/Level/` |
 | Сборка уровня (Blender) | `Tools/Blender/build_level.py` (+ `level_lib/parts/layout`), превью — `AssetSource/Previews/Level/` |
-| Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `SnowLevel`) |
+| Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `Game`) |
 | Маршрут NPC и животных | вейпоинты в `NpcController` на `NPC_R*` и `AN_<Species>`; у `AN_Eagle`/`AN_Piranha` — `AirPatrolController` с высотой; точки — дочерние `WP_*` |
 | Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView`, прицел — `PlayerAimPose` (ADR 0010) |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |

@@ -3,7 +3,8 @@
 ## Что это
 
 **FrostSpace** — Unity-проект на ранней стадии: есть играбельный вертикальный срез
-(снежный уровень `SnowLevel`, роботы, локомоция игрока). Назначение игры, жанр и целевые
+(снежный уровень `Game`, роботы, локомоция игрока), sci-fi экран загрузки, главное меню
+с 3D-диорамой и белые переходы между сценами. Назначение игры, жанр и целевые
 платформы пока не зафиксированы; не выдумывай их по набору пакетов или ассетов.
 Текущая реализация — источник истины, пока не доказано обратное.
 
@@ -24,7 +25,7 @@
 | Цвет | Linear |
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |
 | Play Mode | domain reload **выключен**, scene reload включён; Play тикает только при фокусе окна (`runInBackground` не заменяет) |
-| Сцены | `Assets/Scenes/Boot.unity` — стартовая сцена, build index 0 (инициализация сервисов, затем переход в игру); `Assets/Scenes/SnowLevel.unity` — игровой уровень, build index 1 |
+| Сцены | Поток `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `Game` (2, игровой уровень); переходы — только через `Core/SceneFlow.cs` (ADR 0011) |
 | Код | `Features/` (локомоция, камера), `Editor/` (постпроцессор FBX), EditMode-тесты; asmdef `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
 | Unity MCP | пакет `com.coplaydev.unity-mcp`, порт `127.0.0.1:6400` |
 | Blender | **5.2.2 LTS**, аддон `blender_mcp`, порт `9876` (только GUI) |

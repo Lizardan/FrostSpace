@@ -1883,11 +1883,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1310819456}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &233466521 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 568210920245853865, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
-  m_PrefabInstance: {fileID: 2070505281}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &246975044 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8762173568095027105, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
@@ -5373,11 +5368,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1616425482}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &516772888 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5673267517736287187, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
-  m_PrefabInstance: {fileID: 2070505281}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &525752889
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5702,6 +5692,21 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 1368306521730180351, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
+--- !u!115 &575262974
+MonoScript:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 7
+  m_DefaultReferences: {}
+  m_Icon: {fileID: 0}
+  m_Type: 0
+  m_ExecutionOrder: 0
+  m_ClassName: AuraAimHeadTrace
+  m_Namespace: 
+  m_AssemblyName: DynamicScript_f8c2736be8dc464d9eb55ceabd91ffdb
 --- !u!1001 &600804659
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8270,11 +8275,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6050317177788394138, guid: d67c336d7a2ea444abc9a6cdbd936d4b, type: 3}
   m_PrefabInstance: {fileID: 1131368495}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &1132999294 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8607284553877343864, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
-  m_PrefabInstance: {fileID: 2070505281}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1133231505
 GameObject:
   m_ObjectHideFlags: 0
@@ -9145,11 +9145,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1835705379}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &1287695384 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6253475220018178907, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
-  m_PrefabInstance: {fileID: 2070505281}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1292940787
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10457,6 +10452,37 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.85, z: 0}
+--- !u!1 &1497351644
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1497351646}
+  m_Layer: 0
+  m_Name: GameFlow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1497351646
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497351644}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1502673543
 GameObject:
   m_ObjectHideFlags: 0
@@ -10737,11 +10763,6 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: bfc6099f4dd6bf646ad1e1b0f0937a24, type: 3}
   m_PrefabInstance: {fileID: 1574177637}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1604790306 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3499272442182967246, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
-  m_PrefabInstance: {fileID: 2070505281}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1608349327
 PrefabInstance:
@@ -12025,6 +12046,7 @@ GameObject:
   - component: {fileID: 1786677830}
   - component: {fileID: 1786677829}
   - component: {fileID: 1786677828}
+  - component: {fileID: 1786677831}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -12110,17 +12132,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Locomotion.PlayerAimPose
   _rig: {fileID: 1896362467}
-  _animator: {fileID: 2070505283}
-  _spine: {fileID: 233466521}
-  _clavicle: {fileID: 1604790306}
-  _upperArm: {fileID: 1287695384}
-  _lowerArm: {fileID: 1132999294}
-  _hand: {fileID: 516772888}
+  _neck: {fileID: 0}
+  _head: {fileID: 0}
   _weightSpeed: 5
-  _clavicleWeight: 0.35
-  _spineWeight: 1
-  _maxTwist: 40
-  _maxBoneAngle: 110
+  _turnSpeed: 420
+  _maxYaw: 75
+  _maxPitch: 30
+  _neckShare: 0.45
 --- !u!114 &1786677829
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12165,6 +12183,24 @@ MonoBehaviour:
   _fadeSeconds: 0.16
   _holdSeconds: 0.1
   _isLocalPlayer: 1
+--- !u!114 &1786677831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786677824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 575262974}
+  m_Name: 
+  m_EditorClassIdentifier: DynamicScript_f8c2736be8dc464d9eb55ceabd91ffdb::AuraAimHeadTrace
+  _rig: {fileID: 0}
+  _pose: {fileID: 0}
+  _animator: {fileID: 0}
+  _locomotion: {fileID: 0}
+  _camera: {fileID: 0}
+  _frame: 0
 --- !u!1 &1805958810
 GameObject:
   m_ObjectHideFlags: 0
@@ -13054,7 +13090,6 @@ GameObject:
   - component: {fileID: 1896362463}
   - component: {fileID: 1896362462}
   - component: {fileID: 1896362461}
-  - component: {fileID: 1896362460}
   - component: {fileID: 1896362464}
   - component: {fileID: 1896362465}
   - component: {fileID: 1896362466}
@@ -13066,18 +13101,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1896362460
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1896362459}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb426b053f1c7f94d8718e02856f842e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FrostSpace.Features.View.TopDownCamera
 --- !u!81 &1896362461
 AudioListener:
   m_ObjectHideFlags: 0
@@ -13277,6 +13300,7 @@ MonoBehaviour:
   _headOffset: {x: 0, y: 0.12, z: 0.08}
   _enterSeconds: 0.22
   _exitSeconds: 0.38
+  _interiorExitMargin: 0.5
   _sensitivity: 0.12
   _minPitch: -80
   _maxPitch: 80
@@ -17344,3 +17368,4 @@ SceneRoots:
   - {fileID: 2023518298}
   - {fileID: 1406194242}
   - {fileID: 1897660177}
+  - {fileID: 1497351646}

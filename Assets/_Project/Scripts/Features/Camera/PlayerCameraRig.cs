@@ -141,6 +141,12 @@ namespace FrostSpace.Features.View
 
             if (_camera != null)
                 _pose = new CameraPose(_camera.transform.position, _camera.transform.rotation);
+
+            // Старт без перехода: блендинг считается завершённым, иначе первые
+            // _blendDuration секунд камера летела бы из нуля (позиция по умолчанию
+            // у _blendFrom) в верхнюю позу — старт игры выглядел как выезд камеры.
+            _blendFrom = _pose;
+            _blendTime = _blendDuration;
         }
 
         private void OnEnable()

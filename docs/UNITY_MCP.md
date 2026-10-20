@@ -13,7 +13,7 @@
 | Сервер в клиенте | `unityMCP` |
 | Порт | `127.0.0.1:6400` |
 | Unity | 6000.6.6f1 |
-| Активная сцена | `Assets/Scenes/SnowLevel.unity` (build index 1); стартовая — `Assets/Scenes/Boot.unity` (build index 0) |
+| Активная сцена | `Assets/Scenes/MainMenu.unity` (build index 1); поток — `Boot` 0 → `MainMenu` 1 → `Game` 2 |
 | Состояние | редактор запущен, компиляция завершена, EditMode-тесты 17/17, ошибок в Console нет |
 
 `manifest.json` ссылается на ветку `#main`, поэтому версия сервера может измениться при
@@ -33,9 +33,9 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 
 | Вызов | Фактический результат |
 |---|---|
-| `manage_scene(action: "get_active")` | `SnowLevel`, `Assets/Scenes/SnowLevel.unity`, buildIndex 0 |
+| `manage_scene(action: "get_active")` | `MainMenu`, `Assets/Scenes/MainMenu.unity`, buildIndex 1 |
 | `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 2)` | 10 корней (`Player`, `NPC`, дом, деревья, забор, свет...); `next_cursor: null` |
-| `manage_scene(action: "get_build_settings")` | только `Assets/Scenes/SnowLevel.unity`, enabled, index 0 |
+| `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `Game` (2), все enabled |
 | `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` после сборки уровня и тестов |
 | `run_tests` + `get_test_job` | 3 EditMode-теста — `succeeded` (2026-10-18) |
 | `execute_code(action: "execute")` | работает, `compiler: roslyn`; видит типы проектных сборок (`FrostSpace.Features`, `FrostSpace.Editor`) |

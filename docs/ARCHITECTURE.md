@@ -2,7 +2,8 @@
 
 ## Сейчас (факт)
 
-Есть вертикальный срез на `Assets/Scenes/SnowLevel.unity` (build index 1; стартовая сцена — `Assets/Scenes/Boot.unity`, build index 0):
+Есть вертикальный срез на `Assets/Scenes/Game.unity` (build index 2; перед ним идут
+`Assets/Scenes/Boot.unity`, build index 0, и `Assets/Scenes/MainMenu.unity`, build index 1):
 
 - `FrostSpace.Features` (`Assets/_Project/Scripts/Features/`):
   `Locomotion/RobotLocomotion.cs` — движение через kinematic `CharacterController`,
@@ -54,10 +55,25 @@
   игрока обратно в дверь. Причины фиксируют ADR 0008 и ADR 0010.
 - Локомоция: клипы in-place, Root Motion выключен, `Animator.speed` = фактическая скорость
   / скорость клипа.
-- `Assets/Scenes/Boot.unity` — стартовая сцена (build index 0): Main Camera, Directional Light, Global Volume. Загрузка сервисов и переход в `SnowLevel` ещё не реализованы.
+- `Assets/Scenes/Boot.unity` — стартовая сцена (build index 0): корневой `SceneController`
+  (единственный владелец перехода) и `BootFlow` с `BootScreen` — трёхсекундная консоль
+  загрузки сервисов, затем белый переход в `MainMenu`.
+- `Assets/Scenes/MainMenu.unity` — главное меню: облётная камера над диорамой,
+  `MenuDiorama`, снег, Volume и `MenuFlow` (`MainMenuScreen`).
+- Переход между сценами — единственный сервис `Core/SceneController.cs` (см. ADR 0011):
+  персистентный объект в `DontDestroyOnLoad` с белым занавесом. Занавес не принадлежит
+  сцене, поэтому не гаснет до подмены и не пересоздаётся после неё; запуск не с `Boot`
+  поднимает контроллер через `RuntimeInitializeOnLoadMethod(AfterSceneLoad)`.
+  Тайминги фаз, цвета и строка статуса — общий `SceneFlowSettings`
+  (`Assets/_Project/Content/Settings/SceneFlowSettings.asset`), на него ссылается `Boot`.
+- Курсор: в третьем лице он свободен и виден, `PlayerCameraRig` запирает его только
+  в прицеле и в первом лице. Отдельного захвата на входе в `Game` нет.
+- Камера `Game` на старте сразу стоит в верхней позе: блендинг инициализируется
+  завершённым, поэтому нет выезда из позиции по умолчанию.
 
-Ещё нет composition root, UI, сохранений, сети и ScriptableObject-конфигов; `Core/` и
-`Infrastructure/` не созданы. Это **не** архитектурный долг: просто ещё не написано.
+Ещё нет composition root, сохранений, сети и игровых ScriptableObject-конфигов (кроме
+`SceneFlowSettings`); `Infrastructure/` не создана. Это **не** архитектурный долг: просто ещё
+не написано.
 
 ## Целевая минимальная основа (предложение)
 
@@ -92,9 +108,9 @@ Core ──→ ничего из FrostSpace.*
 - **ScriptableObject — дизайн-данные**, не runtime-состояние. Ссылки на SO — в
   инспекторе, не через `Resources.Load`.
 - **События** — когда они снижают связанность; не заменяют обычные вызовы автоматически.
-- **Сцены.** Сейчас две: `SnowLevel` — игра, `Boot` — заготовка. Когда появится поток,
-  раздели его на осмысленные сцены (bootstrap → menu → game), но не создавай пустые сцены
-  заранее. Переходы — через один сервис загрузки, а не `SceneManager` по всему коду.
+- **Сцены.** Поток: `Boot` (bootstrap) → `MainMenu` (menu) → `Game` (game). Не создавай
+  пустые сцены заранее. Переходы — через `Core/SceneController.cs`, а не `SceneManager`
+  по всему коду; причина выбора — ADR 0011.
 - **Сериализация.** Unity не сериализует интерфейсы, `Dictionary`, статику, делегаты,
   `readonly`. Для сложных данных — `[Serializable]`-класс/структура с полями.
 - **asmdef** — это границы слоёв: `FrostSpace.Features` (runtime-фичи),
@@ -107,7 +123,10 @@ Core ──→ ничего из FrostSpace.*
 
 - DI-контейнера, event bus, service locator, ECS, MVVM, Clean Architecture «по учебнику».
 - Сетевого слоя, сохранений, Addressables, UI-фреймворка — пока нет требований.
-- Глобальных синглтонов: если появится необходимость, решение фиксируется ADR.
+- Глобальных синглтонов нет, кроме персистентного `SceneController.Instance` (ADR 0011):
+  его существование — условие того, что занавес переживает подмену сцены. Статика сервиса
+  сбрасывается в `RuntimeInitializeOnLoadMethod(SubsystemRegistration)`, потому что domain
+  reload выключен.
 
 ## Пробелы по приоритету
 
@@ -119,9 +138,10 @@ Core ──→ ничего из FrostSpace.*
    маршрут, пауза, поворот — `NpcController` или `AirPatrolController`.
 3. **Нет UI, сохранений, сети и конфигов.** Появятся вместе с требованиями; не создавай
    слои и сборки заранее.
-4. **`Boot.unity` — стартовая сцена**, но логики перехода в `SnowLevel` в ней пока нет:
-   сцена содержит только камеру, свет и Global Volume. Не перемещаем существующий
-   ассет ради документации; новые сцены идут в тот же единственный корень.
+4. **`Boot.unity` — стартовая сцена** с реальной загрузкой: `BootScreen` имитирует
+   инициализацию сервисов, `SceneController` отдаёт переход. Реальные сервисы, когда появятся,
+   встанут в тот же таймлайн вместо строк лога. Не перемещаем существующие ассеты ради
+   документации; новые сцены идут в тот же единственный корень.
 5. **Unity MCP ссылается на `#main`.** В lockfile зафиксирован hash, но manifest плавает.
    Риск изменения имён инструментов; запинить позже отдельным решением.
 6. **У мира нет границы.** Рельеф — плоскость 90×90 без стен и «дна»: за её краем игрок
