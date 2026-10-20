@@ -52,10 +52,40 @@ namespace FrostSpace.Features.Menu
         [Tooltip("Фон кнопки под курсором")]
         [SerializeField] private Color _buttonHover = new(0.10f, 0.19f, 0.24f, 0.95f);
 
-        private const string VolumeKey = "audio.master";
+        [Header("Подсветка пунктов")]
+        [Tooltip("За сколько секунд подсветка доезжает до конечного состояния")]
+        [SerializeField] private float _hoverSeconds = 0.16f;
+
+        [Tooltip("Толщина акцентного маркера слева под курсором")]
+        [SerializeField] private float _hoverMarkerWidth = 7f;
+
+        [Tooltip("Насколько строка уезжает вправо под курсором")]
+        [SerializeField] private float _hoverLabelOffset = 42f;
+
+        [Tooltip("Разрядка букв под курсором")]
+        [SerializeField] private float _hoverSpacing = 18f;
+
+        [Tooltip("Насколько строка уходит в цвет акцента под курсором, 0..1")]
+        [SerializeField, Range(0f, 1f)] private float _hoverAccentMix = 0.35f;
+
+        [Tooltip("Прозрачность холодного свечения под курсором, 0..1")]
+        [SerializeField, Range(0f, 1f)] private float _hoverGlowAlpha = 0.22f;
+
+        // Ключ общий с MusicManager: он же применяет сохранённую громкость на старте игры.
+        private const string VolumeKey = MusicManager.MasterVolumeKey;
         private const float ButtonWidth = 360f;
         private const float ButtonHeight = 64f;
         private const float ButtonStep = 82f;
+        private const float MarkerIdleWidth = 3f;
+        private const float LabelIdleOffset = 28f;
+        private const float LabelIdleSpacing = 10f;
+        private const float UnderlineThickness = 2f;
+
+        /// <summary>
+        /// Горизонтальный градиент для свечения: ярко у маркера, плавно уходит в прозрачность
+        /// вправо. Текстура одна на все кнопки и создаётся по первому требованию.
+        /// </summary>
+        private static Texture2D _glowTexture;
 
         private GameObject _settingsPanel;
         private Slider _volume;
@@ -363,18 +393,85 @@ namespace FrostSpace.Features.Menu
             button.colors = colors;
             button.onClick.AddListener(action);
 
+            // Свечение: горизонтальный градиент под текстом, проявляется при наведении.
+            var glowObject = new GameObject("Glow", typeof(RectTransform));
+            glowObject.transform.SetParent(go.transform, false);
+            var glowRect = (RectTransform)glowObject.transform;
+            glowRect.anchorMin = Vector2.zero;
+            glowRect.anchorMax = Vector2.one;
+            glowRect.offsetMin = new Vector2(-10f, -8f);
+            glowRect.offsetMax = new Vector2(10f, 8f);
+            var glow = glowObject.AddComponent<RawImage>();
+            glow.texture = GlowTexture;
+            glow.color = new Color(_accent.r, _accent.g, _accent.b, 0f);
+            glow.raycastTarget = false;
+
             var marker = NewImage(go.transform, "Marker", _accent);
             var markerRect = marker.rectTransform;
             markerRect.anchorMin = new Vector2(0f, 0f);
             markerRect.anchorMax = new Vector2(0f, 1f);
             markerRect.pivot = new Vector2(0f, 0.5f);
-            markerRect.sizeDelta = new Vector2(3f, 0f);
+            markerRect.sizeDelta = new Vector2(MarkerIdleWidth, 0f);
             markerRect.anchoredPosition = Vector2.zero;
 
-            NewText(go.transform, "Label", label, 30f, _text, TextAlignmentOptions.Left,
-                new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(ButtonWidth - 40f, 40f), 10f);
+            // Линия снизу разворачивается слева направо и работает как «протяжка» сканера.
+            var underline = NewImage(go.transform, "Underline", new Color(_accent.r, _accent.g, _accent.b, 0f));
+            var underlineRect = underline.rectTransform;
+            underlineRect.anchorMin = new Vector2(0f, 0f);
+            underlineRect.anchorMax = new Vector2(0f, 0f);
+            underlineRect.pivot = new Vector2(0f, 0f);
+            underlineRect.sizeDelta = new Vector2(0f, UnderlineThickness);
+            underlineRect.anchoredPosition = Vector2.zero;
+
+            var text = NewText(go.transform, "Label", label, 30f, _text, TextAlignmentOptions.Left,
+                new Vector2(0f, 0.5f), new Vector2(LabelIdleOffset, 0f),
+                new Vector2(ButtonWidth - 40f, 40f), LabelIdleSpacing);
+
+            var fx = go.AddComponent<TechButtonFx>();
+            fx.Duration = _hoverSeconds;
+            fx.MarkerIdleWidth = MarkerIdleWidth;
+            fx.MarkerHoverWidth = _hoverMarkerWidth;
+            fx.LabelIdleOffset = LabelIdleOffset;
+            fx.LabelHoverOffset = _hoverLabelOffset;
+            fx.SpacingIdle = LabelIdleSpacing;
+            fx.SpacingHover = _hoverSpacing;
+            fx.AccentMix = _hoverAccentMix;
+            fx.GlowAlpha = _hoverGlowAlpha;
+            fx.Bind(markerRect, underlineRect, glow, text.rectTransform, text, ButtonWidth, _accent, _text);
 
             return button;
+        }
+
+        private static Texture2D GlowTexture
+        {
+            get
+            {
+                if (_glowTexture == null)
+                    _glowTexture = BuildGlowTexture();
+
+                return _glowTexture;
+            }
+        }
+
+        private static Texture2D BuildGlowTexture()
+        {
+            const int width = 256;
+            var texture = new Texture2D(width, 1, TextureFormat.RGBA32, false)
+            {
+                name = "MenuButtonGlow",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+
+            for (var x = 0; x < width; x++)
+            {
+                var t = x / (float)(width - 1);
+                texture.SetPixel(x, 0, new Color(1f, 1f, 1f, Mathf.Pow(1f - t, 2.2f)));
+            }
+
+            texture.Apply();
+            return texture;
         }
 
         private static Texture2D BuildShadeTexture()

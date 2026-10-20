@@ -18,6 +18,12 @@ namespace FrostSpace.Core
         /// <summary>Путь клипа внутри папки Resources, без расширения.</summary>
         private const string ClipResourcePath = "Music/Music_FrostSpaceTheme";
 
+        /// <summary>
+        /// Ключ PlayerPrefs общей громкости. Пишет меню, а читает менеджер один раз при
+        /// старте — до первого звука, чтобы громкость не менялась посреди перехода.
+        /// </summary>
+        public const string MasterVolumeKey = "audio.master";
+
         [Header("Настройки")]
         [Tooltip("Громкость музыки 0..1. Общая громкость игры задаётся AudioListener.volume в настройках меню.")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
@@ -68,6 +74,13 @@ namespace FrostSpace.Core
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+
+            // Сохранённая общая громкость применяется один раз и до старта трека. Если делать
+            // это в меню, как раньше, музыка весь Boot играет на единице и «прыгает» вниз
+            // ровно в момент, когда меню применит своё значение — это и слышно на переходе
+            // Boot → MainMenu.
+            AudioListener.volume = Mathf.Clamp01(
+                PlayerPrefs.GetFloat(MasterVolumeKey, AudioListener.volume));
 
             var clip = Resources.Load<AudioClip>(ClipResourcePath);
             if (clip == null)

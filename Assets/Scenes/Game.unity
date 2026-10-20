@@ -5692,21 +5692,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 1368306521730180351, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
---- !u!115 &575262974
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: AuraAimHeadTrace
-  m_Namespace: 
-  m_AssemblyName: DynamicScript_f8c2736be8dc464d9eb55ceabd91ffdb
 --- !u!1001 &600804659
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12046,7 +12031,6 @@ GameObject:
   - component: {fileID: 1786677830}
   - component: {fileID: 1786677829}
   - component: {fileID: 1786677828}
-  - component: {fileID: 1786677831}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -12183,24 +12167,6 @@ MonoBehaviour:
   _fadeSeconds: 0.16
   _holdSeconds: 0.1
   _isLocalPlayer: 1
---- !u!114 &1786677831
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1786677824}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 575262974}
-  m_Name: 
-  m_EditorClassIdentifier: DynamicScript_f8c2736be8dc464d9eb55ceabd91ffdb::AuraAimHeadTrace
-  _rig: {fileID: 0}
-  _pose: {fileID: 0}
-  _animator: {fileID: 0}
-  _locomotion: {fileID: 0}
-  _camera: {fileID: 0}
-  _frame: 0
 --- !u!1 &1805958810
 GameObject:
   m_ObjectHideFlags: 0

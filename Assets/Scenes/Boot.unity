@@ -412,7 +412,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cf6805f6e86da04fafea5c840d309ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Boot.BootScreen
-  _bootSeconds: 3
+  _bootSeconds: 4
   _readyHoldSeconds: 0.3
   _steps:
   - THERMAL CORE
@@ -491,7 +491,7 @@ MonoBehaviour:
   _curtainColor: {r: 1, g: 1, b: 1, a: 1}
   _sortingOrder: 1000
   _referenceResolution: {x: 1920, y: 1080}
-  _fadeInOnStart: 0
+  _fadeInOnStart: 1
   _logPhases: 1
 --- !u!4 &614507091
 Transform:
