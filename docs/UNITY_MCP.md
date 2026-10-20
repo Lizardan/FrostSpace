@@ -13,8 +13,8 @@
 | Сервер в клиенте | `unityMCP` |
 | Порт | `127.0.0.1:6400` |
 | Unity | 6000.6.6f1 |
-| Активная сцена | `Assets/Scenes/SnowLevel.unity` (build index 0) |
-| Состояние | редактор запущен, компиляция завершена, EditMode-тесты 3/3, ошибок в Console нет |
+| Активная сцена | `Assets/Scenes/SnowLevel.unity` (build index 1); стартовая — `Assets/Scenes/Boot.unity` (build index 0) |
+| Состояние | редактор запущен, компиляция завершена, EditMode-тесты 17/17, ошибок в Console нет |
 
 `manifest.json` ссылается на ветку `#main`, поэтому версия сервера может измениться при
 перерезолве. Hash в lockfile фиксирует текущую; имена инструментов проверяй по схеме,

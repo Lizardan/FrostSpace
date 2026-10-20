@@ -19,12 +19,12 @@ EditMode-тесты. Полноценного игрового цикла, це�
 | Render pipeline | URP 17.6.0 | `Packages/manifest.json`, `Assets/Settings/*_RPAsset` |
 | Качество | один уровень `Default`, один URP-ассет | `ProjectSettings/QualitySettings.asset` (ADR 0008) |
 | Цветовое пространство | Linear | `ProjectSettings/ProjectSettings.asset` |
-| Ввод | только Input System | `activeInputHandler: 2` |
+| Ввод | только Input System | `activeInputHandler: 1` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
 | Play Mode | domain reload выключен, scene reload включён | `m_EnterPlayModeOptionsEnabled: 1`, `m_EnterPlayModeOptions: 1` |
-| Игровая сцена | `Assets/Scenes/SnowLevel.unity`, build index 0 | `EditorBuildSettings.asset`, Unity MCP |
+| Игровая сцена | `Assets/Scenes/SnowLevel.unity`, build index 1 | `EditorBuildSettings.asset`, Unity MCP |
 | Содержимое SnowLevel | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами и животными | сцена `Assets/Scenes/SnowLevel.unity` |
-| Сцена-заготовка | `Assets/Scenes/Boot.unity`: Main Camera, Directional Light, Global Volume | Unity MCP `manage_scene` |
+| Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: Main Camera, Directional Light, Global Volume; загрузка сервисов и переход в игру ещё не реализованы | Unity MCP `manage_scene` |
 | Код | `FrostSpace.Features` (локомоция, камера, NPC), `FrostSpace.Editor`, EditMode-тесты | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |

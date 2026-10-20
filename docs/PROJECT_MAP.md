@@ -9,16 +9,17 @@
 FrostSpace/
 ├─ AGENTS.md                     # обязательные правила для агентов
 ├─ README.md                     # краткий статус и вход
-├─ Plans/                        # текущие многошаговые планы (README — правила)
+├─ Plans/                        # текущие многошаговые планы (README — правила); сюда же пишет Aura через junction `Assets/.Aura/plans`
 ├─ docs/                         # документация (этот файл — карта)
 ├─ Tools/
 │  ├─ Blender/                   # сборка роботов, животных и уровня, пробы, мост, ядро
 │  └─ Unity/                     # прямой клиент к мосту Unity MCP
 ├─ AssetSource/                  # сырые архивы ассетов, ВНЕ git и вне Unity
 └─ Assets/
+   ├─ .Aura/plans/               # планы работ всех агентов (README — правила); Unity dot-папки не импортирует
    ├─ Scenes/                    # ЕДИНСТВЕННАЯ папка сцен
-   │  ├─ Boot.unity              # заготовка шаблона, в игре не участвует
-   │  └─ SnowLevel.unity         # игровой уровень, build index 0
+   │  ├─ Boot.unity              # стартовая сцена, build index 0 (переход в игру ещё не реализован)
+   │  └─ SnowLevel.unity         # игровой уровень, build index 1
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
@@ -54,8 +55,9 @@ FrostSpace/
 
 ## С чего начинается выполнение
 
-1. Unity открывает `Assets/Scenes/SnowLevel.unity` (build index 0) — игровой уровень;
-   `Boot.unity` — заготовка и в игре не участвует.
+1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0) — стартовая сцена для
+   инициализации сервисов; переход в `Assets/Scenes/SnowLevel.unity` (build index 1) пока
+   не реализован, поэтому игра стартует прямо с уровня в редакторе.
 2. Сцена `SnowLevel` — обычный сохранённый ассет: рельеф, дом с интерьером, деревья,
    забор, пропы (FBX из `Content/Models/Level/`), свет, туман, камера, `Player`, `NPC`.
    Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
@@ -96,7 +98,7 @@ FrostSpace/
 | Скрытие перекрытий | `CameraOcclusionFader` + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |
-| Планы работ | `Plans/` (правила — `Plans/README.md`) |
+| Планы работ | `Assets/.Aura/plans/` — единственное место; Aura пишет туда нативно (правила — `Assets/.Aura/plans/README.md`) |
 | Blender-тулинг | `Tools/Blender/`, документация — `BLENDER.md` |
 | Unity-мост | `Tools/Unity/unity_bridge.py`, документация — `UNITY_MCP.md` |
 | Исходные архивы | `AssetSource/` (в git не входит) |

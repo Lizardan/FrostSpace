@@ -2,7 +2,7 @@
 
 ## Сейчас (факт)
 
-Есть вертикальный срез на `Assets/Scenes/SnowLevel.unity` (build index 0):
+Есть вертикальный срез на `Assets/Scenes/SnowLevel.unity` (build index 1; стартовая сцена — `Assets/Scenes/Boot.unity`, build index 0):
 
 - `FrostSpace.Features` (`Assets/_Project/Scripts/Features/`):
   `Locomotion/RobotLocomotion.cs` — движение через kinematic `CharacterController`,
@@ -40,7 +40,7 @@
   связаны `CameraOcclusionFadeGroup`. Причину фиксирует ADR 0008.
 - Локомоция: клипы in-place, Root Motion выключен, `Animator.speed` = фактическая скорость
   / скорость клипа.
-- `Assets/Scenes/Boot.unity` — неиспользуемая заготовка шаблона.
+- `Assets/Scenes/Boot.unity` — стартовая сцена (build index 0): Main Camera, Directional Light, Global Volume. Загрузка сервисов и переход в `SnowLevel` ещё не реализованы.
 
 Ещё нет composition root, UI, сохранений, сети и ScriptableObject-конфигов; `Core/` и
 `Infrastructure/` не созданы. Это **не** архитектурный долг: просто ещё не написано.
@@ -105,7 +105,8 @@ Core ──→ ничего из FrostSpace.*
    маршрут, пауза, поворот — `NpcController` или `AirPatrolController`.
 3. **Нет UI, сохранений, сети и конфигов.** Появятся вместе с требованиями; не создавай
    слои и сборки заранее.
-4. **`Boot.unity` — заготовка** и лежит в `Assets/Scenes/`. Не перемещаем существующий
+4. **`Boot.unity` — стартовая сцена**, но логики перехода в `SnowLevel` в ней пока нет:
+   сцена содержит только камеру, свет и Global Volume. Не перемещаем существующий
    ассет ради документации; новые сцены идут в тот же единственный корень.
 5. **Unity MCP ссылается на `#main`.** В lockfile зафиксирован hash, но manifest плавает.
    Риск изменения имён инструментов; запинить позже отдельным решением.

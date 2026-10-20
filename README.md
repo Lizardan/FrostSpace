@@ -12,16 +12,16 @@ Unity-проект на ранней стадии: есть играбельны
 | Unity | 6000.6.6f1 |
 | Render pipeline | URP 17.6.0 |
 | Ввод | Input System |
-| Стартовая сцена | `Assets/Scenes/SnowLevel.unity` (build index 0) |
+| Стартовая сцена | `Assets/Scenes/Boot.unity` (build index 0); игровой уровень — `SnowLevel` (1) |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model`, движение kinematic |
-| Код и тесты | `FrostSpace.Features` + `FrostSpace.Editor`, 4 EditMode-теста |
+| Код и тесты | `FrostSpace.Features` + `FrostSpace.Editor`, 17 EditMode-тестов |
 
 ## С чего начать
 
 1. [AGENTS.md](AGENTS.md) — обязательные правила для человека и AI-агента.
 2. [docs/README.md](docs/README.md) — индекс документации и порядок чтения.
 3. [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) — где что лежит.
-4. [Plans/README.md](Plans/README.md) — как ведётся текущий план работ.
+4. [Assets/.Aura/plans/README.md](Assets/.Aura/plans/README.md) — как ведётся текущий план работ.
 
 ## Инструменты
 

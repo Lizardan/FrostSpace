@@ -25,10 +25,13 @@
 # Локальная память и кэш агента WorkBuddy: журналы сессий, заметки по проекту
 /.workbuddy-ai/
 
-# Текущие планы работ — локальные, в git не идут.
-# README.md остаётся: на него ссылается AGENTS.md.
-/Plans/*
-!/Plans/README.md
+# Папка планов внутри Assets/.Aura — единственное место планов (см. AGENTS.md).
+# Файлы планов — локальная очередь, в git не идут; README с правилами коммитится.
+# Unity папки с точкой в имени не импортирует, поэтому в сборку ничего не попадает.
+/Assets/.Aura/*
+!/Assets/.Aura/plans/
+/Assets/.Aura/plans/*
+!/Assets/.Aura/plans/README.md
 
 # Python-кеш утилит в Tools/
 __pycache__/
