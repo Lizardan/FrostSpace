@@ -30,7 +30,7 @@ FrostSpace/
    │  │  │  └─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
    │  │  ├─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │  │                       # перехода и единственный вызывающий SceneManager),
-   │  │  │                       # SceneFlowSettings (ScriptableObject с фазами и цветами перехода)
+   │  │  │                       # MusicManager (фоновая музыка); фазы и цвета — поля SceneController
    │  │  └─ Infrastructure/      # пока пусто
    │  ├─ Editor/                 # сборка FrostSpace.Editor, только редактор
    │  │  ├─ RobotAssetPostprocessor.cs # клипы, loop, sRGB при импорте FBX роботов
@@ -47,8 +47,8 @@ FrostSpace/
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал
    │     ├─ Materials/Level/        # материалы уровня Level_*
    │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
-   │     ├─ Settings/               # SceneFlowSettings.asset — общие тайминги перехода
-   │     └─ Art|Audio|UI|Data/      # по мере появления
+   │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
+   │     └─ Art|UI|Data/            # по мере появления
    ├─ ThirdParty/<Pack>/         # импортированное из AssetSource, с SOURCE.md; пока пусто
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
    ├─ Plugins/Roslyn/            # DLL для execute_code Unity MCP

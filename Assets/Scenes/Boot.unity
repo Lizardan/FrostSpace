@@ -477,8 +477,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9266762ed39c45e408b3607ded89f11f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Core::FrostSpace.Core.SceneController
-  _settings: {fileID: 11400000, guid: 5540a38618fe0324f920fff3b09d5a1a, type: 2}
-  _fadeInOnStart: 1
+  _fadeInSeconds: 1
+  _fadeOutSeconds: 1
+  _statusLeadInSeconds: 0.5
+  _statusFadeInSeconds: 0.5
+  _statusHoldSeconds: 1
+  _statusFadeOutSeconds: 0.5
+  _whiteHoldSeconds: 0
+  _statusText: COLONY LINK ESTABLISHED
+  _statusFontSize: 35
+  _statusSpacing: 15
+  _statusColor: {r: 0.06, g: 0.09, b: 0.13, a: 1}
+  _curtainColor: {r: 1, g: 1, b: 1, a: 1}
+  _sortingOrder: 1000
+  _referenceResolution: {x: 1920, y: 1080}
+  _fadeInOnStart: 0
+  _logPhases: 1
 --- !u!4 &614507091
 Transform:
   m_ObjectHideFlags: 0

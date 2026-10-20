@@ -16,18 +16,63 @@ namespace FrostSpace.Core
     /// <see cref="Awake"/>. Если игру запустили прямо с другой сцены, контроллер поднимается
     /// сам (см. <see cref="EnsureExists"/>) — уже без проявления из белого.
     ///
-    /// Тайминги и краски вынесены в общий <see cref="SceneFlowSettings"/>: один ассет
-    /// ссылается из сцены <c>Boot</c>, поэтому переход правится в одном месте.
+    /// Все тайминги, текст и краски перехода лежат в инспекторе этого компонента: отдельного
+    /// ассета нет, поэтому переход правится в одном месте и не зависит от ссылок на ассеты.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class SceneController : MonoBehaviour
     {
-        [Header("Настройки")]
-        [Tooltip("Общий ассет перехода: фазы, цвета и строка статуса. Пусто — значения по умолчанию.")]
-        [SerializeField] private SceneFlowSettings _settings;
+        [Header("Фазы перехода, с")]
+        [Tooltip("Сколько новая сцена проявляется из белого в начале")]
+        [SerializeField, Min(0f)] private float _fadeInSeconds = 0.9f;
 
+        [Tooltip("Сколько текущая сцена уходит в белый перед загрузкой")]
+        [SerializeField, Min(0f)] private float _fadeOutSeconds = 0.8f;
+
+        [Tooltip("За сколько до полного белого строка начинает проявляться. 0 — строка стартует на полном белом, 0.8 — вместе с осветлением")]
+        [SerializeField, Min(0f)] private float _statusLeadInSeconds = 0.35f;
+
+        [Tooltip("Сколько строка статуса проявляется")]
+        [SerializeField, Min(0f)] private float _statusFadeInSeconds = 0.3f;
+
+        [Tooltip("Сколько строка статуса висит на белом")]
+        [SerializeField, Min(0f)] private float _statusHoldSeconds = 0.9f;
+
+        [Tooltip("Сколько строка статуса гаснет")]
+        [SerializeField, Min(0f)] private float _statusFadeOutSeconds = 0.25f;
+
+        [Tooltip("Пауза на белом после строки, перед подменой сцены")]
+        [SerializeField, Min(0f)] private float _whiteHoldSeconds = 0.2f;
+
+        [Header("Строка на белом")]
+        [Tooltip("Текст поверх белого; пусто — без текста")]
+        [SerializeField] private string _statusText = "COLONY LINK ESTABLISHED";
+
+        [Tooltip("Кегль строки")]
+        [SerializeField, Min(1f)] private float _statusFontSize = 34f;
+
+        [Tooltip("Разрядка букв строки")]
+        [SerializeField] private float _statusSpacing = 18f;
+
+        [Tooltip("Цвет строки: на белом читается только тёмный")]
+        [SerializeField] private Color _statusColor = new(0.06f, 0.09f, 0.13f, 1f);
+
+        [Header("Занавес")]
+        [Tooltip("Цвет занавеса: белый — по замыслу, но правится без кода")]
+        [SerializeField] private Color _curtainColor = Color.white;
+
+        [Tooltip("Порядок отрисовки накладки: выше любого игрового канваса")]
+        [SerializeField] private int _sortingOrder = 1000;
+
+        [Tooltip("Опорное разрешение накладки, на котором раскладка не плывёт")]
+        [SerializeField] private Vector2 _referenceResolution = new(1920f, 1080f);
+
+        [Header("Старт")]
         [Tooltip("Сцена начинается с белого и проявляется из него")]
         [SerializeField] private bool _fadeInOnStart = true;
+
+        [Tooltip("Писать в консоль фактическую длительность фаз — удобно сравнивать редактор и WebGL")]
+        [SerializeField] private bool _logPhases = true;
 
         private static SceneController _instance;
 
@@ -82,9 +127,6 @@ namespace FrostSpace.Core
             _instance = this;
             DontDestroyOnLoad(gameObject);
 
-            if (_settings == null)
-                _settings = ScriptableObject.CreateInstance<SceneFlowSettings>();
-
             BuildOverlay();
         }
 
@@ -94,7 +136,7 @@ namespace FrostSpace.Core
             if (!_fadeInOnStart || _canvas == null)
                 return;
 
-            StartCoroutine(FadeRoutine(1f, 0f, _settings.FadeInSeconds));
+            StartCoroutine(FadeRoutine(1f, 0f, _fadeInSeconds));
         }
 
         /// <summary>
@@ -115,10 +157,11 @@ namespace FrostSpace.Core
         }
 
         /// <summary>
-        /// Фазы идут строго друг за другом, без пересечений: сначала белый, потом строка,
-        /// выдержка, угасание строки и только затем подмена сцены. Занавес при этом один и
-        /// тот же объект, поэтому он остаётся на экране и до, и после подмены: новая сцена
-        /// не может показаться раньше, чем начнётся её проявление.
+        /// Фазы идут по порядку, но отсчёт ведётся по реальному времени, а готовность сцены
+        /// не сдвигает видимые фазы: строка статуса стартует вместе с уходом в белый и не
+        /// ждёт загрузки. Поэтому одинаковый переход выглядит одинаково и в редакторе, и в
+        /// собранном WebGL, а разница остаётся только в том, сколько белый держится в
+        /// ожидании загрузки сцены.
         /// </summary>
         private IEnumerator LoadRoutine(string sceneName)
         {
@@ -134,26 +177,35 @@ namespace FrostSpace.Core
 
             operation.allowSceneActivation = false;
 
-            yield return FadeRoutine(_group.alpha, 1f, _settings.FadeOutSeconds);
+            var startedAt = Time.realtimeSinceStartup;
 
-            if (_settings.WhiteHoldSeconds > 0f)
-                yield return new WaitForSecondsRealtime(_settings.WhiteHoldSeconds);
+            // Строка проявляется на хвосте осветления и идёт параллельно занавесу:
+            // она не ждёт, пока сцена догрузится.
+            var statusRoutine = StartCoroutine(StatusRoutine());
 
+            yield return FadeRoutine(_group.alpha, 1f, _fadeOutSeconds);
+            var curtainAt = Time.realtimeSinceStartup;
+
+            yield return statusRoutine;
+            var statusAt = Time.realtimeSinceStartup;
+
+            if (_whiteHoldSeconds > 0f)
+                yield return new WaitForSecondsRealtime(_whiteHoldSeconds);
+
+            var loadWaitStart = Time.realtimeSinceStartup;
             while (operation.progress < 0.9f)
                 yield return null;
 
-            if (!string.IsNullOrEmpty(_settings.StatusText))
+            if (_logPhases)
             {
-                yield return FadeStatusRoutine(0f, 1f, _settings.StatusFadeInSeconds);
-
-                if (_settings.StatusHoldSeconds > 0f)
-                    yield return new WaitForSecondsRealtime(_settings.StatusHoldSeconds);
-
-                yield return FadeStatusRoutine(1f, 0f, _settings.StatusFadeOutSeconds);
+                // Отчёт по фазам в секундах: по этой строке в консоли браузера (F12) видно,
+                // что тайминги в сборке те же, что в редакторе.
+                Debug.Log(string.Format(
+                    "SceneController: '{0}' фазы от старта: занавес {1:0.00}s, строка закрыта {2:0.00}s, ожидание загрузки {3:0.00}s, подмена {4:0.00}s",
+                    sceneName, curtainAt - startedAt, statusAt - startedAt,
+                    Time.realtimeSinceStartup - loadWaitStart, Time.realtimeSinceStartup - startedAt));
             }
 
-            Debug.Log("SceneController: '" + sceneName + "' curtain=" + _group.alpha.ToString("0.00")
-                + " text=" + _statusGroup.alpha.ToString("0.00"));
             // Страховка: к моменту подмены занавес обязан быть непрозрачным.
             SetAlpha(1f);
             _canvas.enabled = true;
@@ -164,21 +216,47 @@ namespace FrostSpace.Core
             // Один кадр новой сцены уже под белым, и только после него начинается проявление.
             yield return null;
 
-            yield return FadeRoutine(1f, 0f, _settings.FadeInSeconds);
+            yield return FadeRoutine(1f, 0f, _fadeInSeconds);
 
             IsBusy = false;
         }
 
+        /// <summary>
+        /// Строка статуса на своём отсчёте: проявляется за <see cref="_statusLeadInSeconds"/>
+        /// до полного белого, висит и гаснет ещё до подмены сцены.
+        /// </summary>
+        private IEnumerator StatusRoutine()
+        {
+            if (string.IsNullOrEmpty(_statusText))
+                yield break;
+
+            var delay = Mathf.Max(0f, _fadeOutSeconds - _statusLeadInSeconds);
+            if (delay > 0f)
+                yield return new WaitForSecondsRealtime(delay);
+
+            yield return FadeStatusRoutine(0f, 1f, _statusFadeInSeconds);
+
+            if (_statusHoldSeconds > 0f)
+                yield return new WaitForSecondsRealtime(_statusHoldSeconds);
+
+            yield return FadeStatusRoutine(1f, 0f, _statusFadeOutSeconds);
+        }
+
+        /// <summary>
+        /// Прогресс считается от метки реального времени, а не суммой дельт кадра:
+        /// <c>Time.unscaledDeltaTime</c> обрезается <c>Time.maximumDeltaTime</c>, и на редких
+        /// или тяжёлых кадрах (редактор, первый заход в сцену) фаза растягивалась бы по
+        /// секундомеру. С меткой длительность всегда равна заданной.
+        /// </summary>
         private IEnumerator FadeRoutine(float from, float to, float duration)
         {
             _canvas.enabled = true;
-            var time = 0f;
-            if (duration <= 0f)
-                time = 1f;
 
+            var startedAt = Time.realtimeSinceStartup;
+            var time = duration <= 0f ? 1f : 0f;
             while (time < 1f)
             {
-                time = Mathf.Clamp01(time + Time.unscaledDeltaTime / Mathf.Max(duration, 0.0001f));
+                time = Mathf.Clamp01((Time.realtimeSinceStartup - startedAt) / duration);
                 SetAlpha(Mathf.Lerp(from, to, Smooth(time)));
                 yield return null;
             }
@@ -193,17 +271,16 @@ namespace FrostSpace.Core
 
         private IEnumerator FadeStatusRoutine(float from, float to, float duration)
         {
-            if (string.IsNullOrEmpty(_settings.StatusText))
+            if (string.IsNullOrEmpty(_statusText))
                 yield break;
 
             _canvas.enabled = true;
-            var time = 0f;
-            if (duration <= 0f)
-                time = 1f;
 
+            var startedAt = Time.realtimeSinceStartup;
+            var time = duration <= 0f ? 1f : 0f;
             while (time < 1f)
             {
-                time = Mathf.Clamp01(time + Time.unscaledDeltaTime / Mathf.Max(duration, 0.0001f));
+                time = Mathf.Clamp01((Time.realtimeSinceStartup - startedAt) / duration);
                 _statusGroup.alpha = Mathf.Lerp(from, to, Smooth(time));
                 yield return null;
             }
@@ -236,11 +313,11 @@ namespace FrostSpace.Core
 
             var canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 1000;
+            canvas.sortingOrder = _sortingOrder;
 
             var scaler = root.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = _referenceResolution;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
@@ -258,7 +335,7 @@ namespace FrostSpace.Core
             fillRect.offsetMax = Vector2.zero;
 
             var image = fill.GetComponent<Image>();
-            image.color = _settings.Color;
+            image.color = _curtainColor;
             image.raycastTarget = false;
 
             var label = new GameObject("Status", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -280,10 +357,10 @@ namespace FrostSpace.Core
             var text = label.GetComponent<TextMeshProUGUI>();
             if (TMP_Settings.defaultFontAsset != null)
                 text.font = TMP_Settings.defaultFontAsset;
-            text.text = _settings.StatusText;
-            text.fontSize = _settings.StatusFontSize;
-            text.color = _settings.StatusColor;
-            text.characterSpacing = _settings.StatusSpacing;
+            text.text = _statusText;
+            text.fontSize = _statusFontSize;
+            text.color = _statusColor;
+            text.characterSpacing = _statusSpacing;
             text.alignment = TextAlignmentOptions.Center;
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.raycastTarget = false;
