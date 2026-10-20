@@ -9,6 +9,20 @@ name: WebGL build and deploy
 # PROJECT:FrostSpace). Без decompressionFallback браузер не распакует .unityweb —
 # GitHub Pages не отдаёт Content-Encoding.
 #
+# Library НЕ кэшируется сознательно. Прогон 39406577398 упал с exit code 137
+# (SIGKILL — сработал OOM-killer контейнера) через 2.5 с после старта билда:
+# actions/cache восстановил Library от другого коммита (точный ключ не совпал,
+# сработал restore-keys), Unity пошла переимпортом поверх чужих артефактов и
+# упёрлась в лимит памяти (--memory ≈ 95% от 16 ГБ раннера). Холодный импорт
+# без кэша (прогон 39198787662) проходил стабильно, поэтому каждый билд
+# импортирует свой Library с нуля — это ~16 минут, но воспроизводимо.
+#
+# Версии сверены с апстримом 2026-10-20: actions/checkout v7.0.1,
+# game-ci/unity-builder v6.0.0 (node24, входы те же, что в v4, — drop-in
+# upgrade), actions/upload-pages-artifact v5.0.0, actions/deploy-pages v5.0.1.
+# Образ unityci/editor поколения 3 — актуальное: для 6000.6.6f1 на Docker Hub
+# есть только -3 / -3.2 / -3.2.2 (алиас -3 указывает на свежий 3.x).
+#
 # Раньше сборка шла на self-hosted раннере этого ПК: ПК должен был быть включён,
 # иначе job висел в очереди, а Unity брался уже активированным. Подробности —
 # docs/DEPLOY.md.
@@ -34,22 +48,12 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      # Кэш импорта. Без него каждый прогон заново импортирует 39 FBX,
-      # 20 префабов и все материалы — минуты впустую.
-      - name: Cache Unity Library
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-${{ runner.os }}-${{ hashFiles('Assets/**', 'Packages/packages-lock.json', 'ProjectSettings/**') }}
-          restore-keys: |
-            Library-${{ runner.os }}-
-
       - name: Build WebGL
-        uses: game-ci/unity-builder@v4
+        uses: game-ci/unity-builder@v6
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -71,7 +75,7 @@ jobs:
           versioning: None
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: Builds/WebGL
 
@@ -85,4 +89,4 @@ jobs:
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
