@@ -82,6 +82,12 @@ namespace FrostSpace.Core
         /// <summary>Идёт переход: повторный запрос игнорируется.</summary>
         public bool IsBusy { get; private set; }
 
+        /// <summary>
+        /// Идёт стартовое проявление из белого: под занавесом сцену не видно, поэтому
+        /// счётчики самой сцены (например, отсчёт <c>BootScreen</c>) ждут его конца.
+        /// </summary>
+        public bool IsIntroPlaying { get; private set; }
+
         private Canvas _canvas;
         private CanvasGroup _group;
         private CanvasGroup _statusGroup;
@@ -136,7 +142,18 @@ namespace FrostSpace.Core
             if (!_fadeInOnStart || _canvas == null)
                 return;
 
-            StartCoroutine(FadeRoutine(1f, 0f, _fadeInSeconds));
+            StartCoroutine(IntroRoutine());
+        }
+
+        /// <summary>
+        /// Стартовое проявление помечается флагом: сцена под занавесом ещё не видна,
+        /// и всё, что считает время внутри сцены, должно ждать конца проявления.
+        /// </summary>
+        private IEnumerator IntroRoutine()
+        {
+            IsIntroPlaying = true;
+            yield return FadeRoutine(1f, 0f, _fadeInSeconds);
+            IsIntroPlaying = false;
         }
 
         /// <summary>

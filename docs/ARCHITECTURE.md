@@ -56,8 +56,12 @@
 - Локомоция: клипы in-place, Root Motion выключен, `Animator.speed` = фактическая скорость
   / скорость клипа.
 - `Assets/Scenes/Boot.unity` — стартовая сцена (build index 0): корневой `SceneController`
-  (единственный владелец перехода) и `BootFlow` с `BootScreen` — трёхсекундная консоль
-  загрузки сервисов, затем белый переход в `MainMenu`.
+  (единственный владелец перехода) и `BootFlow` с `BootScreen` — консоль загрузки сервисов
+  (`_bootSeconds` в инспекторе), затем белый переход в `MainMenu`. Отсчёт `BootScreen`
+  включается только на готовой сцене: он ждёт, пока спадёт `SceneController.IsIntroPlaying`,
+  и двух подряд кадров короче `_warmupFrameSeconds`. Без этого в WebGL прогрев первого
+  кадра (компиляция шейдеров, атлас шрифта) съедал больше половины полосы до появления
+  экрана.
 - `Assets/Scenes/MainMenu.unity` — главное меню: облётная камера над диорамой,
   `MenuDiorama`, снег, Volume и `MenuFlow` (`MainMenuScreen`).
 - Переход между сценами — единственный сервис `Core/SceneController.cs` (см. ADR 0011):

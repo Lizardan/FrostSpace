@@ -491,8 +491,8 @@ MonoBehaviour:
   _curtainColor: {r: 1, g: 1, b: 1, a: 1}
   _sortingOrder: 1000
   _referenceResolution: {x: 1920, y: 1080}
-  _fadeInOnStart: 1
-  _logPhases: 1
+  _fadeInOnStart: 0
+  _logPhases: 0
 --- !u!4 &614507091
 Transform:
   m_ObjectHideFlags: 0

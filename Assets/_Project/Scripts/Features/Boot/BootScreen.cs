@@ -25,6 +25,19 @@ namespace FrostSpace.Features.Boot
         [Tooltip("Сколько держится надпись READY перед переходом, с")]
         [SerializeField] private float _readyHoldSeconds = 0.3f;
 
+        [Header("Старт отсчёта")]
+        [Tooltip("Кадр длиннее этого считается прогревом: в WebGL первый кадр компилирует шейдеры и собирает атлас шрифта, пока такие кадры идут — отсчёт стоит на нуле")]
+        [SerializeField] private float _warmupFrameSeconds = 0.15f;
+
+        [Tooltip("Сколько подряд коротких кадров ждать, чтобы считать сцену прогруженной")]
+        [SerializeField, Min(1)] private int _warmupFrames = 2;
+
+        [Tooltip("Предел ожидания готовности сцены по реальному времени, с")]
+        [SerializeField] private float _warmupTimeoutSeconds = 8f;
+
+        [Tooltip("Писать в консоль, сколько ждали готовности сцены перед отсчётом — удобно сравнивать редактор и WebGL")]
+        [SerializeField] private bool _logStart = true;
+
         [Tooltip("Строки лога по порядку: каждая закрывается по мере прогресса")]
         [SerializeField] private string[] _steps =
         {
@@ -84,19 +97,69 @@ namespace FrostSpace.Features.Boot
         private Image[] _ticks;
         private RectTransform _ring;
         private float _time;
+        private float _sceneStartAt;
         private int _closedSteps;
+        private bool _counting;
         private bool _released;
 
         private void Awake()
         {
+            _sceneStartAt = Time.realtimeSinceStartup;
             BuildInterface();
             RefreshLog(0);
             RefreshProgress(0f);
         }
 
+        private void Start()
+        {
+            StartCoroutine(StartRoutine());
+        }
+
+        /// <summary>
+        /// Отсчёт начинается только тогда, когда сцена действительно видна: сначала
+        /// заканчивается стартовое проявление из белого (им владеет <c>SceneController</c>),
+        /// затем проходят кадры прогрева. В WebGL первый кадр компилирует шейдеры и
+        /// собирает атлас шрифта — раньше эти секунды съедали больше половины полосы
+        /// ещё до того, как экран вообще появлялся.
+        /// </summary>
+        private IEnumerator StartRoutine()
+        {
+            var controller = SceneController.Instance;
+
+            // Проверка на каждом кадре: порядок Start у компонентов сцены не определён,
+            // поэтому флаг проявления читается до тех пор, пока он не спадёт.
+            while (controller != null && controller.IsIntroPlaying)
+                yield return null;
+
+            var warmupFrames = Mathf.Max(_warmupFrames, 1);
+            var deadline = Time.realtimeSinceStartup + Mathf.Max(_warmupTimeoutSeconds, 0f);
+            var cleanFrames = 0;
+            while (cleanFrames < warmupFrames && Time.realtimeSinceStartup < deadline)
+            {
+                var warm = Time.unscaledDeltaTime > _warmupFrameSeconds;
+                if (controller != null && controller.IsIntroPlaying)
+                    warm = true;
+
+                cleanFrames = warm ? 0 : cleanFrames + 1;
+                yield return null;
+            }
+
+            _time = 0f;
+            _counting = true;
+
+            if (_logStart)
+            {
+                // Строка в консоль браузера (F12) показывает, сколько сцена грелась до
+                // старта отсчёта: по ней видно, что полоса начинается с нуля.
+                Debug.Log(string.Format(
+                    "BootScreen: отсчёт начат через {0:0.00}s после запуска сцены, имитация {1:0.00}s",
+                    Time.realtimeSinceStartup - _sceneStartAt, _bootSeconds));
+            }
+        }
+
         private void Update()
         {
-            if (_released)
+            if (_released || !_counting)
                 return;
 
             _time += Time.unscaledDeltaTime;
