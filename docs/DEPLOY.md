@@ -11,13 +11,15 @@
 ```
 git push в main
    └─ GitHub Actions (.github/workflows/webgl.yml)
-        ├─ job build  → ubuntu-latest → game-ci/unity-builder@v4
+        ├─ job build  → ubuntu-24.04 → game-ci/unity-builder@v6 (CLI v0.1.72)
         │                 └─ контейнер unityci/editor + BuildWebGL.PerformBuild → Builds/WebGL
         └─ job deploy → actions/deploy-pages → https://lizardan.github.io/FrostSpace/
 ```
 
-- **Сборка идёт в облаке GitHub**, на `ubuntu-latest`. Unity ставится в контейнер
-  `unityci/editor` и активируется Personal-лицензией из секретов.
+- **Сборка идёт в облаке GitHub**, на `ubuntu-24.04` (не `ubuntu-latest`: с 2026-10-19
+  эта метка переезжает на Ubuntu 26, а переезд под `unityci/editor` не проверен).
+  Unity ставится в контейнер `unityci/editor` и активируется Personal-лицензией
+  по email/паролю из секретов.
 - **Self-hosted раннер больше не используется.** Раньше сборка шла на этом ПК, и
   пуш в `main` без запущенного раннера просто вставал в очередь. Папка
   `F:\actions-runner-frostspace` удалена, раннер `frostspace-pc` снят с GitHub.
@@ -25,19 +27,30 @@ git push в main
   выставляет `PlayerSettings.WebGL` — Brotli + `decompressionFallback` и шаблон
   `PROJECT:FrostSpace`. Без `decompressionFallback` браузер не распакует `.unityweb`:
   GitHub Pages не отдаёт `Content-Encoding`.
+- **Контракт вывода — часть контракта с game-ci.** CLI проверяет stdout Unity и
+  считает сборку успешной только при строке `Build succeeded!` или блоке
+  `# Build results #` с `Errors: N`. Свой buildMethod заменяет штатный скрипт
+  билдера, поэтому маркеры печатает сам `BuildWebGL` (`ReportSummary`,
+  `ReportResult`). Убрать их — значит получить зелёную сборку, которую CI
+  объявит упавшей.
 - Cloudflare Pages не подходит: он не умеет собирать Unity, только хостить готовое.
 
 ## Секреты репозитория (Personal-лицензия)
 
-Три секрета, все в `Settings → Secrets and variables → Actions`:
+Два секрета, оба в `Settings → Secrets and variables → Actions`:
 
 | Секрет | Что лежит |
 |---|---|
-| `UNITY_LICENSE` | содержимое файла `.ulf` целиком, вместе с XML-шапкой |
 | `UNITY_EMAIL` | почта Unity ID |
 | `UNITY_PASSWORD` | пароль Unity ID |
 
-Откуда взять `.ulf`:
+`UNITY_LICENSE` (содержимое `.ulf`) в облаке **не нужен и не работает**: файл
+привязан к машине, на которой выпущен, и в Linux-контейнере даёт
+`Machine bindings don't match` — game-ci откатывается на активацию по паре
+email/пароль. Держать секрет стоит только если сборка когда-нибудь вернётся на
+Windows-раннер.
+
+Как выпустить `.ulf`, если он всё-таки понадобится:
 
 1. **Unity Hub → Preferences (шестерёнка) → Licenses → Add → «Get a free personal license».**
    Именно кнопка `Add` создаёт файл. Обычный вход в Hub активирует редактор, но
@@ -89,7 +102,7 @@ HTML кешируется GitHub Pages до 10 минут — в браузер�
    gh api -X POST repos/Lizardan/FrostSpace/pages -f build_type=workflow
    ```
 
-2. **Три секрета** из раздела выше.
+2. **Два секрета** из раздела выше.
 3. **Файлы в репозитории:** `.github/workflows/webgl.yml`,
    `Assets/_Project/Editor/BuildWebGL.cs`, `Assets/WebGLTemplates/FrostSpace/index.html`.
 
@@ -100,9 +113,12 @@ HTML кешируется GitHub Pages до 10 минут — в браузер�
 | Симптом | Причина | Что делать |
 |---|---|---|
 | Сборка падает на «pull image» | для `6000.6.6f1` ещё нет образа `unityci/editor` | проверить тег образа; при необходимости задать `customImage` или вернуть self-hosted |
+| `Build succeeded`, но job красный: «There was an error building the project» | CLI game-ci не нашёл в stdout маркеров успеха | печатать `Build succeeded!` и блок `# Build results #` из `BuildWebGL` (уже делает); сверить формат с `StdOutReporter.cs` в game-ci/cli |
+| Exit code 137 через пару секунд после старта билда | OOM: `Library` восстановлен из кэша другого коммита | кэш `Library` не подключать (сейчас его нет намеренно) |
+| Предупреждение «Machine bindings don't match» | в секретах лежит `.ulf` от другого компьютера | убрать `UNITY_LICENSE`, активация идёт по email/паролю |
 | `Working tree is dirty` | проверка билдера | в workflow уже стоит `allowDirtyBuild: true` |
 | Артефакт не читается, права root | файлы из контейнера принадлежат root | добавить в билдер `chownFilesTo` / `runAsHostUser` |
-| Каждая сборка долгая | нет кэша импорта | шаг `Cache Unity Library` уже есть; ключ на `Assets/**`, `packages-lock.json`, `ProjectSettings/**` |
+| Каждая сборка долгая (~16 минут) | кэша импорта нет | так и задумано: холодный импорт воспроизводим; кэш только с точным ключом и без `restore-keys` |
 | Страница отдаёт битый `.unityweb` | нет `decompressionFallback` | он выставляется в `BuildWebGL.PerformBuild` — не убирать |
 | Канвас маленький, внизу кнопки Unity | штатный шаблон Default | свой шаблон `Assets/WebGLTemplates/FrostSpace` |
 | Страница старая | кеш GitHub Pages | Ctrl+F5, подождать до 10 минут |

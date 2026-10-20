@@ -2,12 +2,18 @@ name: WebGL build and deploy
 
 # Сборка идёт на GitHub-hosted раннере через game-ci: редактор поднимается в
 # контейнере unityci/editor и активируется лицензией из секретов
-# (Personal: UNITY_LICENSE + UNITY_EMAIL + UNITY_PASSWORD).
+# (Personal: UNITY_EMAIL + UNITY_PASSWORD).
 #
 # Свой buildMethod обязателен: FrostSpace.Editor.BuildWebGL.PerformBuild
 # выставляет PlayerSettings.WebGL (Brotli + decompressionFallback, шаблон
 # PROJECT:FrostSpace). Без decompressionFallback браузер не распакует .unityweb —
 # GitHub Pages не отдаёт Content-Encoding.
+#
+# Контракт вывода: game-ci проверяет stdout Unity и считает сборку успешной
+# только если там есть «Build succeeded!» или блок «# Build results #» с
+# «Errors: N». Свой buildMethod заменяет штатный скрипт билдера, поэтому оба
+# маркера печатает сам BuildWebGL. Прогон 39409178978 собрал 13 МБ и вышел с
+# кодом 0, но упал на этой проверке — тогда маркеров не было.
 #
 # Library НЕ кэшируется сознательно. Прогон 39406577398 упал с exit code 137
 # (SIGKILL — сработал OOM-killer контейнера) через 2.5 с после старта билда:
@@ -17,11 +23,20 @@ name: WebGL build and deploy
 # без кэша (прогон 39198787662) проходил стабильно, поэтому каждый билд
 # импортирует свой Library с нуля — это ~16 минут, но воспроизводимо.
 #
-# Версии сверены с апстримом 2026-10-20: actions/checkout v7.0.1,
-# game-ci/unity-builder v6.0.0 (node24, входы те же, что в v4, — drop-in
-# upgrade), actions/upload-pages-artifact v5.0.0, actions/deploy-pages v5.0.1.
-# Образ unityci/editor поколения 3 — актуальное: для 6000.6.6f1 на Docker Hub
-# есть только -3 / -3.2 / -3.2.2 (алиас -3 указывает на свежий 3.x).
+# Версии закреплены намеренно:
+# - runs-on: ubuntu-24.04, не ubuntu-latest. С 2026-10-19 метка latest
+#   переезжает на Ubuntu 26; переезд под unityci/editor не проверен, а сборка
+#   занимает полчаса — такие сюрпризы не нужны. Менять осознанно.
+# - game-ci/unity-builder@v6 ставит CLI из релиза «latest», если не задан
+#   cliVersion. v0.1.72 — версия, на которой сборка отработала; новая версия
+#   CLI может снова поменять правила валидации.
+# - actions/checkout v7.0.1, actions/upload-pages-artifact v5.0.0,
+#   actions/deploy-pages v5.0.1 — сверено с апстримом 2026-10-20.
+#
+# Секрета UNITY_LICENSE здесь нет: .ulf привязан к машине, на которой выпущен
+# (Windows-ПК), и в контейнере даёт «Machine bindings don't match». game-ci
+# откатывается на активацию по email/паролю — то есть .ulf только добавляет
+# неудачную попытку и предупреждение в лог.
 #
 # Раньше сборка шла на self-hosted раннере этого ПК: ПК должен был быть включён,
 # иначе job висел в очереди, а Unity брался уже активированным. Подробности —
@@ -44,7 +59,7 @@ concurrency:
 jobs:
   build:
     name: Build WebGL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - name: Checkout
@@ -55,7 +70,6 @@ jobs:
       - name: Build WebGL
         uses: game-ci/unity-builder@v6
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
@@ -63,6 +77,8 @@ jobs:
           # auto = версия из ProjectSettings/ProjectVersion.txt (6000.6.6f1):
           # расхождение проекта и контейнера невозможно.
           unityVersion: auto
+          # Релиз game-ci CLI. Не «latest»: правило валидации вывода живёт в CLI.
+          cliVersion: v0.1.72
           projectPath: .
           # Совпадает с путями внутри BuildWebGL.PerformBuild.
           buildsPath: Builds
@@ -82,7 +98,8 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
