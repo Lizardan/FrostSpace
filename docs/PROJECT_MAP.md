@@ -24,10 +24,16 @@ FrostSpace/
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
+   │  │  │  ├─ Boot/             # BootScreen — консоль загрузки сервисов на старте
+   │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, CameraPose, InteriorZone, PlayerSilhouette,
+   │  │  │  │                    # PlayerLocalView, CameraOcclusionFader/Debris/Group, ScreenAperture,
+   │  │  │  │                    # ViewModule + ViewModuleSwitch (ПКМ-модули: первый/третий вид)
+   │  │  │  ├─ Hud/              # PlayerHud — карусель модулей, подписи, подсказки
    │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
-   │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, InteriorZone, PlayerSilhouette,
-   │  │  │  │                    # PlayerLocalView, CameraOcclusionFader; ns ...Features.View
-   │  │  │  └─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
+   │  │  │  ├─ Menu/             # MainMenuScreen, MenuCameraOrbit, TechButtonFx, BeaconPulse
+   │  │  │  ├─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
+   │  │  │  ├─ Ride/             # Hoverbike (посадка/сход, управление), HoverbikeGlow
+   │  │  │  └─ Scan/             # ObjectScanner + ScanTarget (сканирование объектов)
    │  │  ├─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │  │                       # перехода и единственный вызывающий SceneManager),
    │  │  │                       # MusicManager (фоновая музыка); фазы и цвета — поля SceneController
@@ -35,17 +41,22 @@ FrostSpace/
    │  ├─ Editor/                 # сборка FrostSpace.Editor, только редактор
    │  │  ├─ RobotAssetPostprocessor.cs # клипы, loop, sRGB при импорте FBX роботов
    │  │  ├─ AnimalAssetPostprocessor.cs # клипы Idle/Move, loop, sRGB при импорте FBX животных
-   │  │  └─ LevelAssetPostprocessor.cs # нормали, sRGB и палитра Level_* для уровня
+   │  │  ├─ LevelAssetPostprocessor.cs # нормали, sRGB и палитра Level_* для уровня
+   │  │  └─ HoverbikeMockBuilder.cs  # меню FrostSpace → Ride: префаб A (примитивы) и B (FBX)
    │  ├─ Tests/
-   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode (в т.ч. CameraModeTests)
+   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode (CameraModeTests, ModuleCarouselTests)
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller; RobotAnimals/<Species>/RA_<Species>.controller
    │     ├─ Models/Robots/          # R*.fbx
    │     ├─ Models/RobotAnimals/    # <Species>/RA_<Species>.fbx + SOURCE.md (происхождение ригов)
    │     ├─ Models/Level/           # FBX уровня: рельеф, дом, интерьер, деревья, пропы
+   │     ├─ Models/Menu/            # ShipWreck_Mesh.asset — процедурный меш диорамы меню
    │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал
+   │     ├─ Prefabs/Ride/           # Hoverbike_A_Model (макет) и Hoverbike_B_Model (FBX) — визуал + компоненты
    │     ├─ Materials/Level/        # материалы уровня Level_*
+   │     ├─ Materials/Menu/         # материалы диорамы меню
+   │     ├─ Materials/VFX/          # материалы эффектов
    │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
    │     └─ Art|UI|Data/            # по мере появления
@@ -104,6 +115,8 @@ FrostSpace/
 | Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `Game`) |
 | Маршрут NPC и животных | вейпоинты в `NpcController` на `NPC_R*` и `AN_<Species>`; у `AN_Eagle`/`AN_Piranha` — `AirPatrolController` с высотой; точки — дочерние `WP_*` |
 | Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView`, прицел — `PlayerAimPose` (ADR 0010) |
+| Модули камеры (ПКМ) | `ViewModuleSwitch` + `ViewModule` в `Features/Camera/`, карусель — `ModuleCarousel` в `ViewModule.cs`, показ — `PlayerHud` (`Features/Hud/`) |
+| Ховербайк | `Hoverbike` + `HoverbikeGlow` в `Features/Ride/`; префабы — `Content/Prefabs/Ride/Hoverbike_A_Model`, `Hoverbike_B_Model`; сборка префабов — меню `FrostSpace → Ride` (`Editor/HoverbikeMockBuilder.cs`) |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |

@@ -8,18 +8,19 @@ namespace FrostSpace.Features.View
     /// Единственный владелец главной камеры: три режима и плавный переход между ними.
     ///
     /// <list type="bullet">
-    /// <item><b>ThirdPerson</b> — прежний вид сверху-сзади с фиксированным смещением;
-    /// мышь обзор не крутит, так что управление остаётся таким же, как было.</item>
-    /// <item><b>Aim</b> — удержание правой кнопки: камера переезжает за плечо, мышь ведёт
-    /// рыскание и тангаж, корпус доворачивается по WASD (как в третьем лице), а голова
-    /// поворачивается к точке прицела (<c>PlayerAimPose</c>); фейдер перекрытий светит круг.</item>
+    /// <item><b>ThirdPerson</b> — основной вид из-за плеча: мышь ведёт рыскание и тангаж,
+    /// WASD читается от камеры, голова робота доворачивается к перекрестию
+    /// (<c>PlayerAimPose</c>). Правая кнопка мыши больше не меняет позу — она только
+    /// включает эффект выбранного модуля (просвет или сканер).</item>
     /// <item><b>FirstPerson</b> — внутри <see cref="InteriorZone"/>: камера встаёт в голову
-    /// робота, мышь крутит обзор, WASD работает стрейфом.</item>
+    /// робота, WASD работает стрейфом.</item>
+    /// <item><b>Ride</b> — пока игрок на ховербайке: камера сверху-сзади над байком,
+    /// мышь обзор не крутит, направление задаёт сам байк.</item>
     /// </list>
     ///
     /// Поза считается аналитически каждый кадр, а смена режима запоминает текущую позу и
     /// перетекает к новой за <c>_enterSeconds</c> (вход) или <c>_exitSeconds</c> (возврат).
-    /// Камера прицела дополнительно отводится от стены сферокастом.
+    /// Курсор захвачен во всех игровых режимах: перекрестие всегда в центре экрана.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(150)]
@@ -35,30 +36,34 @@ namespace FrostSpace.Features.View
         [Tooltip("Ассет ввода; если пусто — берётся InputSystem.actions")]
         [SerializeField] private InputActionAsset _actions;
 
-        [Header("Третье лицо")]
-        [SerializeField] private Vector3 _thirdPersonOffset = new(0f, 11f, -9f);
-        [SerializeField] private float _thirdPersonLookHeight = 1f;
-        [Tooltip("Сглаживание позиции в третьем лице, 1/с")]
-        [SerializeField] private float _thirdPersonSmoothing = 8f;
-
-        [Header("Прицел")]
+        [Header("Третье лицо (основной вид)")]
         [Tooltip("Смещение камеры от точки над плечом: назад и вбок, в локальных осях рыскания")]
         [SerializeField] private Vector3 _aimOffset = new(0.6f, 0.35f, -3.1f);
-        [Tooltip("Высота точки, вокруг которой стоит камера прицела")]
-        [SerializeField] private float _aimLookHeight = 1.45f;
+        [Tooltip("Высота центра орбиты в персонаже: камера облетает именно эту точку")]
+        [SerializeField] private float _aimLookHeight = 1.25f;
         [Tooltip("Радиус сферы, которой камера отводится от стен")]
         [SerializeField] private float _aimCollisionRadius = 0.25f;
-        [Tooltip("Максимальная дальность прицельного луча, м")]
+        [Tooltip("Максимальная дальность луча из перекрестия, м")]
         [SerializeField] private float _aimDistance = 60f;
 
         [Header("Первое лицо")]
         [Tooltip("Смещение камеры от кости головы, м")]
         [SerializeField] private Vector3 _headOffset = new(0f, 0.12f, 0.08f);
 
+        [Header("Езда")]
+        [Tooltip("Высота камеры над байком, м")]
+        [SerializeField] private float _rideHeight = 7.5f;
+        [Tooltip("Насколько камера отстаёт назад от байка, м")]
+        [SerializeField] private float _rideDistance = 5.5f;
+        [Tooltip("Наклон камеры вниз при езде, градусы")]
+        [SerializeField] private float _ridePitch = 52f;
+        [Tooltip("Фиксированный курс вида сверху, градусы: камера не крутится за байком, верх экрана всегда смотрит сюда")]
+        [SerializeField] private float _rideViewYaw;
+
         [Header("Переходы")]
-        [Tooltip("Сколько камера едет в прицел и в голову, с")]
+        [Tooltip("Сколько камера едет в первый/третий режим по требованию, с")]
         [SerializeField] private float _enterSeconds = 0.22f;
-        [Tooltip("Сколько камера возвращается наверх, с")]
+        [Tooltip("Сколько камера возвращается в третий вид, с")]
         [SerializeField] private float _exitSeconds = 0.38f;
         [Tooltip("Насколько за стену надо выйти, чтобы первое лицо отпустило, м. Без этого запаса режим мигает точно на плоскости стены, когда игрок выбегает из дома")]
         [SerializeField] private float _interiorExitMargin = 0.5f;
@@ -66,11 +71,13 @@ namespace FrostSpace.Features.View
         [Header("Обзор")]
         [Tooltip("Градусов поворота на пиксель движения мыши")]
         [SerializeField] private float _sensitivity = 0.12f;
-        [SerializeField] private float _minPitch = -80f;
-        [SerializeField] private float _maxPitch = 80f;
-        [Tooltip("Тангаж, с которого начинается прицел и первое лицо")]
+        [Tooltip("Предел взгляда вверх: с орбитой камера физически опускается, и ниже -35° она уходит в землю")]
+        [SerializeField] private float _minPitch = -35f;
+        [Tooltip("Предел взгляда вниз: с орбитой камера поднимается над персонажем")]
+        [SerializeField] private float _maxPitch = 70f;
+        [Tooltip("Тангаж по умолчанию: камера смотрит чуть вниз, на робота")]
         [SerializeField] private float _startPitch = 10f;
-        [Tooltip("Что останавливает камеру прицела и прицельный луч (слой Player исключить)")]
+        [Tooltip("Что останавливает камеру и луч из перекрестия (слой Player исключить)")]
         [SerializeField] private LayerMask _blockers = ~0;
 
         private InputAction _lookAction;
@@ -85,6 +92,7 @@ namespace FrostSpace.Features.View
         private Vector3 _aimPoint;
         private float _aimHitDistance;
         private bool _snapPose = true;
+        private Transform _rideTarget;
 
         /// <summary>Текущий режим.</summary>
         public CameraMode Mode { get; private set; } = CameraMode.ThirdPerson;
@@ -93,8 +101,12 @@ namespace FrostSpace.Features.View
         public event Action<CameraMode> ModeChanged;
 
         /// <summary>Корпус доворачивается по камере только в первом лице.
-        /// В прицеле камера ведёт взгляд, а корпус идёт по WASD — как в обычном третьем лице.</summary>
+        /// В третьем лице камера ведёт взгляд, а корпус идёт по WASD.</summary>
         public bool FacesCamera => Mode == CameraMode.FirstPerson;
+
+        /// <summary>Правая кнопка мыши удерживается: включаются эффекты выбранного модуля.</summary>
+        public bool IsAiming => Mode == CameraMode.ThirdPerson &&
+                                _aimAction != null && _aimAction.IsPressed();
 
         /// <summary>Рыскание камеры, градусы.</summary>
         public float ViewYaw => _yaw;
@@ -112,6 +124,18 @@ namespace FrostSpace.Features.View
 
         /// <summary>Камера режимов — её же читает фейдер перекрытий.</summary>
         public Camera ViewCamera => _camera;
+        /// <summary>Кость головы: от неё сканер выпускает конус сканирования.</summary>
+        public Transform HeadBone => _headBone;
+
+
+        /// <summary>Объект, вокруг которого строится вид сверху (ховербайк).</summary>
+        public Transform RideTarget => _rideTarget;
+
+        /// <summary>
+        /// Курс, в котором смотрит вид сверху. По нему байк читает WASD: W — вверх
+        /// по экрану, A — влево, S — вниз, D — вправо.
+        /// </summary>
+        public float RideViewYaw => _rideViewYaw;
 
         /// <summary>Точка, в которую смотрит перекрестие, и дистанция до неё.</summary>
         public bool TryGetAim(out Vector3 point, out float distance)
@@ -119,6 +143,18 @@ namespace FrostSpace.Features.View
             point = _aimPoint;
             distance = _aimHitDistance;
             return _hasAim;
+        }
+
+        /// <summary>Посадка на транспорт: камера уходит в вид сверху над ним.</summary>
+        public void SetRideTarget(Transform rideTarget)
+        {
+            _rideTarget = rideTarget;
+        }
+
+        /// <summary>Сход с транспорта: камера возвращается в третий вид.</summary>
+        public void ClearRideTarget()
+        {
+            _rideTarget = null;
         }
 
         private void Awake()
@@ -147,6 +183,8 @@ namespace FrostSpace.Features.View
             // у _blendFrom) в верхнюю позу — старт игры выглядел как выезд камеры.
             _blendFrom = _pose;
             _blendTime = _blendDuration;
+
+            LockCursor();
         }
 
         private void OnEnable()
@@ -196,10 +234,10 @@ namespace FrostSpace.Features.View
             UpdateAim();
         }
 
-        /// <summary>Мышь ведёт обзор только в прицеле и в первом лице.</summary>
+        /// <summary>Мышь ведёт обзор в третьем и первом лице; вид сверху ведёт сам байк.</summary>
         private void UpdateLook()
         {
-            if (Mode == CameraMode.ThirdPerson || _lookAction == null)
+            if (Mode == CameraMode.Ride || _lookAction == null)
                 return;
 
             var look = _lookAction.ReadValue<Vector2>();
@@ -216,13 +254,17 @@ namespace FrostSpace.Features.View
             // Гистерезис: пока игрок в доме, границы зоны считаются на _interiorExitMargin
             // шире. Иначе на выходе через дверь режим успевает мигнуть туда-обратно,
             // и камера дёргается ровно на пороге.
-            var inside = InteriorZone.ContainsAny(
+            var inside = _rideTarget == null && InteriorZone.ContainsAny(
                 _target.position,
                 Mode == CameraMode.FirstPerson ? _interiorExitMargin : 0f);
-            var wantsAim = _aimAction != null && _aimAction.IsPressed();
-            var next = inside
-                ? CameraMode.FirstPerson
-                : wantsAim ? CameraMode.Aim : CameraMode.ThirdPerson;
+
+            CameraMode next;
+            if (_rideTarget != null)
+                next = CameraMode.Ride;
+            else if (inside)
+                next = CameraMode.FirstPerson;
+            else
+                next = CameraMode.ThirdPerson;
 
             if (next == Mode)
                 return;
@@ -233,57 +275,18 @@ namespace FrostSpace.Features.View
             _blendDuration = next == CameraMode.ThirdPerson ? _exitSeconds : _enterSeconds;
             _blendTime = 0f;
 
-            // Выходя из третьего лица, начинаем обзор не с накопленного ранее рыскания.
-            // В прицел смотрим в сторону курсора, в первое лицо — по развороту робота.
-            if (previous == CameraMode.ThirdPerson)
+            // Выходя из вида сверху или из первого лица, начинаем обзор по развороту
+            // корпуса: камера третьего лица смотрит туда же, куда стоит робот.
+            if (previous != CameraMode.ThirdPerson && next == CameraMode.ThirdPerson)
             {
-                if (next == CameraMode.Aim)
-                    AimFromCursor();
-                else
-                {
-                    _yaw = _target.eulerAngles.y;
-                    _pitch = _startPitch;
-                }
+                _yaw = _target.eulerAngles.y;
+                _pitch = _startPitch;
             }
 
-            if (next == CameraMode.ThirdPerson)
-                UnlockCursor();
-            else
-                LockCursor();
+            LockCursor();
 
             Debug.Log($"[PlayerCameraRig] режим {previous} → {next}", this);
             ModeChanged?.Invoke(next);
-        }
-
-        /// <summary>
-        /// Куда целиться в момент входа в прицел: в сторону курсора относительно робота.
-        /// Иначе камера разворачивалась бы по последнему сохранённому рысканию и прицел
-        /// начинался бы не там, где игрок держит мышь.
-        /// </summary>
-        private void AimFromCursor()
-        {
-            _pitch = _startPitch;
-
-            var mouse = Mouse.current;
-            if (mouse == null || _camera == null)
-            {
-                _yaw = _target.eulerAngles.y;
-                return;
-            }
-
-            var ray = _camera.ScreenPointToRay(mouse.position.ReadValue());
-            var plane = new Plane(Vector3.up, _target.position + Vector3.up * _aimLookHeight);
-            if (!plane.Raycast(ray, out var enter))
-            {
-                _yaw = _target.eulerAngles.y;
-                return;
-            }
-
-            var flat = ray.GetPoint(enter) - _target.position;
-            flat.y = 0f;
-            _yaw = flat.sqrMagnitude > 0.04f
-                ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg
-                : _target.eulerAngles.y;
         }
 
         private CameraPose ComputePose(CameraMode mode, bool settled)
@@ -292,51 +295,57 @@ namespace FrostSpace.Features.View
             {
                 case CameraMode.FirstPerson:
                     return FirstPersonPose();
-                case CameraMode.Aim:
-                    return AimPose();
+                case CameraMode.Ride:
+                    return RidePose();
                 default:
-                    return ThirdPersonPose(settled);
+                    return ThirdPersonPose();
             }
         }
 
-        private CameraPose ThirdPersonPose(bool settled)
+        /// <summary>
+        /// Основной вид: камера висит за плечом и смотрит по мыши. Сферокаст от точки
+        /// над плечом не даёт ей заехать в стену — иначе у стены камера оказывалась бы
+        /// внутри геометрии и перекрытие шумело бы на весь экран.
+        ///
+        /// Тангаж поворачивает не только поворот камеры, но и всё смещение от точки
+        /// орбиты: камера облетает центр в персонаже, а не крутится на месте. Иначе
+        /// при взгляде вверх/вниз точка вращения оказывалась за спиной робота.
+        /// </summary>
+        private CameraPose ThirdPersonPose()
         {
-            var wanted = _target.position + _thirdPersonOffset;
-            var position = wanted;
-            if (settled)
-            {
-                // Сглаживание только в устоявшемся режиме: во время перехода позицию
-                // ведёт блендинг, и две инерции спорили бы друг с другом.
-                var t = 1f - Mathf.Exp(-_thirdPersonSmoothing * Time.deltaTime);
-                position = Vector3.Lerp(_camera.transform.position, wanted, t);
-            }
-
-            var lookAt = _target.position + Vector3.up * _thirdPersonLookHeight;
-            var rotation = Quaternion.LookRotation(lookAt - position, Vector3.up);
+            var pivot = _target.position + Vector3.up * _aimLookHeight;
+            var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+            var offset = rotation * _aimOffset;
+            var position = pivot + offset * Correction(offset, pivot);
             return new CameraPose(position, rotation);
         }
 
-        private CameraPose AimPose()
+        /// <summary>
+        /// Вид сверху над байком: камера едет за ним по позиции, но стоит на месте
+        /// по повороту — курс фиксирован (<c>_rideViewYaw</c>), поэтому корпус байка
+        /// разворачивается под неподвижным верхом экрана.
+        /// </summary>
+        private CameraPose RidePose()
         {
-            var pivot = _target.position + Vector3.up * _aimLookHeight;
-            var flat = Quaternion.Euler(0f, _yaw, 0f);
-            var offset = flat * _aimOffset;
-            var position = pivot + offset * Correction(offset);
-            return new CameraPose(position, Quaternion.Euler(_pitch, _yaw, 0f));
+            var pivot = _rideTarget.position + Vector3.up * 0.6f;
+            var flat = Quaternion.Euler(0f, _rideViewYaw, 0f);
+            var offset = flat * new Vector3(0f, _rideHeight, -_rideDistance);
+            var position = pivot + offset * Correction(offset, pivot);
+            return new CameraPose(position, Quaternion.Euler(_ridePitch, _rideViewYaw, 0f));
         }
 
         /// <summary>
         /// Сфера от точки над плечом до желаемой позиции камеры. Возвращает долю пути,
         /// на которую можно отъехать, не залезая в стену (1 — не мешает ничего).
         /// </summary>
-        private float Correction(Vector3 delta)
+        private float Correction(Vector3 delta, Vector3 pivot)
         {
             var distance = delta.magnitude;
             if (distance < 0.05f)
                 return 1f;
 
             if (!Physics.SphereCast(
-                    _target.position + Vector3.up * _aimLookHeight,
+                    pivot,
                     _aimCollisionRadius,
                     delta / distance,
                     out var hit,
@@ -359,10 +368,14 @@ namespace FrostSpace.Features.View
             return new CameraPose(origin + flat * _headOffset, Quaternion.Euler(_pitch, _yaw, 0f));
         }
 
+        /// <summary>
+        /// Точка в перекрестии. Считается в третьем лице каждый кадр: по ней доворачивается
+        /// голова робота, по ней же работают просвет и сканер.
+        /// </summary>
         private void UpdateAim()
         {
             _hasAim = false;
-            if (Mode != CameraMode.Aim)
+            if (Mode != CameraMode.ThirdPerson)
                 return;
 
             var ray = _camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));

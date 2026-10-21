@@ -4,8 +4,8 @@ using FrostSpace.Features.View;
 namespace FrostSpace.Features.Locomotion
 {
     /// <summary>
-    /// Прицеливание головой: пока включён режим прицела, робот поворачивает шею и голову
-    /// в сторону взгляда и «сканирует» местность.
+    /// Прицеливание головой: в третьем лице (основной вид) робот поворачивает шею и голову
+    /// в сторону взгляда из перекрестия и «сканирует» местность.
     ///
     /// Рука и корпус не трогаются вовсе — их ведёт Animator, поэтому поза не ломается,
     /// когда камеру проводят вокруг робота. Доворот идёт в мировых осях (рыскание — вокруг
@@ -18,7 +18,7 @@ namespace FrostSpace.Features.Locomotion
     public sealed class PlayerAimPose : MonoBehaviour
     {
         [Header("Ссылки")]
-        [Tooltip("Риг камеры: голова поворачивается по взгляду только в режиме Aim")]
+        [Tooltip("Риг камеры: голова поворачивается по взгляду в третьем лице")]
         [SerializeField] private PlayerCameraRig _rig;
         [Tooltip("Кость шеи — берёт на себя часть доворота")]
         [SerializeField] private Transform _neck;
@@ -69,12 +69,18 @@ namespace FrostSpace.Features.Locomotion
 
         private void LateUpdate()
         {
-            var aiming = _rig != null && _rig.Mode == CameraMode.Aim;
-            _weight = Mathf.MoveTowards(
-                _weight, aiming ? 1f : 0f, _weightSpeed * Time.deltaTime);
+            var aiming = _rig != null && _rig.Mode == CameraMode.ThirdPerson;
 
-            if (!aiming && _weight <= 0.001f)
+            if (!aiming)
             {
+                // Смена режима (посадка на байк, первое лицо): доворот снимается сразу.
+                // Плавное затухание здесь нельзя — позу наездника (RiderPose) считает
+                // другая система в том же кадре, и на переходе они складывали поворот
+                // в одной шее, из-за чего голова дёргалась.
+                _weight = 0f;
+                _yawApplied = 0f;
+                _pitchApplied = 0f;
+
                 if (_logged)
                 {
                     _logged = false;
@@ -83,6 +89,8 @@ namespace FrostSpace.Features.Locomotion
 
                 return;
             }
+
+            _weight = Mathf.MoveTowards(_weight, 1f, _weightSpeed * Time.deltaTime);
 
             if (_neck == null && _head == null)
                 return;

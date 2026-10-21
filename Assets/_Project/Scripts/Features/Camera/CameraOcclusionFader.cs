@@ -7,7 +7,8 @@ namespace FrostSpace.Features.View
     /// <summary>
     /// Круговой вырез в геометрии по перекрестию прицела.
     ///
-    /// Работает только в режиме <see cref="CameraMode.Aim"/>. Из камеры в точку прицела
+    /// Работает в третьем лице, пока удерживается ПКМ и на HUD выбран модуль
+    /// <see cref="ViewModule.Aperture"/>. Из камеры в точку прицела
     /// и по краям круга летят лучи; рендереры, в которые они попали, получают материал
     /// с шейдером <c>FrostSpace/VFX/OcclusionReveal</c>. Шейдер вырезает круг в экранном
     /// пространстве вокруг перекрестия и только те пиксели, что ближе к камере, чем точка
@@ -42,6 +43,8 @@ namespace FrostSpace.Features.View
         [SerializeField] private PlayerCameraRig _rig;
         [Tooltip("Игрок — его коллайдеры не считаются перекрытием")]
         [SerializeField] private Transform _target;
+        [Tooltip("Модули HUD: просвет работает, только когда выбран Aperture")]
+        [SerializeField] private ViewModuleSwitch _modules;
 
         [Header("Что скрывать")]
         [Tooltip("Слои, которые могут вырезаться (слой Player исключить)")]
@@ -117,6 +120,8 @@ namespace FrostSpace.Features.View
                 _view = Camera.main;
             if (_rig == null)
                 _rig = FindFirstObjectByType<PlayerCameraRig>();
+            if (_modules == null)
+                _modules = FindFirstObjectByType<ViewModuleSwitch>();
         }
 
         private void LateUpdate()
@@ -137,7 +142,10 @@ namespace FrostSpace.Features.View
                 return;
             }
 
-            var aiming = _rig != null && _rig.Mode == CameraMode.Aim;
+            // Модуль Aperture: ПКМ в третьем лице. В первом лице и на байке модули
+            // не работают, поэтому circle там не рисуется вовсе.
+            var aiming = _rig != null && _rig.IsAiming &&
+                         (_modules == null || _modules.Current == ViewModule.Aperture);
             var distance = _maxAimDistance;
             var point = _view.transform.position + _view.transform.forward * _maxAimDistance;
 

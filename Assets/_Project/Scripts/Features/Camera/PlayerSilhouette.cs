@@ -183,10 +183,13 @@ namespace FrostSpace.Features.View
             }
         }
 
-        /// <summary>В первом лице собственный силуэт только мешает.</summary>
+        /// <summary>
+        /// Силуэт нужен только в третьем лице: в первом камера стоит в голове, а на байке
+        /// корпус байка сам закрывает пробные точки и заливал наездника цианом.
+        /// </summary>
         private bool WantsSilhouette()
         {
-            return _rig == null || _rig.Mode != CameraMode.FirstPerson;
+            return _rig == null || _rig.Mode == CameraMode.ThirdPerson;
         }
 
         /// <summary>Есть ли между камерой и игроком хоть один перекрывающий рендерер.</summary>

@@ -412,6 +412,78 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.30449998, z: 0}
+--- !u!1 &21705444
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 21705445}
+  - component: {fileID: 21705446}
+  m_Layer: 0
+  m_Name: HUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &21705445
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 21705444}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &21705446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 21705444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7954b840f9138004da8f14f916a44843, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Hud.PlayerHud
+  _rig: {fileID: 1896362467}
+  _modules: {fileID: 1896362468}
+  _scanner: {fileID: 1896362469}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
+  _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
+  _crosshairLength: 11
+  _crosshairThickness: 2
+  _crosshairGap: 7
+  _crosshairAlpha: 0.6
+  _rowSpacing: 38
+  _carouselMargin: 68
+  _carouselWidth: 280
+  _carouselFill: {r: 0.13, g: 0.38, b: 0.42, a: 0.68}
+  _carouselPadding: 18
+  _rowFontSize: 21
+  _scrollSmoothing: 16
+  _labelLift: 68
+  _labelArm: 150
+  _labelNameSize: 34
+  _labelCategorySize: 20
+  _labelLineWidth: 3
+  _labelOutline: 0.24
+  _labelOutlineColor: {r: 0.02, g: 0.05, b: 0.07, a: 1}
+  _plateFill: {r: 0.13, g: 0.38, b: 0.42, a: 0.68}
+  _plateHeight: 104
+  _platePadding: 18
+  _framePadding: 14
 --- !u!1 &21950600
 GameObject:
   m_ObjectHideFlags: 0
@@ -11920,6 +11992,112 @@ CapsuleCollider:
   m_Height: 6.3936
   m_Direction: 1
   m_Center: {x: 0, y: 3.1968, z: 0}
+--- !u!1001 &1741278388
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2103839529347683281, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: _actions
+      value: 
+      objectReference: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    - target: {fileID: 2103839529347683281, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: _turnSpeed
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 2103839529347683281, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: _velocityTurnSpeed
+      value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9848078
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.1736482
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6377119628799329163, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7013698753733106489, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      propertyPath: m_Name
+      value: Hoverbike_Model
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5023982171990673170, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1741278390}
+  m_SourcePrefab: {fileID: 100100000, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+--- !u!1 &1741278389 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5023982171990673170, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
+  m_PrefabInstance: {fileID: 1741278388}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1741278390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1741278389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1765615098
 GameObject:
   m_ObjectHideFlags: 0
@@ -12031,6 +12209,7 @@ GameObject:
   - component: {fileID: 1786677830}
   - component: {fileID: 1786677829}
   - component: {fileID: 1786677828}
+  - component: {fileID: 1786677831}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -12163,10 +12342,34 @@ MonoBehaviour:
   _bodyRadius: 0.45
   _occluders:
     serializedVersion: 2
-    m_Bits: 4294967231
+    m_Bits: 183
   _fadeSeconds: 0.16
   _holdSeconds: 0.1
   _isLocalPlayer: 1
+--- !u!114 &1786677831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786677824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7753457d67b28f418afcbb1779bc7f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Ride.RiderPose
+  _pelvis: {fileID: 0}
+  _spine: {fileID: 0}
+  _neck: {fileID: 0}
+  _leanAngle: 26
+  _neckShare: 0.6
+  _gripForward: 0.86
+  _gripUp: 0.06
+  _gripHalfWidth: 0.22
+  _kneeDrop: 0.15
+  _kneeSplay: 0.35
+  _shinBack: 0.2
+  _weightSpeed: 7
 --- !u!1 &1805958810
 GameObject:
   m_ObjectHideFlags: 0
@@ -13060,6 +13263,8 @@ GameObject:
   - component: {fileID: 1896362465}
   - component: {fileID: 1896362466}
   - component: {fileID: 1896362467}
+  - component: {fileID: 1896362468}
+  - component: {fileID: 1896362469}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -13156,9 +13361,10 @@ MonoBehaviour:
   _view: {fileID: 1896362462}
   _rig: {fileID: 1896362467}
   _target: {fileID: 1786677825}
+  _modules: {fileID: 1896362468}
   _occluders:
     serializedVersion: 2
-    m_Bits: 4294967231
+    m_Bits: 183
   _revealShader: {fileID: 4800000, guid: c75c2881ce94b0342aa12d058e674040, type: 3}
   _apertureRadius: 0.9
   _maxAimDistance: 60
@@ -13256,24 +13462,68 @@ MonoBehaviour:
   _camera: {fileID: 1896362462}
   _headBone: {fileID: 246975044}
   _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  _thirdPersonOffset: {x: 0, y: 11, z: -9}
-  _thirdPersonLookHeight: 1
-  _thirdPersonSmoothing: 8
   _aimOffset: {x: 0.6, y: 0.35, z: -3.1}
-  _aimLookHeight: 1.45
+  _aimLookHeight: 1.25
   _aimCollisionRadius: 0.25
   _aimDistance: 60
   _headOffset: {x: 0, y: 0.12, z: 0.08}
+  _rideHeight: 7.5
+  _rideDistance: 5.5
+  _ridePitch: 52
+  _rideViewYaw: 0
   _enterSeconds: 0.22
   _exitSeconds: 0.38
   _interiorExitMargin: 0.5
   _sensitivity: 0.12
-  _minPitch: -80
-  _maxPitch: 80
+  _minPitch: -35
+  _maxPitch: 70
   _startPitch: 10
   _blockers:
     serializedVersion: 2
-    m_Bits: 4294967231
+    m_Bits: 183
+--- !u!114 &1896362468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1896362459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35cffe8ef7bfeab4ca6a7fcd6e75cb6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.ViewModuleSwitch
+  _start: 0
+  _scrollPerStep: 0.5
+  _stepCooldown: 0.12
+--- !u!114 &1896362469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1896362459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f06824cf65ff52b4db7f41841803499f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ObjectScanner
+  _view: {fileID: 1896362462}
+  _rig: {fileID: 1896362467}
+  _modules: {fileID: 1896362468}
+  _shader: {fileID: 4800000, guid: b373580b7ef06b14da2eba65ac68355c, type: 3}
+  _cone: {fileID: 0}
+  _targets:
+    serializedVersion: 2
+    m_Bits: 183
+  _maxDistance: 40
+  _scanSeconds: 0.6
+  _fadeSeconds: 0.16
+  _maxRenderers: 48
+  _scanAreaHalf: 0.14
+  _scanSamples: 5
+  _scanColor: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _outlineWidth: 2.6
 --- !u!1 &1896362969
 GameObject:
   m_ObjectHideFlags: 0
@@ -17335,3 +17585,5 @@ SceneRoots:
   - {fileID: 1406194242}
   - {fileID: 1897660177}
   - {fileID: 1497351646}
+  - {fileID: 21705445}
+  - {fileID: 1741278388}

@@ -5,12 +5,16 @@ using FrostSpace.Features.View;
 namespace FrostSpace.Features.Locomotion
 {
     /// <summary>
-    /// Движение робота по земле от третьего лица.
+    /// Движение робота по земле.
     ///
     /// Вектор скорости поворачивается к вводу отдельно от корпуса: на резкой смене
     /// направления робот не «заносится» боком, а доворачивает траекторию. Animator
     /// получает Moving/Sprinting и скорость «фактическая скорость / базовая скорость
     /// клипа», поэтому стопа не проскальзывает при разгоне и торможении.
+    ///
+    /// Базис WASD — всегда рыскание камеры. Раньше он «замораживался» при выходе из дома,
+    /// чтобы зажатый W не разворачивал игрока; теперь третий вид сам управляется мышью,
+    /// поэтому базис одинаков во всех режимах и заморозка не нужна.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public sealed class RobotLocomotion : MonoBehaviour
@@ -23,7 +27,7 @@ namespace FrostSpace.Features.Locomotion
         [SerializeField] private Transform _camera;
         [Tooltip("Animator визуальной модели — дочерний объект, например R1_PolarMechanic_Model")]
         [SerializeField] private Animator _animator;
-        [Tooltip("Риг камеры: в прицеле и в первом лице корпус смотрит по камере, а WASD становится стрейфом")]
+        [Tooltip("Риг камеры: базис WASD — рыскание камеры, в первом лице корпус идёт по ней")]
         [SerializeField] private PlayerCameraRig _rig;
 
         [Header("Скорости, м/с")]
@@ -55,8 +59,8 @@ namespace FrostSpace.Features.Locomotion
         private bool _inputOverridden;
         private Vector2 _overrideMove;
         private bool _overrideSprint;
-        private float _basisYaw;
-        private bool _basisLocked;
+        private bool _rideOverride;
+        private float _loggedBasisYaw = float.NaN;
 
         public float PlanarSpeed => _planarVelocity.magnitude;
         public float AnimatorSpeed => _animatorSpeed;
@@ -77,6 +81,30 @@ namespace FrostSpace.Features.Locomotion
             _inputOverridden = false;
             _overrideMove = Vector2.zero;
             _overrideSprint = false;
+        }
+
+        /// <summary>
+        /// Пока игрок на транспорте, ходьба выключена: коллайдер отключается, чтобы
+        /// персонаж жёстко ехал вместе с байком, а не спорил с ним за позицию.
+        /// </summary>
+        public void SetRideOverride(bool riding)
+        {
+            if (_rideOverride == riding)
+                return;
+
+            _rideOverride = riding;
+            _planarVelocity = Vector3.zero;
+            _verticalVelocity = 0f;
+            _controller.enabled = !riding;
+
+            if (_animator != null)
+            {
+                _animator.SetBool(MovingId, false);
+                _animator.SetBool(SprintingId, false);
+                _animator.speed = 1f;
+            }
+
+            Debug.Log(riding ? "[RobotLocomotion] посадка" : "[RobotLocomotion] сход", this);
         }
 
         private void Awake()
@@ -117,6 +145,9 @@ namespace FrostSpace.Features.Locomotion
 
         private void Update()
         {
+            if (_rideOverride)
+                return;
+
             var input = _inputOverridden
                 ? _overrideMove
                 : (_moveAction != null ? _moveAction.ReadValue<Vector2>() : Vector2.zero);
@@ -148,7 +179,7 @@ namespace FrostSpace.Features.Locomotion
 
             if (_rig != null && _rig.FacesCamera)
             {
-                // Прицел и первое лицо: корпус доворачивается по рысканию камеры,
+                // Первое лицо: корпус доворачивается по рысканию камеры,
                 // поэтому WASD читается как стрейф, как в шутере.
                 var facing = Quaternion.Euler(0f, _rig.ViewYaw, 0f);
                 transform.rotation = Quaternion.RotateTowards(
@@ -211,9 +242,7 @@ namespace FrostSpace.Features.Locomotion
 
         private Vector3 CameraRelative(Vector2 input)
         {
-            // Базис обновляется и на простое: именно там он выравнивается по камере
-            // после выхода из первого лица или прицела.
-            var yaw = MovementBasisYaw(input);
+            var yaw = BasisYaw();
             if (input.sqrMagnitude < 0.001f)
                 return Vector3.zero;
 
@@ -222,40 +251,37 @@ namespace FrostSpace.Features.Locomotion
         }
 
         /// <summary>
-        /// Рыскание, по которому читается WASD.
-        ///
-        /// В первом лице и прицеле — рыскание камеры. В третьем лице — плоское «вперёд»
-        /// камеры, но переключается на него только после того, как игрок отпустил клавиши:
-        /// иначе, выходя из дома с зажатым W, игрок в тот же кадр пошёл бы в обратную
-        /// сторону (в третьем лице W — это «вверх по экрану», а не «вперёд по взгляду»)
-        /// и снова вошёл бы в дверь.
+        /// Рыскание, по которому читается WASD. В игре это всегда рыскание рига:
+        /// камера третьего лица смотрит туда же, куда ведёт мышь, поэтому базис
+        /// не меняется при переходе между третьим и первым лицом и заморозка не нужна.
         /// </summary>
-        private float MovementBasisYaw(Vector2 input)
+        private float BasisYaw()
         {
-            if (_rig != null && _rig.FacesCamera)
+            float yaw;
+            if (_rig != null)
             {
-                _basisYaw = _rig.ViewYaw;
-                _basisLocked = true;
-                return _basisYaw;
+                yaw = _rig.ViewYaw;
+            }
+            else
+            {
+                var cameraForward = _camera != null ? _camera.forward : Vector3.forward;
+                var flat = Vector3.ProjectOnPlane(cameraForward, Vector3.up);
+                yaw = flat.sqrMagnitude > 1e-4f
+                    ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg
+                    : 0f;
             }
 
-            var cameraForward = _camera != null ? _camera.forward : Vector3.forward;
-            var flat = Vector3.ProjectOnPlane(cameraForward, Vector3.up);
-            var cameraYaw = flat.sqrMagnitude > 1e-4f
-                ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg
-                : 0f;
-
-            if (_rig == null || input.sqrMagnitude < 0.001f)
+            if (!float.IsNaN(_loggedBasisYaw) && Mathf.Abs(Mathf.DeltaAngle(_loggedBasisYaw, yaw)) > 15f)
             {
-                _basisYaw = cameraYaw;
-                _basisLocked = false;
+                _loggedBasisYaw = yaw;
+                Debug.Log($"[RobotLocomotion] базис={yaw:0.#}°", this);
             }
-            else if (!_basisLocked)
+            else if (float.IsNaN(_loggedBasisYaw))
             {
-                _basisYaw = cameraYaw;
+                _loggedBasisYaw = yaw;
             }
 
-            return _basisYaw;
+            return yaw;
         }
     }
 }

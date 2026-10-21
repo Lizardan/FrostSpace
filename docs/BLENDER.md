@@ -237,6 +237,31 @@ build_level.py -> Content/Models/Level/*.fbx (19 шт.) -> плоские нор
   временных кадров — `STYLE.md`.
 - В `Assets/` не должно быть `.blend` и скриншотов: уровень живёт в скриптах и FBX.
 
+## Ховербайк FrostSpace
+
+Статика того же конвейера, но отдельным скриптом: файл нужен один, в раскладку уровня он
+не входит, поэтому `build_level.py` его не трогает.
+
+```bat
+set PYTHONUTF8=1
+"%BLENDER%" --background --factory-startup --python Tools/Blender/build_hoverbike.py
+```
+
+- Геометрия — `hoverbike_parts.py` (`level_lib.LevelBuilder`, палитра `Level_*`), выход —
+  `Assets/_Project/Content/Models/Level/Hoverbike.fbx`, постпроцессор уровня подставит
+  материалы как остальному статическому уровню.
+- Нос смотрит в Blender −Y: после `export_static` (зеркало X) это Unity +Z, то есть
+  `transform.forward` байка. Ориентацию проверяй асимметричной деталью — подножкой
+  и выхлопом по правому борту: bbox отражение по X не ловит (ADR 0007).
+- Низ корпуса поднят на `hoverbike_parts.CLEARANCE` (0.53 м): это парение, а не ошибка —
+  подушка под днищем рисуется шейдером `HoverCushion`. Детали при этом все посажены на
+  корпус; правило «ничего не парит» — про них (`STYLE.md`).
+- Контроль (2026-10-20, Blender 5.2.2): `verts=448 tris=820 shells=19`, габарит
+  `(1.040, 3.014, 0.726)` м, non-manifold = 0.
+- Префабы собираются меню `FrostSpace → Ride`: `Build Hoverbike Mock` (вариант A из
+  примитивов) и `Build Hoverbike Prefab B` (обёртка над FBX: корень + компоненты +
+  подушка). Код игры от варианта не зависит.
+
 ## Роботы FrostSpace
 
 Анимация в проекте уже есть — это двадцать роботов (`R1_PolarMechanic` … `R20_Cogsmith`); R6–R20 — вторая партия, принята 2026-10-18.
