@@ -19,6 +19,8 @@ namespace FrostSpace.Features.Locomotion
         [Tooltip("Насколько стопа может быть выше минимальной, чтобы считаться на земле")]
         [SerializeField] private float _contactHeight = 0.03f;
         [SerializeField] private float _contactRiseLimit = 0.25f;
+        [Tooltip("После замеров проверить прыжок: высота вершины и время полёта")]
+        [SerializeField] private bool _probeJump = true;
 
         private RobotLocomotion _locomotion;
         private Transform _foot;
@@ -45,6 +47,8 @@ namespace FrostSpace.Features.Locomotion
             yield return Measure("sprint", true);
             yield return new WaitForSeconds(0.4f);
             yield return MeasureSteer();
+            if (_probeJump)
+                yield return MeasureJump();
             _locomotion.ClearInputOverride();
             Debug.Log("PROBE done");
         }
@@ -142,6 +146,36 @@ namespace FrostSpace.Features.Locomotion
             Debug.Log(string.Format(
                 "PROBE steer maxAngle={0:F1} avgAngle={1:F1} samples={2}",
                 maxAngle, samples > 0 ? angleSum / samples : 0f, samples));
+        }
+
+        /// <summary>
+        /// Прыжок без клавиатуры: компонент сам ставит запрос и меряет вершину
+        /// траектории и время от нажатия до приземления.
+        /// </summary>
+        private IEnumerator MeasureJump()
+        {
+            _locomotion.ClearInputOverride();
+            yield return new WaitForSeconds(0.5f);
+
+            var startY = transform.position.y;
+            var start = Time.time;
+            var peak = 0f;
+            var leftGround = false;
+            _locomotion.RequestJump();
+
+            while (Time.time - start < 2.5f)
+            {
+                yield return null;
+                peak = Mathf.Max(peak, transform.position.y - startY);
+                if (_locomotion.IsAirborne)
+                    leftGround = true;
+                if (leftGround && !_locomotion.IsAirborne && Time.time - start > 0.2f)
+                    break;
+            }
+
+            Debug.Log(string.Format(
+                "PROBE jump height={0:F2} airtime={1:F2} airborne={2}",
+                peak, Time.time - start, _locomotion.IsAirborne));
         }
 
         /// <summary>Кость ищется по имени: иерархия визуала может меняться.</summary>

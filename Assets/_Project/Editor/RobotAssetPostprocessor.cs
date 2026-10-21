@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -34,6 +36,31 @@ namespace FrostSpace.Editor
             },
         };
 
+        /// <summary>
+        /// Прыжок есть только у модели игрока: NPC не прыгают, а лишние клипы в
+        /// каждом FBX раздували бы импорт. Клипы того же ActionForge-пака.
+        /// </summary>
+        private static readonly ModelImporterClipAnimation[] JumpClips =
+        {
+            new ModelImporterClipAnimation
+            {
+                name = "JumpStart", takeName = "jump_start",
+                firstFrame = 0, lastFrame = 40, loopTime = false,
+            },
+            new ModelImporterClipAnimation
+            {
+                name = "JumpLoop", takeName = "jump_loop",
+                firstFrame = 0, lastFrame = 75, loopTime = true,
+            },
+            new ModelImporterClipAnimation
+            {
+                name = "JumpLand", takeName = "jump_land",
+                firstFrame = 0, lastFrame = 38, loopTime = false,
+            },
+        };
+
+        private const string PlayerRobot = "R1_PolarMechanic";
+
         private void OnPreprocessModel()
         {
             if (!IsRobot(assetPath))
@@ -46,7 +73,12 @@ namespace FrostSpace.Editor
             importer.animationType = ModelImporterAnimationType.Generic;
             importer.importAnimation = true;
             importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-            importer.clipAnimations = CloneClips();
+
+            var clips = new List<ModelImporterClipAnimation>(Clips);
+            if (Path.GetFileNameWithoutExtension(assetPath) == PlayerRobot)
+                clips.AddRange(JumpClips);
+
+            importer.clipAnimations = CloneClips(clips);
         }
 
         private void OnPostprocessModel(GameObject root)
@@ -76,12 +108,13 @@ namespace FrostSpace.Editor
             material.SetColor(property, color.linear);
         }
 
-        private static ModelImporterClipAnimation[] CloneClips()
+        private static ModelImporterClipAnimation[] CloneClips(
+            IReadOnlyList<ModelImporterClipAnimation> sourceClips)
         {
-            var copy = new ModelImporterClipAnimation[Clips.Length];
-            for (var i = 0; i < Clips.Length; i++)
+            var copy = new ModelImporterClipAnimation[sourceClips.Count];
+            for (var i = 0; i < sourceClips.Count; i++)
             {
-                var source = Clips[i];
+                var source = sourceClips[i];
                 copy[i] = new ModelImporterClipAnimation
                 {
                     name = source.name,

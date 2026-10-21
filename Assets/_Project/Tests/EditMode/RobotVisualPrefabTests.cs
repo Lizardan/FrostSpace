@@ -92,6 +92,61 @@ namespace FrostSpace.Tests
             }
         }
 
+        /// <summary>
+        /// Прыжок есть только у модели игрока: остальные роботы — NPC, им прыжок
+        /// не нужен, и лишние клипы в их FBX не появляются.
+        /// </summary>
+        [Test]
+        public void PlayerRobot_HasJumpClipsAndStates()
+        {
+            const string robot = "R1_PolarMechanic";
+            var modelPath = ModelFolder + "/" + robot + ".fbx";
+            var clips = AssetDatabase.LoadAllAssetsAtPath(modelPath)
+                .OfType<AnimationClip>()
+                .Where(clip => !clip.name.StartsWith("__preview"))
+                .GroupBy(clip => clip.name)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            foreach (var name in new[] { "JumpStart", "JumpLoop", "JumpLand" })
+                Assert.IsTrue(clips.ContainsKey(name), modelPath + ": нет клипа " + name);
+
+            Assert.AreEqual(40f / 30f, clips["JumpStart"].length, 0.02f);
+            Assert.AreEqual(75f / 30f, clips["JumpLoop"].length, 0.02f);
+            Assert.AreEqual(38f / 30f, clips["JumpLand"].length, 0.02f);
+            Assert.IsTrue(
+                AnimationUtility.GetAnimationClipSettings(clips["JumpLoop"]).loopTime,
+                "JumpLoop должен зацикливаться");
+            Assert.IsFalse(
+                AnimationUtility.GetAnimationClipSettings(clips["JumpStart"]).loopTime,
+                "JumpStart не должен зацикливаться");
+            Assert.IsFalse(
+                AnimationUtility.GetAnimationClipSettings(clips["JumpLand"]).loopTime,
+                "JumpLand не должен зацикливаться");
+
+            foreach (var name in new[] { "JumpStart", "JumpLoop", "JumpLand" })
+                Assert.IsFalse(clips[name].hasRootCurves, "клип " + name + " должен быть in-place");
+
+            var path = PrefabFolder + "/" + robot + "_Model.prefab";
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            var animator = prefab.GetComponent<Animator>();
+            var controller = animator.runtimeAnimatorController as AnimatorController;
+            Assert.IsNotNull(controller, path + ": controller не AnimatorController");
+
+            var stateNames = controller.layers[0].stateMachine.states
+                .Select(state => state.state.name)
+                .ToArray();
+            foreach (var state in new[] { "JumpStart", "JumpLoop", "JumpLand" })
+                CollectionAssert.Contains(stateNames, state, path + ": нет состояния " + state);
+
+            var jump = controller.parameters.FirstOrDefault(parameter => parameter.name == "Jump");
+            var airborne = controller.parameters.FirstOrDefault(
+                parameter => parameter.name == "Airborne");
+            Assert.IsNotNull(jump, path + ": нет параметра Jump");
+            Assert.AreEqual(AnimatorControllerParameterType.Trigger, jump.type);
+            Assert.IsNotNull(airborne, path + ": нет параметра Airborne");
+            Assert.AreEqual(AnimatorControllerParameterType.Bool, airborne.type);
+        }
+
         [Test]
         public void RobotModel_HasThreeInPlaceClips()
         {

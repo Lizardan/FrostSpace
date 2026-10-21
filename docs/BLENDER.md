@@ -262,6 +262,32 @@ set PYTHONUTF8=1
   примитивов) и `Build Hoverbike Prefab B` (обёртка над FBX: корень + компоненты +
   подушка). Код игры от варианта не зависит.
 
+## Мотоцикл FrostSpace
+
+```bat
+set PYTHONUTF8=1
+"%BLENDER%" --background --factory-startup --python Tools/Blender/build_motorcycle.py
+```
+
+- Геометрия — `motorcycle_parts.py` (`level_lib.LevelBuilder`, палитра `Level_*`), выход —
+  `Content/Models/Level/Motorcycle.fbx`: три узла `MotorcycleBody`, `MotorcycleWheelF`,
+  `MotorcycleWheelR`. Колесо крутится в Unity, поэтому у него **свой pivot**: меш
+  строится вокруг нуля, а `obj.location` ставится в ось колеса.
+- **Не сдвигай вершины колеса на `−center`.** Первая версия сдвигала: объект уезжал в
+  `+center`, меш — в `−center`, и оба колеса рисовались в центре рамы, а крылья висели
+  в воздухе. Проверка после импорта: `mesh.bounds.center ≈ (0, 0, 0)` в локальных
+  координатах, `transform.localPosition` — ось (0, 0.38, ±0.78/0.74).
+- Нос — Blender −Y → Unity +Z (`export_static`, зеркало X по ADR 0007).
+- Контроль (2026-10-21, Blender 5.2.2): body 1 696 тр., каждое колесо 464 тр.,
+  габарит колеса `(0.245, 0.760, 0.741)` м, общий bbox `0.76 × 1.13 × 2.55` м.
+- Префаб `Prefabs/Ride/Motorcycle_Model` собирается в редакторе: корень +
+  `CharacterController` + `Motorcycle` + `MotorcycleRideVisual`, дети `Visual`
+  (FBX, внутри него `Seat`), `ExitPoint`, `Headlight`, `BrakeLight`, `SnowSprayL/R`,
+  `Exhaust`. `Seat` живёт **внутри** `Visual`: иначе наездник не качается и не кренится
+  вместе с байком.
+- Обломки и занос открытого вида меню — `build_wreck_parts.py` и `build_menu_open.py`
+  (те же `Level_*`; в сцене масштабируются как пропы).
+
 ## Роботы FrostSpace
 
 Анимация в проекте уже есть — это двадцать роботов (`R1_PolarMechanic` … `R20_Cogsmith`); R6–R20 — вторая партия, принята 2026-10-18.

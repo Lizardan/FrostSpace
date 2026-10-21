@@ -21,6 +21,8 @@ namespace FrostSpace.Features.Locomotion
     {
         private static readonly int MovingId = Animator.StringToHash("Moving");
         private static readonly int SprintingId = Animator.StringToHash("Sprinting");
+        private static readonly int JumpId = Animator.StringToHash("Jump");
+        private static readonly int AirborneId = Animator.StringToHash("Airborne");
 
         [Header("Ссылки")]
         [SerializeField] private InputActionAsset _actions;
@@ -42,6 +44,18 @@ namespace FrostSpace.Features.Locomotion
         [Tooltip("Скорость доворота вектора скорости, градусов/с")]
         [SerializeField] private float _velocityTurnSpeed = 800f;
 
+        [Header("Прыжок")]
+        [Tooltip("Высота прыжка по вершине траектории, м")]
+        [SerializeField] private float _jumpHeight = 1.2f;
+        [Tooltip("Пауза приседа перед импульсом, с: клип JumpStart успевает начаться")]
+        [SerializeField] private float _jumpAnticipation = 0.08f;
+        [Tooltip("Сколько нажатие живёт в буфере до приземления, с")]
+        [SerializeField] private float _jumpBuffer = 0.12f;
+        [Tooltip("Сколько после схода с края ещё можно прыгнуть, с")]
+        [SerializeField] private float _coyoteTime = 0.1f;
+        [Tooltip("Доля управления в воздухе: 1 — как на земле")]
+        [SerializeField, Range(0f, 1f)] private float _airControl = 0.65f;
+
         // Базовые скорости клипов, м/с: Animator.speed подгоняется так, чтобы
         // стопа не проскальзывала. В сцене зафиксирован разовый замер в Unity;
         // дефолты ниже — ориентир из Tools/Blender/measure_locomotion.py.
@@ -52,6 +66,7 @@ namespace FrostSpace.Features.Locomotion
         private CharacterController _controller;
         private InputAction _moveAction;
         private InputAction _sprintAction;
+        private InputAction _jumpAction;
         private Vector3 _planarVelocity;
         private float _verticalVelocity;
         private float _animatorSpeed = 1f;
@@ -61,9 +76,24 @@ namespace FrostSpace.Features.Locomotion
         private bool _overrideSprint;
         private bool _rideOverride;
         private float _loggedBasisYaw = float.NaN;
+        private float _lastGroundedAt = -999f;
+        private float _jumpBufferedAt = -999f;
+        private float _jumpQueuedAt = -999f;
+        private bool _jumpPending;
+        private bool _airborne;
 
         public float PlanarSpeed => _planarVelocity.magnitude;
         public float AnimatorSpeed => _animatorSpeed;
+        public bool IsAirborne => _airborne;
+
+        /// <summary>
+        /// Поставить прыжок в очередь так же, как это делает Space. Нужен
+        /// проверочному стенду: он меряет высоту и время полёта без клавиатуры.
+        /// </summary>
+        public void RequestJump()
+        {
+            _jumpBufferedAt = Time.time;
+        }
 
         /// <summary>Фактический вектор движения по земле — для проверок, не для геймплея.</summary>
         public Vector3 PlanarVelocity => _planarVelocity;
@@ -95,12 +125,16 @@ namespace FrostSpace.Features.Locomotion
             _rideOverride = riding;
             _planarVelocity = Vector3.zero;
             _verticalVelocity = 0f;
+            _jumpPending = false;
+            _airborne = false;
+            _jumpBufferedAt = -999f;
             _controller.enabled = !riding;
 
             if (_animator != null)
             {
                 _animator.SetBool(MovingId, false);
                 _animator.SetBool(SprintingId, false);
+                _animator.SetBool(AirborneId, false);
                 _animator.speed = 1f;
             }
 
@@ -128,6 +162,7 @@ namespace FrostSpace.Features.Locomotion
             {
                 _moveAction = source.FindAction("Player/Move");
                 _sprintAction = source.FindAction("Player/Sprint");
+                _jumpAction = source.FindAction("Player/Jump");
             }
         }
 
@@ -135,12 +170,14 @@ namespace FrostSpace.Features.Locomotion
         {
             _moveAction?.Enable();
             _sprintAction?.Enable();
+            _jumpAction?.Enable();
         }
 
         private void OnDisable()
         {
             _moveAction?.Disable();
             _sprintAction?.Disable();
+            _jumpAction?.Disable();
         }
 
         private void Update()
@@ -155,6 +192,7 @@ namespace FrostSpace.Features.Locomotion
                 ? _overrideSprint
                 : (_sprintAction != null && _sprintAction.IsPressed());
             var direction = CameraRelative(input);
+            UpdateJump();
 
             // Скорость и направление разведены: разгон/торможение меняют длину
             // вектора, steering — только его направление. Это убирает «занос»
@@ -163,7 +201,8 @@ namespace FrostSpace.Features.Locomotion
             var targetSpeed = direction.sqrMagnitude > 0.001f
                 ? (wantsSprint ? _sprintSpeed : _walkSpeed)
                 : 0f;
-            var rate = targetSpeed > currentSpeed ? _acceleration : _brake;
+            var control = _airborne ? _airControl : 1f;
+            var rate = (targetSpeed > currentSpeed ? _acceleration : _brake) * control;
             var newSpeed = Mathf.MoveTowards(
                 currentSpeed, targetSpeed, rate * Time.deltaTime);
 
@@ -173,7 +212,7 @@ namespace FrostSpace.Features.Locomotion
             var newDirection = direction.sqrMagnitude > 0.001f
                 ? Vector3.RotateTowards(
                     currentDirection, direction,
-                    _velocityTurnSpeed * Mathf.Deg2Rad * Time.deltaTime, 0f)
+                    _velocityTurnSpeed * control * Mathf.Deg2Rad * Time.deltaTime, 0f)
                 : currentDirection;
             _planarVelocity = newDirection * newSpeed;
 
@@ -193,19 +232,88 @@ namespace FrostSpace.Features.Locomotion
                     transform.rotation, rotation, _turnSpeed * Time.deltaTime);
             }
 
-            if (_controller.isGrounded && _verticalVelocity < 0f)
-                _verticalVelocity = -2f;
+            if (_controller.isGrounded)
+            {
+                _lastGroundedAt = Time.time;
+                if (_verticalVelocity < 0f)
+                    _verticalVelocity = -2f;
+            }
             _verticalVelocity += Physics.gravity.y * Time.deltaTime;
 
             var motion = _planarVelocity;
             motion.y = _verticalVelocity;
             _controller.Move(motion * Time.deltaTime);
 
+            // Приземление засчитываем только после реального импульса: в кадре
+            // приседа персонаж ещё стоит на земле, и без этого флага прыжок
+            // отменялся бы до старта.
+            if (_airborne && _controller.isGrounded && _verticalVelocity <= 0f &&
+                Time.time - _jumpQueuedAt > _jumpAnticipation + 0.05f)
+            {
+                _airborne = false;
+                _animator.SetBool(AirborneId, false);
+            }
+
             UpdateAnimator(wantsSprint);
+        }
+
+        /// <summary>
+        /// Прыжок с буфером и coyote time: нажатие в воздухе запоминается на
+        /// короткое время, а сход с края не отбирает прыжок мгновенно.
+        /// Импульс выдаётся не сразу, а через присед — так JumpStart успевает
+        /// начаться и вес прыжка читается.
+        /// </summary>
+        private void UpdateJump()
+        {
+            if (_jumpAction != null && _jumpAction.WasPressedThisFrame())
+                _jumpBufferedAt = Time.time;
+
+            if (_jumpPending)
+            {
+                if (Time.time - _jumpQueuedAt < _jumpAnticipation)
+                    return;
+
+                if (_controller.isGrounded ||
+                    Time.time - _lastGroundedAt <= _coyoteTime)
+                {
+                    _jumpPending = false;
+                    _airborne = true;
+                    _verticalVelocity = Mathf.Sqrt(
+                        2f * -Physics.gravity.y * Mathf.Max(0.05f, _jumpHeight));
+                    _animator.SetBool(AirborneId, true);
+                }
+                else
+                {
+                    _jumpPending = false;
+                    _animator.SetBool(AirborneId, false);
+                }
+
+                return;
+            }
+
+            if (_airborne || Time.time - _jumpBufferedAt > _jumpBuffer)
+                return;
+
+            if (!_controller.isGrounded && Time.time - _lastGroundedAt > _coyoteTime)
+                return;
+
+            _jumpBufferedAt = -999f;
+            _jumpPending = true;
+            _jumpQueuedAt = Time.time;
+            _animator.SetTrigger(JumpId);
         }
 
         private void UpdateAnimator(bool wantsSprint)
         {
+            // В прыжке клип ведёт Animator, а не подгонка шага: иначе скорость
+            // клипа прыжка зависела бы от горизонтальной скорости.
+            if (_airborne || _jumpPending)
+            {
+                _animatorSpeed = 1f;
+                _animator.speed = 1f;
+                return;
+            }
+
             var speed = _planarVelocity.magnitude;
             var moving = speed > 0.08f;
 

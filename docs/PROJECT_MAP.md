@@ -30,9 +30,11 @@ FrostSpace/
    │  │  │  │                    # ViewModule + ViewModuleSwitch (ПКМ-модули: первый/третий вид)
    │  │  │  ├─ Hud/              # PlayerHud — карусель модулей, подписи, подсказки
    │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
-   │  │  │  ├─ Menu/             # MainMenuScreen, MenuCameraOrbit, TechButtonFx, BeaconPulse
+   │  │  │  ├─ Menu/             # MainMenuScreen, MenuViewSwitch (два вида меню), MenuCameraOrbit,
+   │  │  │  │                    # MenuCameraSweep (проезд открытого вида), TechButtonFx, BeaconPulse
    │  │  │  ├─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
-   │  │  │  ├─ Ride/             # Hoverbike (посадка/сход, управление), HoverbikeGlow
+   │  │  │  ├─ Ride/             # Hoverbike, HoverbikeGlow, Motorcycle, MotorcycleRideVisual,
+   │  │  │  │                    # RiderPose (посадка верхом поверх клипа)
    │  │  │  └─ Scan/             # ObjectScanner + ScanTarget (сканирование объектов)
    │  │  ├─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │  │                       # перехода и единственный вызывающий SceneManager),
@@ -53,13 +55,15 @@ FrostSpace/
    │     ├─ Models/Menu/            # ShipWreck_Mesh.asset — процедурный меш диорамы меню
    │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал
-   │     ├─ Prefabs/Ride/           # Hoverbike_A_Model (макет) и Hoverbike_B_Model (FBX) — визуал + компоненты
+   │     ├─ Prefabs/Ride/           # Hoverbike_A_Model (макет), Hoverbike_B_Model (FBX),
+   │     │                          # Motorcycle_Model (FBX + контроллер, эффекты, свет)
    │     ├─ Materials/Level/        # материалы уровня Level_*
    │     ├─ Materials/Menu/         # материалы диорамы меню
    │     ├─ Materials/VFX/          # материалы эффектов
    │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
-   │     └─ Art|UI|Data/            # по мере появления
+   │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню
+   │     └─ Art|UI/                  # по мере появления
    ├─ ThirdParty/<Pack>/         # импортированное из AssetSource, с SOURCE.md; пока пусто
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
    ├─ Plugins/Roslyn/            # DLL для execute_code Unity MCP
@@ -99,7 +103,7 @@ FrostSpace/
 |---|---|
 | Версия Unity | `ProjectSettings/ProjectVersion.txt` |
 | Пакеты | `Packages/manifest.json`, `Packages/packages-lock.json` |
-| Render pipeline | `Assets/Settings/PC_RPAsset.asset`, `Mobile_RPAsset.asset`, `QualitySettings.asset` |
+| Render pipeline | `Assets/Settings/FrostSpace_RPAsset.asset`, `FrostSpace_Renderer.asset`, `QualitySettings.asset` (единый уровень `Default`, ADR 0008) |
 | Цветовое пространство | `ProjectSettings/ProjectSettings.asset` (`m_ActiveColorSpace`) |
 | Play Mode / сериализация | `ProjectSettings/EditorSettings.asset` |
 | Ввод | `Assets/InputSystem_Actions.inputactions` |
@@ -112,11 +116,13 @@ FrostSpace/
 | Происхождение ригов животных | `Content/Models/RobotAnimals/SOURCE.md` |
 | Модели уровня (FBX) | `Content/Models/Level/`, палитра — `Content/Materials/Level/` |
 | Сборка уровня (Blender) | `Tools/Blender/build_level.py` (+ `level_lib/parts/layout`), превью — `AssetSource/Previews/Level/` |
-| Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `Game`) |
+| Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `Game`): скорости, прыжок (буфер, coyote time, присед) |
 | Маршрут NPC и животных | вейпоинты в `NpcController` на `NPC_R*` и `AN_<Species>`; у `AN_Eagle`/`AN_Piranha` — `AirPatrolController` с высотой; точки — дочерние `WP_*` |
 | Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView`, прицел — `PlayerAimPose` (ADR 0010) |
 | Модули камеры (ПКМ) | `ViewModuleSwitch` + `ViewModule` в `Features/Camera/`, карусель — `ModuleCarousel` в `ViewModule.cs`, показ — `PlayerHud` (`Features/Hud/`) |
 | Ховербайк | `Hoverbike` + `HoverbikeGlow` в `Features/Ride/`; префабы — `Content/Prefabs/Ride/Hoverbike_A_Model`, `Hoverbike_B_Model`; сборка префабов — меню `FrostSpace → Ride` (`Editor/HoverbikeMockBuilder.cs`) |
+| Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
+| Виды главного меню | `MenuViewSwitch` на `MenuFlow` (ссылки на корни и камеры видов), переключатель строит `MainMenuScreen`; открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013) |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |

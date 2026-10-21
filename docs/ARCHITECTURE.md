@@ -7,12 +7,13 @@
 
 - `FrostSpace.Features` (`Assets/_Project/Scripts/Features/`):
   `Locomotion/RobotLocomotion.cs` — движение через kinematic `CharacterController`,
-  базис WASD фиксируется при выходе из 1-го лица/прицела (`_basisYaw`/`_basisLocked`),
+  базис WASD — рыскание камеры, прыжок физикой (буфер, coyote time, присед, воздушное
+  управление) поверх клипов `JumpStart`/`JumpLoop`/`JumpLand`,
   `Locomotion/PlayerAimPose.cs` — поворот шеи и головы к прицелу (рука и корпус остаются
   за Animator; порядок выполнения 200),
   `Locomotion/LocomotionDiagnostics.cs` — стенд замера (`PROBE`) в Play Mode,
   `Camera/PlayerCameraRig.cs` — единственный владелец `Main Camera`: три режима
-  (`ThirdPerson`/`Aim`/`FirstPerson`), блендинг поз, mouse-look, курсор, отвод от стен;
+  (`ThirdPerson`/`FirstPerson`/`Ride`), блендинг поз, mouse-look, курсор, отвод от стен;
   `Camera/CameraMode.cs` — `enum CameraMode`, `CameraPose` и чистая `ViewBlend`;
   `Camera/InteriorZone.cs` — объём интерьера на `BoxCollider`-триггере;
   `Camera/PlayerSilhouette.cs` — x-ray силуэт локального игрока (`ZTest Greater`);
@@ -23,7 +24,15 @@
   составного объекта, получающие вырез вместе),
   `Npc/NpcController.cs` — NPC по маршруту: точка → пауза 2–10 с → следующая;
   `Npc/AirPatrolController.cs` — воздушный NPC (орёл, пиранья) по маршруту с высотой,
-  поворот только по рысканью.
+  поворот только по рысканью;
+  `Ride/Hoverbike.cs` — ховербайк: посадка по E, WASD в экранных осях, вид сверху;
+  `Ride/Motorcycle.cs` — мотоцикл: WASD в экранных осях, корпус доворачивается к движению;
+  `Ride/MotorcycleRideVisual.cs` — вращение колёс по пройденному пути, крен, подвеска,
+  фара, стоп-сигнал, снег из-под колеса;
+  `Ride/RiderPose.cs` — процедурная поза наездника поверх клипа (общая для обоих байков);
+  `Menu/MenuViewSwitch.cs` — два вида главного меню в одной сцене (диорама и открытая
+  площадка) с затемнением на переходе; `Menu/MenuCameraSweep.cs` — проезд камеры
+  открытого вида.
 - `FrostSpace.Editor` (`Assets/_Project/Editor/`): `RobotAssetPostprocessor` — импорт FBX
   роботов (имена клипов, loop, sRGB); `AnimalAssetPostprocessor` — импорт FBX животных
   (клипы `Idle`/`Move`, loop, sRGB); `LevelAssetPostprocessor` — импорт моделей уровня
@@ -62,8 +71,11 @@
   и двух подряд кадров короче `_warmupFrameSeconds`. Без этого в WebGL прогрев первого
   кадра (компиляция шейдеров, атлас шрифта) съедал больше половины полосы до появления
   экрана.
-- `Assets/Scenes/MainMenu.unity` — главное меню: облётная камера над диорамой,
-  `MenuDiorama`, снег, Volume и `MenuFlow` (`MainMenuScreen`).
+- `Assets/Scenes/MainMenu.unity` — главное меню: два вида в одной сцене — диорама
+  (`MenuDiorama`, облётная камера) и открытая площадка (занос, обломки корабля, ходящие
+  роботы, проезд `MenuCameraSweep`). Активен ровно один корень и одна камера;
+  переключатель `01 DIORAMA / 02 OPEN` строит `MainMenuScreen`, подмену видов делает
+  `MenuViewSwitch` через затемнение. Снег, Volume и `MenuFlow` — общие для обоих видов.
 - Переход между сценами — единственный сервис `Core/SceneController.cs` (см. ADR 0011):
   персистентный объект в `DontDestroyOnLoad` с белым занавесом. Занавес не принадлежит
   сцене, поэтому не гаснет до подмены и не пересоздаётся после неё; запуск не с `Boot`

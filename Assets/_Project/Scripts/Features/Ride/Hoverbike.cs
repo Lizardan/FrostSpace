@@ -71,6 +71,19 @@ namespace FrostSpace.Features.Ride
         /// <summary>Игрок на байке.</summary>
         public bool IsMounted => _mounted;
 
+        /// <summary>На любом ховербайке сцены сейчас сидит игрок.</summary>
+        public static bool SeatTaken => s_mountedBike != null;
+
+        /// <summary>
+        /// Domain reload выключен: без сброса защёлка прошлой сессии не давала
+        /// сесть на байк во втором запуске Play Mode.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_mountedBike = null;
+        }
+
         /// <summary>Текущая скорость, м/с (модуль фактической скорости).</summary>
         public float Speed => _speed;
 
@@ -219,6 +232,8 @@ namespace FrostSpace.Features.Ride
             // Игрок уже сидит на другом байке: второй не перехватывает управление.
             if (s_mountedBike != null && s_mountedBike != this)
                 return;
+            if (Motorcycle.SeatTaken)
+                return;
 
             if (Vector3.Distance(_rider.position, transform.position) > _mountRadius)
                 return;
@@ -253,6 +268,8 @@ namespace FrostSpace.Features.Ride
                 return;
 
             if (s_mountedBike != null && s_mountedBike != this)
+                return;
+            if (Motorcycle.SeatTaken)
                 return;
 
             _mounted = true;

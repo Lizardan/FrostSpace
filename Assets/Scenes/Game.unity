@@ -5409,6 +5409,40 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1981263599}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &486228834 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5141630430533430628, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+  m_PrefabInstance: {fileID: 1252417631}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &486228836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486228834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &487980578
 GameObject:
   m_ObjectHideFlags: 0
@@ -5502,6 +5536,40 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1410193403244463314, guid: ad34a717d2cbc8846820d590bc178818, type: 3}
   m_PrefabInstance: {fileID: 525752889}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &527204759 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 684452328512306928, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+  m_PrefabInstance: {fileID: 1252417631}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &527204761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 527204759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &537457956
 GameObject:
   m_ObjectHideFlags: 0
@@ -8886,6 +8954,69 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1835705379}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1252417631
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.95371693
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.3007058
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9201438870370433287, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      propertyPath: m_Name
+      value: Motorcycle_Model
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 684452328512306928, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 527204761}
+    - targetCorrespondingSourceObject: {fileID: 5141630430533430628, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 486228836}
+  m_SourcePrefab: {fileID: 100100000, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
 --- !u!1 &1258678247
 GameObject:
   m_ObjectHideFlags: 0
@@ -12006,7 +12137,7 @@ PrefabInstance:
       objectReference: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     - target: {fileID: 2103839529347683281, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
       propertyPath: _turnSpeed
-      value: 200
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 2103839529347683281, guid: 214ba5499e55e684ca762a230e47d9d4, type: 3}
       propertyPath: _velocityTurnSpeed
@@ -12255,6 +12386,11 @@ MonoBehaviour:
   _brake: 24
   _turnSpeed: 720
   _velocityTurnSpeed: 800
+  _jumpHeight: 1.2
+  _jumpAnticipation: 0.08
+  _jumpBuffer: 0.12
+  _coyoteTime: 0.1
+  _airControl: 0.65
   _walkClipSpeed: 0.91182196
   _sprintClipSpeed: 8.918498
 --- !u!143 &1786677827
@@ -17587,3 +17723,4 @@ SceneRoots:
   - {fileID: 1497351646}
   - {fileID: 21705445}
   - {fileID: 1741278388}
+  - {fileID: 1252417631}

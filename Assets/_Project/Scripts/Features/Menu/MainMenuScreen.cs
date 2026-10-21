@@ -71,6 +71,13 @@ namespace FrostSpace.Features.Menu
         [Tooltip("Прозрачность холодного свечения под курсором, 0..1")]
         [SerializeField, Range(0f, 1f)] private float _hoverGlowAlpha = 0.22f;
 
+        [Header("Виды меню")]
+        [Tooltip("Переключатель диорамы и открытой площадки на MenuFlow")]
+        [SerializeField] private MenuViewSwitch _viewSwitch;
+
+        [Tooltip("Скорость переезда подчёркивания между пунктами, 1/с")]
+        [SerializeField] private float _viewIndicatorSpeed = 12f;
+
         // Ключ общий с MusicManager: он же применяет сохранённую громкость на старте игры.
         private const string VolumeKey = MusicManager.MasterVolumeKey;
         private const float ButtonWidth = 360f;
@@ -90,12 +97,20 @@ namespace FrostSpace.Features.Menu
         private GameObject _settingsPanel;
         private Slider _volume;
         private Button[] _menuButtons;
+        private Button[] _viewButtons;
+        private TextMeshProUGUI[] _viewLabels;
+        private RectTransform _viewIndicator;
+        private CanvasGroup _viewFade;
+        private Image _viewFadeLine;
+        private float _viewIndicatorTargetX;
+        private int _viewIndex;
         private bool _cursorApplied;
 
         private void Awake()
         {
             EnsureEventSystem();
             BuildInterface();
+            BindViewSwitch();
             ShowCursor();
         }
 
@@ -120,10 +135,43 @@ namespace FrostSpace.Features.Menu
             if (_settingsPanel != null && _settingsPanel.activeSelf &&
                 Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 _settingsPanel.SetActive(false);
+
+            var canSwitch = !busy && _viewSwitch != null && !_viewSwitch.IsSwitching;
+            if (_viewButtons != null)
+            {
+                for (var i = 0; i < _viewButtons.Length; i++)
+                {
+                    if (_viewButtons[i] != null)
+                        _viewButtons[i].interactable = canSwitch;
+                }
+            }
+
+            if (_viewSwitch != null && canSwitch &&
+                (_settingsPanel == null || !_settingsPanel.activeSelf) &&
+                Keyboard.current != null)
+            {
+                if (Keyboard.current.digit1Key.wasPressedThisFrame)
+                    OnViewPressed(0);
+                if (Keyboard.current.digit2Key.wasPressedThisFrame)
+                    OnViewPressed(1);
+            }
+
+            if (_viewIndicator != null)
+            {
+                var x = Mathf.Lerp(
+                    _viewIndicator.anchoredPosition.x,
+                    _viewIndicatorTargetX,
+                    1f - Mathf.Exp(-_viewIndicatorSpeed * Time.unscaledDeltaTime));
+                _viewIndicator.anchoredPosition = new Vector2(
+                    x, _viewIndicator.anchoredPosition.y);
+            }
         }
 
         private void OnDisable()
         {
+            if (_viewSwitch != null)
+                _viewSwitch.VariantChanged -= OnVariantChanged;
+
             _cursorApplied = false;
             PlayerPrefs.Save();
         }
@@ -184,6 +232,67 @@ namespace FrostSpace.Features.Menu
         {
             AudioListener.volume = Mathf.Clamp01(value);
             PlayerPrefs.SetFloat(VolumeKey, AudioListener.volume);
+        }
+
+        private void BindViewSwitch()
+        {
+            if (_viewSwitch == null)
+                _viewSwitch = GetComponent<MenuViewSwitch>();
+
+            if (_viewSwitch == null)
+            {
+                Debug.LogError(
+                    "MainMenuScreen: на MenuFlow нет MenuViewSwitch — переключение видов недоступно",
+                    this);
+                return;
+            }
+
+            _viewSwitch.BindTransition(_viewFade, _viewFadeLine);
+            _viewSwitch.VariantChanged += OnVariantChanged;
+            OnVariantChanged(_viewSwitch.Variant);
+        }
+
+        private void OnViewPressed(int index)
+        {
+            _viewSwitch?.RequestVariant(index);
+        }
+
+        private void OnVariantChanged(int index)
+        {
+            _viewIndex = Mathf.Clamp(index, 0, 1);
+            _viewIndicatorTargetX = _viewIndex == 0 ? 4f : 154f;
+            RefreshViewButtons();
+        }
+
+        /// <summary>
+        /// Активный пункт держит акцентный фон и цвет, неактивный остаётся
+        /// приглушённым. Цвета пишутся в ColorTint, иначе Button вернул бы свой
+        /// normalColor после первого наведения.
+        /// </summary>
+        private void RefreshViewButtons()
+        {
+            if (_viewButtons == null)
+                return;
+
+            var activeBackground = new Color(0.10f, 0.19f, 0.24f, 0.95f);
+            for (var i = 0; i < _viewButtons.Length; i++)
+            {
+                var active = i == _viewIndex;
+                if (_viewLabels != null && _viewLabels[i] != null)
+                    _viewLabels[i].color = active ? _accent : _dim;
+
+                if (_viewButtons[i] == null)
+                    continue;
+
+                var colors = _viewButtons[i].colors;
+                colors.normalColor = active ? activeBackground : _buttonIdle;
+                colors.selectedColor = active ? activeBackground : _buttonHover;
+                colors.highlightedColor = _buttonHover;
+                _viewButtons[i].colors = colors;
+
+                if (_viewButtons[i].targetGraphic != null)
+                    _viewButtons[i].targetGraphic.color = active ? activeBackground : _buttonIdle;
+            }
         }
 
         private void BuildInterface()
@@ -250,8 +359,140 @@ namespace FrostSpace.Features.Menu
             NewText(root, "Build", "BUILD 0.1  /  WEBGL", 20f, _dim, TextAlignmentOptions.BottomRight,
                 new Vector2(1f, 0f), new Vector2(-96f, 64f), new Vector2(700f, 30f), 14f);
 
+            BuildViewSwitch(root);
+            BuildViewFade();
+
             _settingsPanel = BuildSettingsPanel(root);
             _settingsPanel.SetActive(false);
+        }
+
+        /// <summary>
+        /// Нижний правый угол: два пункта видов и переезжающее подчёркивание.
+        /// Размеры кратны сетке меню, поэтому блок читается как его часть.
+        /// </summary>
+        private void BuildViewSwitch(Transform root)
+        {
+            NewText(root, "ViewLabel", "VIEW MODE", 15f, _dim, TextAlignmentOptions.BottomRight,
+                new Vector2(1f, 0f), new Vector2(-96f, 180f), new Vector2(300f, 22f), 10f);
+
+            var panelObject = new GameObject("ViewSwitch", typeof(RectTransform));
+            panelObject.transform.SetParent(root, false);
+            var panelRect = (RectTransform)panelObject.transform;
+            panelRect.anchorMin = new Vector2(1f, 0f);
+            panelRect.anchorMax = new Vector2(1f, 0f);
+            panelRect.pivot = new Vector2(1f, 0f);
+            panelRect.sizeDelta = new Vector2(300f, 56f);
+            panelRect.anchoredPosition = new Vector2(-96f, 112f);
+
+            var panel = panelObject.AddComponent<Image>();
+            panel.color = new Color(_panelColor.r, _panelColor.g, _panelColor.b, 0.78f);
+            panel.raycastTarget = false;
+
+            var edge = NewImage(panelObject.transform, "TopEdge", _accent);
+            var edgeRect = edge.rectTransform;
+            edgeRect.anchorMin = new Vector2(0f, 1f);
+            edgeRect.anchorMax = new Vector2(1f, 1f);
+            edgeRect.pivot = new Vector2(0.5f, 1f);
+            edgeRect.sizeDelta = new Vector2(0f, 2f);
+            edgeRect.anchoredPosition = Vector2.zero;
+
+            _viewButtons = new[]
+            {
+                NewViewButton(panelObject.transform, "ViewDiorama", "01  DIORAMA", 0, new Vector2(4f, 8f)),
+                NewViewButton(panelObject.transform, "ViewOpen", "02  OPEN", 1, new Vector2(154f, 8f)),
+            };
+            _viewLabels = new[]
+            {
+                _viewButtons[0].GetComponentInChildren<TextMeshProUGUI>(),
+                _viewButtons[1].GetComponentInChildren<TextMeshProUGUI>(),
+            };
+
+            var indicator = NewImage(panelObject.transform, "ActiveLine", _accent);
+            _viewIndicator = indicator.rectTransform;
+            _viewIndicator.anchorMin = new Vector2(0f, 0f);
+            _viewIndicator.anchorMax = new Vector2(0f, 0f);
+            _viewIndicator.pivot = new Vector2(0f, 0f);
+            _viewIndicator.sizeDelta = new Vector2(142f, 3f);
+            _viewIndicator.anchoredPosition = new Vector2(4f, 4f);
+        }
+
+        /// <summary>
+        /// Оверлей перехода живёт на отдельном Canvas поверх меню: затемняет
+        /// картинку и не перехватывает клики. Циановая линия — тот же цифровой
+        /// акцент, что у силуэта и выреза, поэтому переход не вводит новый цвет.
+        /// </summary>
+        private void BuildViewFade()
+        {
+            var canvasObject = new GameObject("ViewFadeCanvas", typeof(RectTransform));
+            canvasObject.transform.SetParent(transform, false);
+            var canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 30;
+
+            _viewFade = canvasObject.AddComponent<CanvasGroup>();
+            _viewFade.alpha = 0f;
+            _viewFade.blocksRaycasts = false;
+            _viewFade.interactable = false;
+
+            var fadeObject = new GameObject("Fade", typeof(RectTransform));
+            fadeObject.transform.SetParent(canvasObject.transform, false);
+            var fadeRect = (RectTransform)fadeObject.transform;
+            fadeRect.anchorMin = Vector2.zero;
+            fadeRect.anchorMax = Vector2.one;
+            fadeRect.offsetMin = Vector2.zero;
+            fadeRect.offsetMax = Vector2.zero;
+            var fade = fadeObject.AddComponent<Image>();
+            fade.color = new Color(0.012f, 0.022f, 0.032f, 1f);
+            fade.raycastTarget = false;
+
+            var lineObject = new GameObject("ScanLine", typeof(RectTransform));
+            lineObject.transform.SetParent(canvasObject.transform, false);
+            var lineRect = (RectTransform)lineObject.transform;
+            lineRect.anchorMin = new Vector2(0.35f, 0.5f);
+            lineRect.anchorMax = new Vector2(0.65f, 0.5f);
+            lineRect.pivot = new Vector2(0.5f, 0.5f);
+            lineRect.sizeDelta = new Vector2(0f, 2f);
+            lineRect.anchoredPosition = Vector2.zero;
+
+            _viewFadeLine = lineObject.AddComponent<Image>();
+            _viewFadeLine.color = new Color(_accent.r, _accent.g, _accent.b, 0f);
+            _viewFadeLine.raycastTarget = false;
+        }
+
+        private Button NewViewButton(
+            Transform parent, string name, string label, int index, Vector2 position)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0f, 0f);
+            rect.sizeDelta = new Vector2(142f, 40f);
+            rect.anchoredPosition = position;
+
+            var background = go.AddComponent<Image>();
+            background.color = _buttonIdle;
+            background.raycastTarget = true;
+
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = background;
+            button.transition = Selectable.Transition.ColorTint;
+            var colors = button.colors;
+            colors.normalColor = _buttonIdle;
+            colors.highlightedColor = _buttonHover;
+            colors.pressedColor = _accent;
+            colors.selectedColor = _buttonHover;
+            colors.disabledColor = new Color(_buttonIdle.r, _buttonIdle.g, _buttonIdle.b, 0.35f);
+            colors.fadeDuration = 0.1f;
+            button.colors = colors;
+            button.onClick.AddListener(() => OnViewPressed(index));
+
+            NewText(go.transform, "Label", label, 19f, _dim, TextAlignmentOptions.Center,
+                new Vector2(0.5f, 0.5f), Vector2.zero,
+                new Vector2(142f, 40f), 8f);
+
+            return button;
         }
 
         private GameObject BuildSettingsPanel(Transform root)

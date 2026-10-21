@@ -1,10 +1,13 @@
-"""Собирает роботов FrostSpace и экспортирует FBX с тремя клипами.
+"""Собирает роботов FrostSpace и экспортирует FBX с клипами.
 
 Запуск:
     blender --background --factory-startup --python Tools/Blender/build_robots.py -- R1
     blender --background --factory-startup --python Tools/Blender/build_robots.py
+    blender --background --factory-startup --python Tools/Blender/build_robots.py -- --jump -- R1
 
 Без аргументов собираются все дизайны из `robot_designs.BUILDERS`.
+Флаг `--jump` добавляет к клипам jump_start/jump_loop/jump_land из ActionForge;
+без списка роботов он собирает только R1 — прыжок нужен игроку, а не всем NPC.
 """
 
 from __future__ import annotations
@@ -30,14 +33,17 @@ def main() -> int:
     robot_lib.configure_stdout()
     print("Blender", bpy.app.version_string)
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    selected = {a.lower() for a in args}
+    include_jump = any(a.lower() == "--jump" for a in args)
+    selected = {a.lower() for a in args if not a.startswith("--")}
+    if include_jump and not selected:
+        selected = {"r1"}
 
-    arm, _actions = robot_lib.load_rig()
+    arm, _actions = robot_lib.load_rig(include_jump=include_jump)
     built = []
     for builder in robot_designs.BUILDERS:
         name, obj, _mats = builder(arm)
-        if selected and not any(name.lower().startswith(s) or
-                                s in name.lower() for s in selected):
+        if selected and not any(name.lower() == s or
+                                name.lower().startswith(s + "_") for s in selected):
             bpy.data.objects.remove(obj, do_unlink=True)
             continue
         robot_lib.bind(obj, arm)

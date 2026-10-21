@@ -283,18 +283,26 @@ def rig_points(arm):
     return points
 
 
-def load_rig():
-    """Импортирует скелет ActionForge и три клипа, возвращает арматуру.
+def load_rig(include_jump: bool = False):
+    """Импортирует скелет ActionForge и клипы, возвращает арматуру.
 
     Все клипы переведены в in-place: смещение root по Y (вперёд) обнулено.
     Оригинальные FBX/GLB не меняются — правка идёт только в памяти Blender.
+
+    `include_jump=True` добавляет три клипа того же пака — jump_start,
+    jump_loop, jump_land. Они нужны только игроку (R1), поэтому сборка без
+    флага остаётся ровно прежней.
     """
     clear_scene()
     bpy.context.scene.render.fps = 30
 
+    clips = ["walk_loop", "idle_loop", "sprint_loop"]
+    if include_jump:
+        clips += ["jump_start", "jump_loop", "jump_land"]
+
     base = None
     actions = {}
-    for clip in ("walk_loop", "idle_loop", "sprint_loop"):
+    for clip in clips:
         path = os.path.join(SAMPLES, clip + ".glb")
         if not os.path.exists(path):
             raise FileNotFoundError("нет клипа ActionForge: %s" % path)

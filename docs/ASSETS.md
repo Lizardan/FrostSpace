@@ -67,6 +67,10 @@ FBX-экспортёр конвертирует оси. Не «поправля�
   материалов из sRGB в линейный (иначе роботы выглядят выбеленными). Из палитры цвет и
   roughness переносятся (`_Smoothness` = 1 − roughness, сверено по всем материалам),
   а `metallic` — нет: `_Metallic` = 0 у всех роботов.
+- **Прыжок есть только у `R1_PolarMechanic`**: сборка с флагом
+  `-- --jump` добавляет клипы `jump_start`/`jump_loop`/`jump_land`, постпроцессор даёт
+  им имена `JumpStart`/`JumpLoop`/`JumpLand` (loop только у `JumpLoop`). Остальные
+  роботы собираются без флага — шесть лишних клипов на модель не нужны NPC (ADR 0013).
 - Клипы **in-place** (корневое смещение обнулено). Root Motion выключен, движение в игре —
   kinematic; согласование стопы и корпуса — через `Animator.speed` (ADR 0004).
 - Скорость стопы в контакте, м/с: Blender `measure_locomotion.py` даёт walk 0.93 /
@@ -133,6 +137,19 @@ FBX-экспортёр конвертирует оси. Не «поправля�
   Префабы `Prefabs/Ride/Hoverbike_A_Model` (макет из примитивов) и `Hoverbike_B_Model`
   (обёртка над FBX) собираются меню `FrostSpace → Ride`; подушка и игровые
   компоненты — на корне префаба, не в FBX (ADR 0012).
+- Мотоцикл — там же: `Tools/Blender/build_motorcycle.py` (дизайн
+  `motorcycle_parts.py`) → `Content/Models/Level/Motorcycle.fbx` (2 624 тр., габарит
+  0.76 × 1.13 × 2.55 м). В FBX три узла: `MotorcycleBody` и два колеса
+  `MotorcycleWheelF` / `MotorcycleWheelR`, у каждого **pivot в оси** — меш колеса
+  центрирован в нуле, `localPosition` задаёт ось; иначе вращение уводит колесо по кругу.
+  Префаб `Prefabs/Ride/Motorcycle_Model` добавляет `CharacterController`, `Motorcycle`,
+  `MotorcycleRideVisual`, точки `Seat`/`ExitPoint`, фару, стоп-сигнал и частицы; в сцене
+  `Game` он стоит рядом с ховербайком (ADR 0013). **`Seat` — дочерний объект `Visual`**
+  (как и у ховербайка): модель качается и кренится скриптом, и наездник должен ехать
+  вместе с ней, а не висеть на неподвижном корне.
+- Обломки и занос для открытого вида меню — `Tools/Blender/build_wreck_parts.py`
+  (`MenuWreckWing` / `MenuWreckFin` / `MenuWreckEngine`) и `build_menu_open.py`
+  (`MenuDrift`); палитра та же `Level_*`, в сцену ставятся как обычные пропы.
 
 ## Unity: импорт FBX
 
