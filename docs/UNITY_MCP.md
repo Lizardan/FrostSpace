@@ -12,7 +12,7 @@
 | Resolved hash | `aa5fc638d623f56178d50329d9ad8c541a57fe66` (в `Packages/packages-lock.json`) |
 | Сервер в клиенте | `unityMCP` |
 | Порт | `127.0.0.1:6400` |
-| Unity | 6000.6.6f1 |
+| Unity | 6000.6.7f1 |
 | Активная сцена | `Assets/Scenes/MainMenu.unity` (build index 1); поток — `Boot` 0 → `MainMenu` 1 → `Game` 2 |
 | Состояние | редактор запущен, компиляция завершена, EditMode-тесты 17/17, ошибок в Console нет |
 
@@ -37,9 +37,9 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 | `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 2)` | 10 корней (`Player`, `NPC`, дом, деревья, забор, свет...); `next_cursor: null` |
 | `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `Game` (2), все enabled |
 | `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` после сборки уровня и тестов |
-| `run_tests` + `get_test_job` | 3 EditMode-теста — `succeeded` (2026-10-18) |
+| `run_tests` + `get_test_job` | 41 EditMode-тест — `succeeded` (2026-10-22) |
 | `execute_code(action: "execute")` | работает, `compiler: roslyn`; видит типы проектных сборок (`FrostSpace.Features`, `FrostSpace.Editor`) |
-| `manage_asset(action: "delete")` | папка `Assets/Screenshots` удалена (2026-10-18) |
+| `manage_asset(action: "delete")` | папка `Assets/Screenshots` удаляется после проверки (расходник, STYLE.md); на 2026-10-22 её в проекте нет |
 | `manage_camera(action: "screenshot", capture_source: "game_view")` | работает: PNG в `Assets/Screenshots/`, вид из `view_position` на `view_target`; **значения в файле линейные** — см. «Ловушки» |
 | `manage_editor(action: "play")` / `(action: "stop")` | работает: временные объекты и правки Play откатываются при выходе, сцена остаётся чистой |
 | `refresh_unity(mode: "if_dirty", scope: "all", compile: "request", wait_for_ready: true)` | `refresh_triggered: true`, `compile_started: true`, `resulting_state: compiling` |
@@ -178,7 +178,7 @@ unity_docs(action: "get_manual", slug: "execution-order")
 
 Unity уже слушает 6400. Пока инструменты не появились, используй прямой клиент:
 
-```bash
+```powershell
 python Tools/Unity/unity_bridge.py ping
 python Tools/Unity/unity_bridge.py call manage_scene '{"action": "get_active"}'
 ```

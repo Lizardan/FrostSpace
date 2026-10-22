@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
@@ -26,8 +27,15 @@ namespace FrostSpace.Features.Hud
     [DefaultExecutionOrder(250)]
     public sealed class PlayerHud : MonoBehaviour
     {
-        private static readonly ViewModule[] Modules = { ViewModule.Aperture, ViewModule.Scanner };
-        private static readonly string[] ModuleLabels = { "APERTURE", "SCANNER" };
+        private static readonly ViewModule[] Modules = (ViewModule[])Enum.GetValues(typeof(ViewModule));
+
+        /// <summary>Подпись модуля в ленте HUD.</summary>
+        private static string ModuleLabel(ViewModule module) => module switch
+        {
+            ViewModule.Aperture => "APERTURE",
+            ViewModule.Scanner => "SCANNER",
+            _ => module.ToString().ToUpperInvariant()
+        };
 
         [Header("Ссылки")]
         [Tooltip("Риг камеры: видимость ленты модулей и проекция подписи")]
@@ -112,14 +120,21 @@ namespace FrostSpace.Features.Hud
         private int _selected;
         private Camera _camera;
 
+        // Кэш подписи скана: строки и ширина плашки пересчитываются только при изменении.
+        private string _lastName;
+        private string _lastCategory;
+        private float _lastDistance = -1f;
+        private bool _labelTextDirty = true;
+        private float _plateWidth = 180f;
+
         private void Awake()
         {
             if (_rig == null)
-                _rig = FindFirstObjectByType<PlayerCameraRig>();
+                _rig = FindAnyObjectByType<PlayerCameraRig>();
             if (_modules == null)
-                _modules = FindFirstObjectByType<ViewModuleSwitch>();
+                _modules = FindAnyObjectByType<ViewModuleSwitch>();
             if (_scanner == null)
-                _scanner = FindFirstObjectByType<ObjectScanner>();
+                _scanner = FindAnyObjectByType<ObjectScanner>();
 
             _camera = _rig != null ? _rig.ViewCamera : Camera.main;
 
@@ -220,7 +235,7 @@ namespace FrostSpace.Features.Hud
                 _rows[i] = rowRect;
 
                 var label = NewText(row.transform, "Label",
-                    $"{i + 1:00}   {ModuleLabels[i]}", _rowFontSize, _dim,
+                    $"{i + 1:00}   {ModuleLabel(Modules[i])}", _rowFontSize, _dim,
                     TextAlignmentOptions.Right, new Vector2(1f, 0.5f), new Vector2(-24f, 0f),
                     new Vector2(_carouselWidth - 24f, 30f), 8f);
                 _rowLabels[i] = label;
@@ -309,6 +324,19 @@ namespace FrostSpace.Features.Hud
         }
 
         /// <summary>
+        /// Камера для проекции. Ищется один раз и кэшируется: обращение к
+        /// <c>Camera.main</c> каждый кадр — это поиск по тегу и молчаливая подмена
+        /// вместо явной ссылки.
+        /// </summary>
+        private Camera ResolveCamera()
+        {
+            if (_camera == null)
+                _camera = _rig != null ? _rig.ViewCamera : Camera.main;
+
+            return _camera;
+        }
+
+        /// <summary>
         /// Экранная проекция мировых границ: восемь углов дают прямоугольник в координатах
         /// Canvas. Если хоть один угол за камерой, рамку не рисуем — иначе она растянется
         /// на пол-экрана и перестанет что-либо обозначать.
@@ -318,7 +346,7 @@ namespace FrostSpace.Features.Hud
             center = default;
             size = default;
 
-            var view = _camera != null ? _camera : Camera.main;
+            var view = ResolveCamera();
             if (view == null)
                 return false;
 
@@ -503,7 +531,7 @@ namespace FrostSpace.Features.Hud
                 return;
             }
 
-            var camera = _camera != null ? _camera : Camera.main;
+            var camera = ResolveCamera();
             if (camera == null)
                 return;
 
@@ -536,22 +564,48 @@ namespace FrostSpace.Features.Hud
             _labelName.text = _scanner.Current.Name;
             _labelName.color = WithAlpha(_text, strength);
 
-            // Инвариантная культура: на русской локали разделитель стал бы запятой
-            // и подпись выбивалась бы из латинского стиля HUD.
-            _labelDistance.text =
-                _scanner.Current.Distance.ToString("0.0", CultureInfo.InvariantCulture) + " M";
+            // Строки и ширина плашки меняются редко: пересчёт каждый кадр — это
+            // аллокация строки и три дорогих GetPreferredValues.
+            if (!ReferenceEquals(_lastName, _scanner.Current.Name))
+            {
+                _lastName = _scanner.Current.Name;
+                _labelTextDirty = true;
+            }
+
+            if (!ReferenceEquals(_lastCategory, _scanner.Current.Category))
+            {
+                _lastCategory = _scanner.Current.Category;
+                _labelTextDirty = true;
+            }
+
+            var distance = _scanner.Current.Distance;
+            if (!Mathf.Approximately(distance, _lastDistance))
+            {
+                _lastDistance = distance;
+
+                // Инвариантная культура: на русской локали разделитель стал бы запятой
+                // и подпись выбивалась бы из латинского стиля HUD.
+                _labelDistance.text = distance.ToString("0.0", CultureInfo.InvariantCulture) + " M";
+                _labelTextDirty = true;
+            }
+
             _labelDistance.color = WithAlpha(_accent, 0.9f * strength);
             if (_plateRect != null && _plateGroup != null)
             {
-                // Ширина подложки идёт за текстом: плашка не тянется в пустоту и не режет
-                // длинные имена одним и тем же размером на всех объектах.
-                var width = Mathf.Max(
-                    _labelName.GetPreferredValues(_scanner.Current.Name).x,
-                    _labelCategory.GetPreferredValues(_scanner.Current.Category).x);
-                width = Mathf.Max(width, _labelDistance.GetPreferredValues(_labelDistance.text).x);
+                if (_labelTextDirty)
+                {
+                    _labelTextDirty = false;
 
-                var plateWidth = Mathf.Clamp(width + _platePadding * 2f, 180f, 520f);
-                _plateRect.sizeDelta = new Vector2(plateWidth, _plateHeight);
+                    // Ширина подложки идёт за текстом: плашка не тянется в пустоту и не режет
+                    // длинные имена одним и тем же размером на всех объектах.
+                    var width = Mathf.Max(
+                        _labelName.GetPreferredValues(_scanner.Current.Name).x,
+                        _labelCategory.GetPreferredValues(_scanner.Current.Category).x);
+                    width = Mathf.Max(width, _labelDistance.GetPreferredValues(_labelDistance.text).x);
+                    _plateWidth = Mathf.Clamp(width + _platePadding * 2f, 180f, 520f);
+                }
+
+                _plateRect.sizeDelta = new Vector2(_plateWidth, _plateHeight);
                 _plateGroup.alpha = strength;
             }
         }

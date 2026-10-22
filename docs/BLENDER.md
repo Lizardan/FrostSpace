@@ -42,15 +42,15 @@
 
 ## Окружение и запуск
 
-```bash
-export BLENDER="/g/Steam/steamapps/common/Blender/blender.exe"
-"$BLENDER" --version
+```powershell
+$env:BLENDER = "G:/Steam/steamapps/common/Blender/blender.exe"
+& $env:BLENDER --version
 ```
 
 ### Headless
 
-```bash
-"$BLENDER" --background --factory-startup --python script.py -- arg1 arg2
+```powershell
+& $env:BLENDER --background --factory-startup --python script.py -- arg1 arg2
 ```
 
 `--background` полностью функционален: меши, риг, анимация, рендер, экспорт. Это
@@ -63,8 +63,8 @@ export BLENDER="/g/Steam/steamapps/common/Blender/blender.exe"
 
 ### GUI
 
-```bash
-"$BLENDER" --python Tools/Blender/blender_boot.py
+```powershell
+& $env:BLENDER --python Tools/Blender/blender_boot.py
 ```
 
 Из агентского шелла GUI нельзя запускать как обычный дочерний процесс: на Windows
@@ -72,8 +72,8 @@ export BLENDER="/g/Steam/steamapps/common/Blender/blender.exe"
 задачей или из терминала пользователя. Признак готовности — **слушающий порт**, а не
 старт процесса:
 
-```bash
-netstat -ano | grep "127.0.0.1:9876.*LISTENING"
+```powershell
+netstat -ano | Select-String "127.0.0.1:9876.*LISTENING"
 ```
 
 `blender_boot.py` пишет `BLENDER_READY` или `BLENDER_FAIL` в stdout и в
@@ -131,12 +131,13 @@ if bpy.app.background:
   через `blender_bridge.py` — протокол тот же.
 - Установка аддона (если его ещё нет):
 
-  ```bash
-  export BLENDERMCP_ADDONS_DIR="C:/Users/<user>/AppData/Roaming/Blender Foundation/Blender/5.2/scripts/addons"
-  PYTHONUTF8=1 uvx --from mcp-for-blender==2.1.9 mcp-for-blender install-addon
+  ```powershell
+  $env:BLENDERMCP_ADDONS_DIR = "C:/Users/<user>/AppData/Roaming/Blender Foundation/Blender/5.2/scripts/addons"
+  $env:PYTHONUTF8 = "1"
+  uvx --from mcp-for-blender==2.1.9 mcp-for-blender install-addon
   ```
 
-  `PYTHONUTF8=1` обязателен. Без него CLI может упасть на печати результата
+  `$env:PYTHONUTF8 = "1"` обязателен. Без него CLI может упасть на печати результата
   (`UnicodeEncodeError` на cp1251), хотя аддон уже скопирован. Проверяй каталог
   аддонов, а не только код возврата. Команду сверяй с `--help` установленной версии:
   мы её не запускали, аддон уже стоял.
@@ -156,7 +157,7 @@ if bpy.app.background:
 
 ## Мост `blender_bridge.py`
 
-```bash
+```powershell
 python Tools/Blender/blender_bridge.py ping
 python Tools/Blender/blender_bridge.py scene
 python Tools/Blender/blender_bridge.py call get_object_info '{"name": "Cube"}'
@@ -176,9 +177,11 @@ python Tools/Blender/blender_bridge.py code snippet.py
 
 Адрес/порт/таймаут:
 
-```bash
-BLENDER_HOST=127.0.0.1 BLENDER_PORT=9876 BLENDER_TIMEOUT=300 \
-  python Tools/Blender/blender_bridge.py ping
+```powershell
+$env:BLENDER_HOST = "127.0.0.1"
+$env:BLENDER_PORT = "9876"
+$env:BLENDER_TIMEOUT = "300"
+python Tools/Blender/blender_bridge.py ping
 ```
 
 Если ответа нет за таймаут — сначала проверь, запущен ли GUI-Blender и не заблокирован
@@ -212,11 +215,11 @@ BLENDER_HOST=127.0.0.1 BLENDER_PORT=9876 BLENDER_TIMEOUT=300 \
 | Модель приезжает в Unity **отражённой по X** при верном габарите | `bake_space_transform` даёт левостороннюю конверсию осей (детерминант −1); bbox-проверка отражение не ловит | Статику экспортировать только через `export_static` (зеркало X + `reverse_faces`); сверять асимметричный признак — ADR 0007 |
 | Габарит не сходится | glTF Y-up vs Blender Z-up; мерили в разных пространствах | Мерить после импорта или с учётом конверсии осей |
 | Превью Quaternius пустое | `Alpha = 0` при `HASHED` | Принудительная непрозрачность только для превью; в Unity не переносить |
-| Кириллица падает на печати | Windows-консоль cp1251 | `PYTHONUTF8=1`; в наших скриптах stdout переконфигурируется в UTF-8 |
+| Кириллица падает на печати | Windows-консоль cp1251 | `$env:PYTHONUTF8 = "1"`; в наших скриптах stdout переконфигурируется в UTF-8 |
 
 ## Уровень FrostSpace
 
-Уровень (`SnowLevel`) собран тем же способом, что и роботы: геометрию делает скрипт,
+Уровень (`Game`) собран тем же способом, что и роботы: геометрию делает скрипт,
 Unity получает готовые FBX.
 
 ```
@@ -243,7 +246,7 @@ build_level.py -> Content/Models/Level/*.fbx (19 шт.) -> плоские нор
 не входит, поэтому `build_level.py` его не трогает.
 
 ```bat
-set PYTHONUTF8=1
+$env:PYTHONUTF8 = "1"
 "%BLENDER%" --background --factory-startup --python Tools/Blender/build_hoverbike.py
 ```
 
@@ -265,7 +268,7 @@ set PYTHONUTF8=1
 ## Мотоцикл FrostSpace
 
 ```bat
-set PYTHONUTF8=1
+$env:PYTHONUTF8 = "1"
 "%BLENDER%" --background --factory-startup --python Tools/Blender/build_motorcycle.py
 ```
 
@@ -294,7 +297,7 @@ set PYTHONUTF8=1
 но отдельным скриптом: в раскладку уровня они не входят.
 
 ```bat
-set PYTHONUTF8=1
+$env:PYTHONUTF8 = "1"
 "%BLENDER%" --background --factory-startup --python Tools/Blender/build_menu_views.py
 ```
 
@@ -354,7 +357,7 @@ build_robots.py -> Content/Models/Robots/R*.fbx -> клипы Walk/Idle/Sprint, 
 
 ## Робо-животные FrostSpace
 
-13 робо-животных для `SnowLevel`: 12 видов — гибрид на ригах CC0-паков Quaternius
+13 робо-животных для `Game`: 12 видов — гибрид на ригах CC0-паков Quaternius
 (оболочка источника + наш череп и броня), паук собран целиком процедурно. Источник,
 лицензия и что именно взято — `SOURCE.md` рядом с моделями; контракт ассетов — `ASSETS.md`;
 причина решения — ADR 0009.

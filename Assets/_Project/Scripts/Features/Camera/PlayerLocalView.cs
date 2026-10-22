@@ -56,7 +56,7 @@ namespace FrostSpace.Features.View
         private void Awake()
         {
             if (_rig == null)
-                _rig = FindFirstObjectByType<PlayerCameraRig>();
+                _rig = FindAnyObjectByType<PlayerCameraRig>();
             if (_silhouette == null)
                 _silhouette = GetComponent<PlayerSilhouette>();
             if (_headBone == null)

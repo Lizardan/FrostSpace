@@ -79,7 +79,7 @@ namespace FrostSpace.Editor
                 PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.WebGL,
                     Il2CppCompilerConfiguration.Release);
 
-                // В проекте ровно один уровень качества (ADR 0008), так что это
+                // В проекте ровно один уровень качества (ADR 0016), так что это
                 // просто страховка: m_PerPlatformDefaultQuality не перезаписывается
                 // при удалении уровней, и старый индекс 1 для WebGL остаётся в файле.
                 // В батче активная цель — WebGL, поэтому запись идёт именно в неё.

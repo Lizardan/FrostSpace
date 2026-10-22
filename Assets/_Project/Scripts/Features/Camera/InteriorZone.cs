@@ -21,6 +21,16 @@ namespace FrostSpace.Features.View
     {
         private static readonly List<InteriorZone> Zones = new();
 
+        /// <summary>
+        /// Сброс статики между запусками Play Mode: домен не перезагружается, поэтому
+        /// реестр зон иначе может пережить сцену и влиять на новый запуск.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            Zones.Clear();
+        }
+
         [Tooltip("Запас внутрь от границ коллайдера, м: у самой стены режим не мигает")]
         [SerializeField] private float _shrink = 0.15f;
 

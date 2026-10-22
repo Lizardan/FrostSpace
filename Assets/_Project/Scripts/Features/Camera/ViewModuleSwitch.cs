@@ -16,6 +16,9 @@ namespace FrostSpace.Features.View
     [DefaultExecutionOrder(140)]
     public sealed class ViewModuleSwitch : MonoBehaviour
     {
+        /// <summary>Сколько модулей в ленте: считается по enum, чтобы новый модуль не терялся.</summary>
+        private static readonly int ModuleCount = Enum.GetValues(typeof(ViewModule)).Length;
+
         [Header("Выбор")]
         [Tooltip("Модуль, выбранный на старте")]
         [SerializeField] private ViewModule _start = ViewModule.Aperture;
@@ -31,9 +34,6 @@ namespace FrostSpace.Features.View
 
         /// <summary>Выбранный модуль.</summary>
         public ViewModule Current { get; private set; }
-
-        /// <summary>Смена модуля — событие для HUD и эффектов.</summary>
-        public event Action<ViewModule> Changed;
 
         private void Awake()
         {
@@ -57,7 +57,7 @@ namespace FrostSpace.Features.View
             if (Mathf.Abs(_pendingScroll) < threshold)
                 return;
 
-            var next = ModuleCarousel.Step((int)Current, _pendingScroll, 2);
+            var next = ModuleCarousel.Step((int)Current, _pendingScroll, ModuleCount);
             _pendingScroll = 0f;
             _nextStepTime = Time.unscaledTime + _stepCooldown;
 
@@ -66,7 +66,6 @@ namespace FrostSpace.Features.View
 
             Current = (ViewModule)next;
             Debug.Log($"[ViewModule] выбран {Current}", this);
-            Changed?.Invoke(Current);
         }
     }
 }

@@ -1,7 +1,9 @@
-# 0008. Единый пресет графики
+# 0016. Единый пресет графики
 
 - Статус: Accepted
 - Дата: 2026-10-19
+- Перенумерован 2026-10-22: был `0008` — дублировался с
+  [0008](0008-camera-occlusion-aperture.md). Решение не менялось, изменился только номер.
 
 ## Контекст
 
@@ -28,7 +30,7 @@ soft, Forward+) и `Mobile_RPAsset` (1024, 1 каскад, без soft, допо
 - `m_PerPlatformDefaultQuality` правится только вручную: `QualitySettings.SetQualityLevel`
   пишет индекс для активной платформы. `BuildWebGL.PerformBuild` вызывает
   `QualitySettings.SetQualityLevel(0, true)` — в батче активная цель WebGL.
-- Камера `SnowLevel`: SMAA, качество High (антиалиасинг без полноэкранного MSAA,
+- Камера `Game`: SMAA, качество High (антиалиасинг без полноэкранного MSAA,
   который на WebGL2 дорог по bandwidth).
 - SSAO-фича выключена (нет Volume → не активна; включённая фича заставляет URP
   держать промежуточную текстуру).

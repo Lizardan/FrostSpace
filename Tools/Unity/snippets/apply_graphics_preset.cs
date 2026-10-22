@@ -295,9 +295,9 @@ if (gs != null)
 // ---------- 6. Камера сцены: SMAA ----------
 var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
 string scenePath = scene.path;
-if (scenePath != "Assets/Scenes/SnowLevel.unity")
+if (scenePath != "Assets/Scenes/Game.unity")
 {
-    Say("камера НЕ тронута: активная сцена " + scenePath + " (ожидалась SnowLevel)");
+    Say("камера НЕ тронута: активная сцена " + scenePath + " (ожидалась Game)");
 }
 else
 {

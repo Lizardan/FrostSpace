@@ -47,7 +47,7 @@ namespace FrostSpace.Features.Locomotion
         private void Awake()
         {
             if (_rig == null)
-                _rig = FindFirstObjectByType<PlayerCameraRig>();
+                _rig = FindAnyObjectByType<PlayerCameraRig>();
             if (_neck == null)
                 _neck = FindBone("neck_01");
             if (_head == null)

@@ -15,10 +15,10 @@
 
 | Параметр | Значение | Источник |
 |---|---|---|
-| Unity | 6000.6.6f1 | `ProjectSettings/ProjectVersion.txt` |
-| Редактор | `F:\Unity\Editor\Unity.exe` | Unity Hub / фактический запуск |
+| Unity | 6000.6.7f1 | `ProjectSettings/ProjectVersion.txt` |
+| Редактор | `F:\Unity\Editor\6000.6.7f1\Editor\Unity.exe` | Unity Hub / фактический запуск |
 | Render pipeline | URP 17.6.0 | `Packages/manifest.json`, `Assets/Settings/*_RPAsset` |
-| Качество | один уровень `Default`, один URP-ассет | `ProjectSettings/QualitySettings.asset` (ADR 0008) |
+| Качество | один уровень `Default`, один URP-ассет | `ProjectSettings/QualitySettings.asset` (ADR 0016) |
 | Цветовое пространство | Linear | `ProjectSettings/ProjectSettings.asset` |
 | Ввод | только Input System | `activeInputHandler: 1` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
@@ -28,22 +28,31 @@
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Features` (локомоция, камера, NPC), `FrostSpace.Editor`, EditMode-тесты | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (2 файла), `FrostSpace.Features` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (5 файлов), `FrostSpace.Tests.EditMode` (41 тест) | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
-| Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-18 |
+| Интерфейс | строится кодом: `BootScreen`, `MainMenuScreen` (меню и лента видов), `PlayerHud` (модули, сканер) | `Assets/_Project/Scripts/Features/` |
+| Аудио | `MusicManager` + `Music_FrostSpaceTheme.mp3` из `Content/Audio/Resources/Music/` | `Assets/_Project/Scripts/Core/MusicManager.cs` |
+| NPC | `NpcController` (ходьба по маршруту) и `AirPatrolController` (патруль) | `Assets/_Project/Scripts/Features/Npc/` |
+| Сборка и CI | `BuildWebGL.PerformBuild` (только CLI) + `.github/workflows/webgl.yml` (game-ci, `unityVersion: auto`) | `Assets/_Project/Editor/BuildWebGL.cs` |
+| Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-22 |
 | Blender | 5.2.2 LTS, аддон `blender_mcp` установлен | фактический запуск |
+| Скиллы | 34 скилла Unity + проектный `plans`, мосты для всех агентов | `.Aura/Skills/`, `Tools/Agent/LinkAgentSkills.ps1` |
 
 ## Чего в проекте нет
 
-- Игрового цикла, целей, UI, сохранений, сети и аудио.
-- Логики NPC: акторы `NPC_*` статичны и играют Idle, `NpcController` не написан.
-- Собственных ScriptableObject-конфигов и баланса.
-- CI и build-метода; из Editor-кода — только постпроцессор импорта FBX.
-- Импортированных сторонних моделей: `Assets/ThirdParty/` пуст, исходники — архивами в `AssetSource/`.
+- Игрового цикла: целей, условий победы/поражения, прогрессии, экономики, сюжета.
+- Сохранений и сети. Ни серверной части, ни мультиплеера, ни облачных сервисов.
+- Собственных ScriptableObject-конфигов и баланса — дизайн-параметры живут в
+  `[SerializeField]` прямо на компонентах.
+- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 41 шт.).
+- Локализации: подписи интерфейса латинские, `com.unity.localization` не подключён.
+- Импортированных сторонних моделей: каталога `Assets/ThirdParty/` нет, исходники —
+  архивами в `AssetSource/`.
 
 Всё перечисленное — **не реализовано**, а не «сделано, но не описано». Не ссылайся на
-несуществующие системы в документации или отчётах.
+несуществующие системы в документации или отчётах. При этом интерфейс, аудио, логика
+NPC, CI и build-метод **есть** — см. таблицу выше.
 
 ## Ограничения и факты, которые влияют на решения
 

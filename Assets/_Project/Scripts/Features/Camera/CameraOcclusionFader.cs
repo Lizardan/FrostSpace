@@ -119,9 +119,9 @@ namespace FrostSpace.Features.View
             if (_view == null)
                 _view = Camera.main;
             if (_rig == null)
-                _rig = FindFirstObjectByType<PlayerCameraRig>();
+                _rig = FindAnyObjectByType<PlayerCameraRig>();
             if (_modules == null)
-                _modules = FindFirstObjectByType<ViewModuleSwitch>();
+                _modules = FindAnyObjectByType<ViewModuleSwitch>();
         }
 
         private void LateUpdate()

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -115,8 +114,17 @@ namespace FrostSpace.Features.Scan
         /// <summary>Мировые границы цели: по ним HUD рисует квадратную рамку.</summary>
         public Bounds TargetBounds => _bounds;
 
-        /// <summary>Скан доведён до конца: HUD может показать подпись целиком.</summary>
-        public event Action<ScanResult> Scanned;
+        /// <summary>
+        /// Камера скана. Ищется один раз; если камера пересоздана — ищется заново,
+        /// но не каждый кадр: обращение к <c>Camera.main</c> — это поиск по тегу.
+        /// </summary>
+        private Camera ResolveView()
+        {
+            if (_view == null)
+                _view = Camera.main;
+
+            return _view;
+        }
 
         private void Awake()
         {
@@ -183,7 +191,6 @@ namespace FrostSpace.Features.Scan
                 {
                     _announced = true;
                     Debug.Log($"[ObjectScanner] скан {_current.Name} на {_current.Distance:0.#} м", this);
-                    Scanned?.Invoke(_current);
                 }
             }
 
@@ -442,7 +449,7 @@ namespace FrostSpace.Features.Scan
                 _cone = go.AddComponent<ScanCone>();
             }
 
-            var view = _view != null ? _view : Camera.main;
+            var view = ResolveView();
             var origin = _rig != null && _rig.HeadBone != null
                 ? _rig.HeadBone.position
                 : view != null ? view.transform.position : transform.position;

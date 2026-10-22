@@ -107,6 +107,26 @@ namespace FrostSpace.Features.Menu
         /// </summary>
         private static Texture2D _glowTexture;
 
+        /// <summary>Затемнение под лентой меню. Тоже одна на весь экран.</summary>
+        private static Texture2D _shadeTexture;
+
+        /// <summary>
+        /// Сброс статики между запусками Play Mode: домен не перезагружается, поэтому
+        /// сгенерированные текстуры иначе живут вечно и переживают сцену.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            if (_glowTexture != null)
+                Object.Destroy(_glowTexture);
+
+            if (_shadeTexture != null)
+                Object.Destroy(_shadeTexture);
+
+            _glowTexture = null;
+            _shadeTexture = null;
+        }
+
         private GameObject _settingsPanel;
         private Slider _volume;
         private Button[] _menuButtons;
@@ -368,7 +388,7 @@ namespace FrostSpace.Features.Menu
             shadeRect.offsetMin = Vector2.zero;
             shadeRect.offsetMax = Vector2.zero;
             var shade = shadeObject.AddComponent<RawImage>();
-            shade.texture = BuildShadeTexture();
+            shade.texture = ShadeTexture;
             shade.color = Color.white;
             shade.raycastTarget = false;
 
@@ -752,15 +772,16 @@ namespace FrostSpace.Features.Menu
                 new Vector2(ButtonWidth - 40f, 40f), LabelIdleSpacing);
 
             var fx = go.AddComponent<TechButtonFx>();
-            fx.Duration = _hoverSeconds;
-            fx.MarkerIdleWidth = MarkerIdleWidth;
-            fx.MarkerHoverWidth = _hoverMarkerWidth;
-            fx.LabelIdleOffset = LabelIdleOffset;
-            fx.LabelHoverOffset = _hoverLabelOffset;
-            fx.SpacingIdle = LabelIdleSpacing;
-            fx.SpacingHover = _hoverSpacing;
-            fx.AccentMix = _hoverAccentMix;
-            fx.GlowAlpha = _hoverGlowAlpha;
+            fx.Initialize(
+                duration: _hoverSeconds,
+                markerIdleWidth: MarkerIdleWidth,
+                markerHoverWidth: _hoverMarkerWidth,
+                labelIdleOffset: LabelIdleOffset,
+                labelHoverOffset: _hoverLabelOffset,
+                spacingIdle: LabelIdleSpacing,
+                spacingHover: _hoverSpacing,
+                accentMix: _hoverAccentMix,
+                glowAlpha: _hoverGlowAlpha);
             fx.Bind(markerRect, underlineRect, glow, text.rectTransform, text, ButtonWidth, _accent, _text);
 
             return button;
@@ -774,6 +795,17 @@ namespace FrostSpace.Features.Menu
                     _glowTexture = BuildGlowTexture();
 
                 return _glowTexture;
+            }
+        }
+
+        private static Texture2D ShadeTexture
+        {
+            get
+            {
+                if (_shadeTexture == null)
+                    _shadeTexture = BuildShadeTexture();
+
+                return _shadeTexture;
             }
         }
 
@@ -806,6 +838,7 @@ namespace FrostSpace.Features.Menu
                 name = "MenuShadeGradient",
                 wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave,
             };
 
             for (var x = 0; x < width; x++)

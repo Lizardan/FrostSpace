@@ -90,7 +90,7 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: WebGL
-          # auto = версия из ProjectSettings/ProjectVersion.txt (6000.6.6f1):
+          # auto = версия из ProjectSettings/ProjectVersion.txt (6000.6.7f1):
           # расхождение проекта и контейнера невозможно.
           unityVersion: auto
           # Релиз game-ci CLI. Не «latest»: правило валидации вывода живёт в CLI.

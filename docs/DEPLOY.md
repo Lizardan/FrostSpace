@@ -99,8 +99,8 @@ Windows-раннер.
 2. Файл появляется в `C:\ProgramData\Unity\Unity_lic.ulf`.
 3. Залить, не печатая значение в терминал:
 
-```bash
-gh secret set UNITY_LICENSE -R Lizardan/FrostSpace < /c/ProgramData/Unity/Unity_lic.ulf
+```powershell
+Get-Content "C:/ProgramData/Unity/Unity_lic.ulf" -Raw | gh secret set UNITY_LICENSE -R Lizardan/FrostSpace
 gh secret set UNITY_EMAIL   -R Lizardan/FrostSpace      # спросит интерактивно
 gh secret set UNITY_PASSWORD -R Lizardan/FrostSpace     # спросит интерактивно
 gh secret list -R Lizardan/FrostSpace                   # покажет только имена
@@ -117,16 +117,19 @@ gh secret list -R Lizardan/FrostSpace                   # покажет тол�
 
 ## Рабочий цикл деплоя
 
-```bash
-git add -A && git commit -m "..." && git push origin main
+```powershell
+git add -A
+git commit -m "..."
+git push origin main
 gh run list --limit 1
 gh run watch <run-id> --exit-status      # ждёт конца, код 1 при падении
 ```
 
 Проверить страницу:
 
-```bash
-curl -s https://lizardan.github.io/FrostSpace/ | grep -o "<title>[^<]*</title>"
+```powershell
+(Invoke-WebRequest "https://lizardan.github.io/FrostSpace/").Content -match '<title>[^<]*</title>' | Out-Null
+$Matches[0]
 # <title>FrostSpace</title>
 ```
 
@@ -152,7 +155,7 @@ HTML кешируется GitHub Pages до 10 минут — в браузер�
 
 | Симптом | Причина | Что делать |
 |---|---|---|
-| Сборка падает на «pull image» | для `6000.6.6f1` ещё нет образа `unityci/editor` | проверить тег образа; при необходимости задать `customImage` или вернуть self-hosted |
+| Сборка падает на «pull image» | для `6000.6.7f1` ещё нет образа `unityci/editor` | проверить тег образа; при необходимости задать `customImage` или вернуть self-hosted |
 | `Build succeeded`, но job красный: «There was an error building the project» | CLI game-ci не нашёл в stdout маркеров успеха | печатать `Build succeeded!` и блок `# Build results #` из `BuildWebGL` (уже делает); сверить формат с `StdOutReporter.cs` в game-ci/cli |
 | Exit code 137 через пару секунд после старта билда | OOM: `Library` восстановлен из кэша другого коммита | кэш `Library` не подключать (сейчас его нет намеренно) |
 | Предупреждение «Machine bindings don't match» | в секретах лежит `.ulf` от другого компьютера | убрать `UNITY_LICENSE`, активация идёт по email/паролю |

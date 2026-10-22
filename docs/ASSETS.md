@@ -131,10 +131,15 @@ FBX-экспортёр конвертирует оси. Не «поправля�
 - Коллайдеры: рельеф — `MeshCollider`, у частей дома и пропов — конвексные/меш-коллайдеры;
   геометрия без коллайдера (мелкие пропы, снежная плита крыши) не участвует в скрытии
   перекрытий (ADR 0006).
-- Превью — `AssetSource/Previews/Level/`; в `Assets/` скриншотов и `.blend` нет.
+- Превью — AssetSource/Previews/Level/; в Assets/ скриншотов и .blend нет.
+- Assets/TextMesh Pro/ — ресурсы TextMeshPro, **не трогать**: Resources/TMP Settings.asset
+  задаёт defaultFontAsset, который используют BootScreen, MainMenuScreen,
+  PlayerHud и SceneController через TMP_Settings.defaultFontAsset. Шейдеры в
+  этой папке — легаси TMP 3.x; в проекте используется только TMP_SDF-Mobile.shader,
+  остальные удалены 2026-10-22 как неиспользуемые (TMP 5.x внутри com.unity.ugui 2.6.0).
 - Ховербайк — отдельный FBX того же пайплайна: `Tools/Blender/build_hoverbike.py` →
   `Content/Models/Level/Hoverbike.fbx` (820 тр., габарит после импорта 1.04 × 3.01 × 0.73 м).
-  Префабы `Prefabs/Ride/Hoverbike_A_Model` (макет из примитивов) и `Hoverbike_B_Model`
+  Префаб `Prefabs/Ride/Hoverbike_Model` (корпус, `Visual`, `Cushion`)
   (обёртка над FBX) собираются меню `FrostSpace → Ride`; подушка и игровые
   компоненты — на корне префаба, не в FBX (ADR 0012).
 - Мотоцикл — там же: `Tools/Blender/build_motorcycle.py` (дизайн

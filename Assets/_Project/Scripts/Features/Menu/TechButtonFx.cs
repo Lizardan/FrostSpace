@@ -21,37 +21,40 @@ namespace FrostSpace.Features.Menu
     {
         [Header("Тайминг")]
         [Tooltip("За сколько секунд подсветка доезжает до конечного состояния")]
-        public float Duration = 0.16f;
+        [SerializeField] private float _duration = 0.16f;
 
         [Header("Маркер")]
         [Tooltip("Толщина маркера в покое")]
-        public float MarkerIdleWidth = 3f;
+        [SerializeField] private float _markerIdleWidth = 3f;
 
         [Tooltip("Толщина маркера под курсором")]
-        public float MarkerHoverWidth = 7f;
+        [SerializeField] private float _markerHoverWidth = 7f;
 
         [Header("Строка")]
         [Tooltip("Отступ строки от левого края в покое")]
-        public float LabelIdleOffset = 28f;
+        [SerializeField] private float _labelIdleOffset = 28f;
 
         [Tooltip("Отступ строки от левого края под курсором")]
-        public float LabelHoverOffset = 42f;
+        [SerializeField] private float _labelHoverOffset = 42f;
 
         [Tooltip("Разрядка букв в покое")]
-        public float SpacingIdle = 10f;
+        [SerializeField] private float _spacingIdle = 10f;
 
         [Tooltip("Разрядка букв под курсором")]
-        public float SpacingHover = 18f;
+        [SerializeField] private float _spacingHover = 18f;
 
         [Tooltip("Насколько строка уходит в цвет акцента под курсором, 0..1")]
-        [Range(0f, 1f)] public float AccentMix = 0.35f;
+        [Range(0f, 1f)]
+        [SerializeField] private float _accentMix = 0.35f;
 
         [Header("Свечение и линия")]
         [Tooltip("Прозрачность холодного свечения под курсором, 0..1")]
-        [Range(0f, 1f)] public float GlowAlpha = 0.22f;
+        [Range(0f, 1f)]
+        [SerializeField] private float _glowAlpha = 0.22f;
 
         [Tooltip("Прозрачность акцентной линии снизу под курсором, 0..1")]
-        [Range(0f, 1f)] public float UnderlineAlpha = 0.95f;
+        [Range(0f, 1f)]
+        [SerializeField] private float _underlineAlpha = 0.95f;
 
         private RectTransform _marker;
         private Image _markerImage;
@@ -65,6 +68,32 @@ namespace FrostSpace.Features.Menu
         private Color _labelColor;
         private float _value;
         private float _target;
+
+        /// <summary>
+        /// Задаёт стиль подсветки. Компонент создаётся кодом, поэтому значения приходят
+        /// из <see cref="MainMenuScreen"/> явно, а не из инспектора.
+        /// </summary>
+        public void Initialize(
+            float duration,
+            float markerIdleWidth,
+            float markerHoverWidth,
+            float labelIdleOffset,
+            float labelHoverOffset,
+            float spacingIdle,
+            float spacingHover,
+            float accentMix,
+            float glowAlpha)
+        {
+            _duration = duration;
+            _markerIdleWidth = markerIdleWidth;
+            _markerHoverWidth = markerHoverWidth;
+            _labelIdleOffset = labelIdleOffset;
+            _labelHoverOffset = labelHoverOffset;
+            _spacingIdle = spacingIdle;
+            _spacingHover = spacingHover;
+            _accentMix = accentMix;
+            _glowAlpha = glowAlpha;
+        }
 
         /// <summary>
         /// Привязывает элементы кнопки к подсветке и сразу ставит их в состояние покоя.
@@ -103,7 +132,7 @@ namespace FrostSpace.Features.Menu
             if (Mathf.Approximately(_value, _target))
                 return;
 
-            _value = Mathf.MoveTowards(_value, _target, Time.unscaledDeltaTime / Mathf.Max(Duration, 0.0001f));
+            _value = Mathf.MoveTowards(_value, _target, Time.unscaledDeltaTime / Mathf.Max(_duration, 0.0001f));
             Apply();
         }
 
@@ -114,7 +143,7 @@ namespace FrostSpace.Features.Menu
             if (_marker != null)
             {
                 var size = _marker.sizeDelta;
-                _marker.sizeDelta = new Vector2(Mathf.Lerp(MarkerIdleWidth, MarkerHoverWidth, t), size.y);
+                _marker.sizeDelta = new Vector2(Mathf.Lerp(_markerIdleWidth, _markerHoverWidth, t), size.y);
 
                 if (_markerImage != null)
                 {
@@ -132,7 +161,7 @@ namespace FrostSpace.Features.Menu
                 if (_underlineImage != null)
                 {
                     var color = _accent;
-                    color.a = UnderlineAlpha * t;
+                    color.a = _underlineAlpha * t;
                     _underlineImage.color = color;
                 }
             }
@@ -140,20 +169,20 @@ namespace FrostSpace.Features.Menu
             if (_glow != null)
             {
                 var color = _accent;
-                color.a = GlowAlpha * t;
+                color.a = _glowAlpha * t;
                 _glow.color = color;
             }
 
             if (_label != null)
             {
                 var position = _label.anchoredPosition;
-                _label.anchoredPosition = new Vector2(Mathf.Lerp(LabelIdleOffset, LabelHoverOffset, t), position.y);
+                _label.anchoredPosition = new Vector2(Mathf.Lerp(_labelIdleOffset, _labelHoverOffset, t), position.y);
             }
 
             if (_labelText != null)
             {
-                _labelText.characterSpacing = Mathf.Lerp(SpacingIdle, SpacingHover, t);
-                _labelText.color = Color.Lerp(_labelColor, _accent, AccentMix * t);
+                _labelText.characterSpacing = Mathf.Lerp(_spacingIdle, _spacingHover, t);
+                _labelText.color = Color.Lerp(_labelColor, _accent, _accentMix * t);
             }
         }
     }

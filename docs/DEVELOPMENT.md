@@ -4,10 +4,11 @@
 
 | Компонент | Значение | Проверено |
 |---|---|---|
-| Unity | 6000.6.6f1 | да |
-| Редактор | `F:\Unity\Editor\Unity.exe` | да |
+| Unity | 6000.6.7f1 | да |
+| Редактор | `F:\Unity\Editor\6000.6.7f1\Editor\Unity.exe` | да |
 | Проект | `F:\Unity Projects\FrostSpace` | да |
 | Python | 3.14.3 (для `Tools/`) | да |
+| Скиллы | `.Aura/Skills/` + мост `.agents/skills/` | настроены `Tools/Agent/LinkAgentSkills.ps1` |
 | Blender | 5.2.2 LTS, `G:\Steam\steamapps\common\Blender\blender.exe` | да |
 | Unity MCP | порт `127.0.0.1:6400`, инструменты доступны | да |
 | Blender MCP | порт `9876`, только при запущенном GUI-Blender | аддон установлен, мост проверен mock-тестом |
@@ -31,27 +32,59 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 
 Проверка импорта/компиляции:
 
-```bash
-"F:/Unity/Editor/Unity.exe" -batchmode -quit \
-  -projectPath "F:/Unity Projects/FrostSpace" \
-  -logFile "F:/Unity Projects/FrostSpace/Temp/batch-import.log"
+```powershell
+& "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -batchmode -quit -projectPath "F:/Unity Projects/FrostSpace" -logFile "F:/Unity Projects/FrostSpace/Temp/batch-import.log"
 ```
 
 Тесты EditMode (не добавляй `-quit`: `-runTests` завершает процесс сам):
 
-```bash
-"F:/Unity/Editor/Unity.exe" -runTests -batchmode \
-  -projectPath "F:/Unity Projects/FrostSpace" \
-  -testPlatform EditMode \
-  -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
+```powershell
+& "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тесты PlayMode — то же с `-testPlatform PlayMode`. EditMode-тесты живут в
-`FrostSpace.Tests.EditMode` (проверки префабов и клипов роботов). `total: 0` в отчёте
-означает, что тесты не найдены, а не что «всё прошло».
+Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 41 тест:
+проверки префабов и клипов роботов и животных, `ViewBlend`, экранный вырез, карусель
+модулей). Флаг `-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
+не существует. `total: 0` в отчёте означает, что тесты не найдены, а не что «всё прошло».
 
-Сборка: готового build-метода и build-профиля нет. Не выдумывай команду; используй
-Unity MCP `manage_build` или сначала создай Editor-метод сборки отдельной задачей.
+Сборка: build-метод есть — `FrostSpace.Editor.BuildWebGL.PerformBuild` (см. раздел
+«WebGL и публикация»). Собирается только из CLI, меню в редакторе нет (ADR 0005).
+Целевая платформа одна — WebGL.
+
+## Пакеты: как они обновляются
+
+`Packages/manifest.json` — источник правды по версиям. Обычные пакеты закреплены
+точными версиями (`com.unity.render-pipelines.universal` = `17.6.0` и т.д.) и
+обновляются только вручную: меняешь строку в манифесте.
+
+Два пакета приходят из git и **следуют за веткой**:
+
+```json
+"com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
+"com.ramenvr.aura-unity": "https://github.com/ramenvr/AuraForUnityPlugin.git"
+```
+
+Так они обновляются сами: новая версия на GitHub приезжает при перерезолве.
+
+**Как это работает на самом деле.** `Packages/packages-lock.json` фиксирует конкретный
+коммит каждого git-пакета (`hash`). Пока lock не трогали, сборка воспроизводима и
+новый коммит не подтягивается сам. Новый коммит подтягивается при перерезолве:
+
+- Package Manager → `Resolve` (кнопка в окне);
+- или удалить запись пакета из `packages-lock.json` и открыть проект;
+- или изменить строку в `manifest.json`.
+
+**Что это значит на практике:**
+
+| Хочется | Как сделать |
+|---|---|
+| Обновить Unity MCP или плагин Aura до свежего | Package Manager → `Resolve`, затем закоммитить изменившийся `packages-lock.json` |
+| Откатить на прошлую версию | В `packages-lock.json` вернуть прежний `hash` |
+| Собрать ровно ту же версию, что и вчера | Ничего не делать: lock уже закрепляет коммит |
+
+Плавающая ветка означает: обновление приезжает само, но может приехать неожиданно.
+Если такое не устраивает — закрепи тег (`#v10.3.0`) вместо ветки, и обновлять придётся
+вручную. Тогда в `manifest.json` вместо `#main` пишется конкретный тег.
 
 ## WebGL и публикация
 
@@ -72,10 +105,8 @@ Unity MCP `manage_build` или сначала создай Editor-метод с
   человек должны ждать `Builds/webgl-result.json`, а не код возврата.
 - **Локальная проверка** (редактор должен быть закрыт, иначе `Temp/UnityLockfile`):
 
-  ```bash
-  "F:/Unity/Editor/6000.6.6f1/Editor/Unity.exe" -quit -batchmode \
-    -projectPath "F:/Unity Projects/FrostSpace" -buildTarget WebGL \
-    -executeMethod FrostSpace.Editor.BuildWebGL.PerformBuild
+  ```powershell
+  & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -quit -batchmode -projectPath "F:/Unity Projects/FrostSpace" -buildTarget WebGL -executeMethod FrostSpace.Editor.BuildWebGL.PerformBuild
   ```
 
 ## Blender
@@ -85,19 +116,19 @@ Blender не обязателен для Unity-разработки. Если з
 
 ```bash
 # сборка/проверка без GUI
-"/g/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
+"G:/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
   --python Tools/Blender/selftest.py
 
 # роботы: пересборка FBX (перезаписывает Content/Models/Robots — запускать осознанно)
-"/g/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
+"G:/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
   --python Tools/Blender/build_robots.py -- R1
 
 # роботы: замер скорости стопы в клипах
-"/g/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
+"G:/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
   --python Tools/Blender/measure_locomotion.py -- <file.fbx>
 
 # живой MCP — только GUI
-"/g/Steam/steamapps/common/Blender/blender.exe" --python Tools/Blender/blender_boot.py
+"G:/Steam/steamapps/common/Blender/blender.exe" --python Tools/Blender/blender_boot.py
 ```
 
 Headless-прогон — основной путь; GUI нужен только для визуального/интерактивного
@@ -115,7 +146,7 @@ Headless-прогон — основной путь; GUI нужен только
 | Анализ PNG | `blender --background ... inspect_image.py -- <file.png>` | работает |
 | Unity ping через мост | `python Tools/Unity/unity_bridge.py ping` | `pong` |
 | Unity MCP Console | `read_console(types: ["error"])` | 0 ошибок |
-| Unity MCP сцена | `manage_scene(get_active)` | `MainMenu`, `MenuDiorama` + `MenuFlow`, index 1 |
+| Unity MCP сцена | `manage_scene(get_active)` | `Boot` (index 0) — активная сцена редактора; `MainMenu` — index 1 |
 | Unity MCP Build Settings | `manage_scene(get_build_settings)` | `Boot` 0, `MainMenu` 1, `Game` 2 |
 | Тесты Unity | `run_tests` + `get_test_job` | 41 EditMode — PASS (2026-10-21): префабы и клипы роботов/животных, `ViewBlend`, вырез, карусель модулей |
 | Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | базлайн 2026-10-18: walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° — **на ровном рельефе** |
@@ -126,7 +157,7 @@ Headless-прогон — основной путь; GUI нужен только
 | Превью партии роботов | `blender ... render_robot_lineup.py -- <имена>` | PASS (2026-10-18): idle, спереди/сзади |
 | Контактный лист | `blender ... make_robot_sheet.py -- --cols 5 <имена>` | PASS (2026-10-18): 2400 px, с подписями |
 | Мотоцикл в Play | префаб `Motorcycle_Model` в `Game`, Console по `[Motorcycle]` | PASS (2026-10-21): посадка/сход, разгон до 17 м/с, вид сверху; колёса проверены по `mesh.bounds.center ≈ 0` |
-| Сборка Unity | `manage_build` | не запускалась: нет build-метода и платформы |
+| Сборка Unity (WebGL) | `BuildWebGL.PerformBuild` | выполняется в CI (`.github/workflows/webgl.yml`); локальный запуск — только при закрытом редакторе |
 
 ## Что не проверено
 
@@ -140,8 +171,9 @@ Headless-прогон — основной путь; GUI нужен только
   только опоры. На фасетном уровне проверяй баланс шага: клип `L` секунд при скорости
   клипа `v` сдвигает стопу на `L·v` за цикл, и столько же должен проходить персонаж
   (`скорость × L / animSpeed`); расхождение = скольжение. Стенд гоняй на ровной зоне.
-- Unity build: нет build-метода и целевой платформы.
-- Импорт моделей из `AssetSource/`: архивы не распакованы, `Assets/ThirdParty/` пуст.
+- Unity build: локальный WebGL-сборка после правок не запускалась (метод и workflow есть,
+  последняя локальная проверка — до 2026-10-22).
+- Импорт моделей из `AssetSource/`: архивы не распакованы, каталога `Assets/ThirdParty/` нет.
 
 ## Правила проверки
 

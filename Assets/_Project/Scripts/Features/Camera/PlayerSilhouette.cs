@@ -91,7 +91,7 @@ namespace FrostSpace.Features.View
             if (_target == null)
                 _target = transform;
             if (_rig == null)
-                _rig = FindFirstObjectByType<PlayerCameraRig>();
+                _rig = FindAnyObjectByType<PlayerCameraRig>();
             if (_source == null)
                 _source = GetComponentInChildren<SkinnedMeshRenderer>();
 

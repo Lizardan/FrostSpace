@@ -219,7 +219,7 @@
 | `Tools/Blender/level_parts.py` | детали уровня (числа масштаба — здесь) |
 | `Tools/Blender/level_layout.py` | раскладка уровня, `to_blender(x, z) = (x, −z)` |
 | `Tools/Blender/build_level.py` | сборка 19 FBX уровня |
-| `Tools/Blender/hoverbike_parts.py`, `build_hoverbike.py` | ховербайк: геометрия и FBX (вариант B); макет A — `Assets/_Project/Editor/HoverbikeMockBuilder.cs` |
+| `Tools/Blender/hoverbike_parts.py`, `build_hoverbike.py` | ховербайк: геометрия и FBX; сборка префаба — `Assets/_Project/Editor/HoverbikeModelBuilder.cs` |
 | `Tools/Blender/motorcycle_parts.py`, `build_motorcycle.py` | мотоцикл: геометрия и FBX; pivot колёс — в оси, меш вокруг нуля |
 | `Tools/Blender/build_wreck_parts.py`, `build_menu_open.py` | обломки корабля и занос для открытого вида меню |
 | `Tools/Blender/build_menu_views.py` | декорации видов станции, каньона и депо (мачта, ледяная стена, мост, ворота) — ADR 0014 |

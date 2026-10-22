@@ -97,9 +97,6 @@ namespace FrostSpace.Features.View
         /// <summary>Текущий режим.</summary>
         public CameraMode Mode { get; private set; } = CameraMode.ThirdPerson;
 
-        /// <summary>Смена режима — событие для локомоции, позы рук и локального вида.</summary>
-        public event Action<CameraMode> ModeChanged;
-
         /// <summary>Корпус доворачивается по камере только в первом лице.
         /// В третьем лице камера ведёт взгляд, а корпус идёт по WASD.</summary>
         public bool FacesCamera => Mode == CameraMode.FirstPerson;
@@ -286,7 +283,6 @@ namespace FrostSpace.Features.View
             LockCursor();
 
             Debug.Log($"[PlayerCameraRig] режим {previous} → {next}", this);
-            ModeChanged?.Invoke(next);
         }
 
         private CameraPose ComputePose(CameraMode mode, bool settled)
