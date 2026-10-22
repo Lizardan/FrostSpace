@@ -137,6 +137,7 @@ FrostSpace/
 | Скиллы | `.Aura/Skills/` — единственный источник; opencode — `opencode.json` (`skills.paths`), остальные рантаймы — мост `.agents/skills/` |
 | Планы работ | `Assets/.Aura/plans/` — единственное место; Aura пишет туда нативно (правила — `Assets/.Aura/plans/README.md`) |
 | Blender-тулинг | `Tools/Blender/`, документация — `BLENDER.md` |
+| Пайплайн ассетов | `Tools/Blender/build_all.py` — единый вход: сборка → проверки → превью; реестр `PIPELINE` внутри файла, логи — `Tools/Blender/logs/` (ADR 0017) |
 | Unity-мост | `Tools/Unity/unity_bridge.py`, документация — `UNITY_MCP.md` |
 | Исходные архивы | `AssetSource/` (в git не входит) |
 | Импортированные паки | `Assets/ThirdParty/<Pack>/` + `SOURCE.md` (каталога пока нет) |

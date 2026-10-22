@@ -9,9 +9,9 @@
 | Проект | `F:\Unity Projects\FrostSpace` | да |
 | Python | 3.14.3 (для `Tools/`) | да |
 | Скиллы | `.Aura/Skills/` + мост `.agents/skills/` | настроены `Tools/Agent/LinkAgentSkills.ps1` |
-| Blender | 5.2.2 LTS, `G:\Steam\steamapps\common\Blender\blender.exe` | да |
+| Blender | 5.2.3 LTS, `G:\Steam\steamapps\common\Blender\blender.exe` | да |
 | Unity MCP | порт `127.0.0.1:6400`, инструменты доступны | да |
-| Blender MCP | порт `9876`, только при запущенном GUI-Blender | аддон установлен, мост проверен mock-тестом |
+| Blender MCP | сервер `mcp-for-blender==2.2.2`, аддон протокол 14, порт `9876`, только при запущенном GUI-Blender | версии согласованы; end-to-end не проверен |
 
 Версия Unity берётся из `ProjectSettings/ProjectVersion.txt`, а не из памяти. Путь к
 редактору может отличаться на другой машине: ищи его через Unity Hub, не хардкодь в
@@ -115,31 +115,27 @@ Blender не обязателен для Unity-разработки. Если з
 `BLENDER.md`. Кратко:
 
 ```bash
-# сборка/проверка без GUI
-"G:/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
-  --python Tools/Blender/selftest.py
-
-# роботы: пересборка FBX (перезаписывает Content/Models/Robots — запускать осознанно)
-"G:/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
-  --python Tools/Blender/build_robots.py -- R1
-
-# роботы: замер скорости стопы в клипах
-"G:/Steam/steamapps/common/Blender/blender.exe" --background --factory-startup \
-  --python Tools/Blender/measure_locomotion.py -- <file.fbx>
+# единственный вход пайплайна: сборка + проверки + превью (ADR 0017)
+python Tools/Blender/build_all.py --list                  # реестр ассетов
+python Tools/Blender/build_all.py --asset hoverbike --check
+python Tools/Blender/build_all.py --asset robots --ids R1 --preview
 
 # живой MCP — только GUI
 "G:/Steam/steamapps/common/Blender/blender.exe" --python Tools/Blender/blender_boot.py
 ```
 
-Headless-прогон — основной путь; GUI нужен только для визуального/интерактивного
-контроля. Подробности и грабли — в `BLENDER.md`.
+Профильные команды (`blender --background --python build_robots.py -- R1` и т.п.) остаются
+рабочими для точечной отладки, но штатный путь — `build_all.py`: он сам находит Blender и
+пишет лог в `Tools/Blender/logs/`. Headless — основной путь; GUI нужен только для
+визуального/интерактивного контроля. Подробности и грабли — в `BLENDER.md`.
 
 ## Проверки, которые реально доступны
 
 | Проверка | Команда | Статус |
 |---|---|---|
 | Синтаксис Python-утилит | `python -m compileall -q Tools` | выполняется |
-| Low-poly ядро + FBX roundtrip | `blender --background --factory-startup --python Tools/Blender/selftest.py` | PASS на 5.2.2 |
+| Пайплайн ассетов (сборка+проверки) | `python Tools/Blender/build_all.py --asset <id> --check` | PASS (2026-10-22): сборка hoverbike, `selftest`, `fbx_units`, локомоция R1 |
+| Low-poly ядро + FBX roundtrip | `blender --background --factory-startup --python Tools/Blender/selftest.py` | PASS на 5.2.3 |
 | Единицы внутри FBX | `python Tools/Blender/fbx_units.py <file.fbx>` | работает |
 | Разбор FBX после импорта | `blender --background ... probes/probe_fbx_import.py -- <file.fbx>` | работает |
 | API действий Blender 5.x | `blender --background ... probes/probe_action_api.py` | работает |
@@ -182,5 +178,6 @@ Headless-прогон — основной путь; GUI нужен только
 - Не запускай тесты при ошибках компиляции: Unity может вернуть ложный `Passed` на
   старой сборке.
 - После правки скриптов: `refresh_unity` → `read_console(errors)` → только потом тесты.
-- После правки Blender-утилит: `selftest.py` и профильная проба, а не только `py_compile`.
+- После правки Blender-утилит: `build_all.py --check` (или `selftest.py` + профильная проба),
+  а не только `py_compile`.
 - Долгие batch-прогоны не запускай при открытом редакторе: сначала закрой Unity.

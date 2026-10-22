@@ -37,7 +37,7 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 | Сцены | Поток `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `Game` (2, игровой уровень); переходы — только через `Core/SceneController.cs` (ADR 0011) |
 | Код | `Core/` (2 файла), `Features/` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `Editor/` (5 файлов: 3 постпроцессора FBX + сборка WebGL + сборщик ховербайка), `Tests/EditMode/` (5 файлов, 41 тест); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
 | Unity MCP | пакет `com.coplaydev.unity-mcp`, порт `127.0.0.1:6400` |
-| Blender | **5.2.2 LTS**, аддон `blender_mcp`, порт `9876` (только GUI) |
+| Blender | **5.2.3 LTS**, аддон `blender_mcp` (протокол 14), порт `9876` (только GUI) |
 | Исходники ассетов | `AssetSource/` — вне git, Unity их не видит |
 
 Точные версии пакетов — `Packages/manifest.json` и `Packages/packages-lock.json`;
@@ -65,6 +65,11 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 Правила:
 - **Скрипт — источник истины.** Всё воспроизводимое живёт в `Tools/` или в проектном
   генераторе, а не в разовой команде MCP.
+- **Единый вход ассетов — `Tools/Blender/build_all.py`** (ADR 0017). Сборка, `--check` и
+  `--preview` идут только через него; реестр ассетов — `PIPELINE` в этом файле, флаги —
+  `docs/BLENDER.md` §«Единая точка входа».
+- **Ассет считается сделанным**, только если он появился из прогона `build_all.py`,
+  прошёл `--check` и оставил превью. Разовая правка в GUI-Blender — черновик.
 - **MCP — глаза и руки, не замена скрипту.** Результат MCP-правки, который должен
   сохраниться, переносится в скрипт и перепроверяется headless.
 - **Качество не зависит от транспорта.** Headless и GUI используют один `bpy`;
@@ -279,10 +284,14 @@ pwsh -File Tools/Agent/LinkAgentSkills.ps1 -Check    # только провер
    ошибках компиляции: будет ложный `Passed` на старой сборке.
 
 **Blender:**
-1. `blender --background --factory-startup --python Tools/Blender/selftest.py`.
-2. Профильные пробы: `probes/probe_action_api.py`, `probes/probe_fbx_import.py`.
-3. Габариты/единицы — `fbx_units.py`; рендер — `inspect_image.py`.
-4. GUI-MCP — только если нужен визуальный/интерактивный результат.
+1. `python Tools/Blender/build_all.py --asset <id> --check` — сборка и инварианты
+   (`selftest.py`, `fbx_units.py`, профильные шаги); лог — `Tools/Blender/logs/`.
+2. Превью: `--preview` (или `--preview --skip-build` по готовым файлам) — то, что числами
+   не видно.
+3. Профильные пробы: `probes/probe_action_api.py`, `probes/probe_fbx_import.py`; единицы
+   и габариты — `fbx_units.py`; рендер-разбор — `inspect_image.py`.
+4. GUI-MCP — только если нужен визуальный/интерактивный результат; его результат обязан
+   вернуться в скрипт и перепровериться headless.
 
 **Общее:** не заявляй, что код компилируется, сцена работает или тест проходит, если
 проверка фактически не выполнялась. Не удалось — напиши `Not verified` и причину.

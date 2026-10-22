@@ -8,14 +8,15 @@
 
 | Параметр | Значение | Проверено |
 |---|---|---|
-| Версия | Blender **5.2.2 LTS** (`build 2026-09-15`, hash `d13f752e3b9c`) | да |
+| Версия | Blender **5.2.3 LTS** (`build 2026-10-22`, hash `e13b728c6880`) | да |
 | Путь | `G:\Steam\steamapps\common\Blender\blender.exe` | да |
 | Аддоны | `%APPDATA%\Blender Foundation\Blender\5.2\scripts\addons` | да |
-| MCP-аддон | `blender_mcp.py`, протокол аддона **13** | установлен; протокол — по документации |
-| MCP-сервер | пакет `mcp-for-blender==2.1.9` | по документации пакета |
+| MCP-аддон | `blender_mcp.py`, протокол аддона **14** | установлен пакетом 2.2.2 |
+| MCP-сервер | пакет `mcp-for-blender==2.2.2` | `--help` и `install-addon` проверены |
 | Порт моста | **9876** | по конфигурации; в этой сессии не слушал |
 | Наш мост | `Tools/Blender/blender_bridge.py` | mock-тест |
 | Загрузчик | `Tools/Blender/blender_boot.py` | headless-отказ проверен |
+| **Единый вход ассетов** | `Tools/Blender/build_all.py` (ADR 0017) | сборка, проверки и превью прогнаны на 5.2.3 |
 | Роботы | `robot_lib.py`, `robot_designs.py`, `build_robots.py`, `measure_locomotion.py` | сборка и замер прогоняются headless |
 
 Путь и версия — **параметр окружения**, а не константа в коде. На другой машине они
@@ -39,6 +40,60 @@
   сборку Blender; разница только в цикле обратной связи.
 - Если пользователь просит показать шаг — покажи через GUI; иначе не открывай окно
   без необходимости.
+
+## Единая точка входа: `build_all.py`
+
+**Это единственный поддерживаемый способ произвести ассет** (ADR 0017). Остальные
+`build_*` остаются рабочими командами для точечной отладки, но пайплайн — здесь.
+
+```powershell
+python Tools/Blender/build_all.py --list                    # реестр ассетов, Blender не запускается
+python Tools/Blender/build_all.py --asset hoverbike         # сборка одного ассета
+python Tools/Blender/build_all.py --asset robots --ids R1 --jump
+python Tools/Blender/build_all.py --asset level --ids terrain house --check
+python Tools/Blender/build_all.py --all --check             # сборка всего + инварианты
+python Tools/Blender/build_all.py --asset robots --ids R1 --preview
+python Tools/Blender/build_all.py --asset level --preview --skip-build
+python Tools/Blender/build_all.py --all --dry-run           # напечатать команды
+```
+
+| Флаг | Что делает |
+|---|---|
+| `--asset <id>` / `--all` | какие ассеты гнать (повторяемый `--asset`); `--list` показывает id |
+| `--ids <имена...>` | аргументы скрипта сборки (имена роботов, виды, секции) **и** фильтр превью/проверок по имени файла |
+| `--jump` | прокинуть `--jump` в `build_robots.py` (клипы прыжка) |
+| `--check` | `selftest.py` + `fbx_units.py` по всем файлам + профильные шаги (локомоция роботов) |
+| `--preview` | рендер PNG в `AssetSource/Previews/...` |
+| `--skip-build` | не пересобирать: только превью/проверки по готовым файлам |
+| `--dry-run` | напечатать команды, ничего не запускать |
+| `--blender <путь>` | явный путь; иначе `BLENDER_EXE` → `PATH` → типовые каталоги |
+| `--timeout <с>` | таймаут шага (по умолчанию сборка 1800, превью 900, проверка 600) |
+
+Реестр `PIPELINE` внутри скрипта — единственное место, где записано соответствие
+«ассет → сборочный скрипт → выходные файлы → превью → проверки». Новый ассет без записи
+в реестре для пайплайна не существует. Лог каждого прогона — `Tools/Blender/logs/`.
+
+**Правило приёмки.** Ассет считается сделанным, только если он появился из прогона
+`build_all.py`, прошёл `--check` и оставил превью. Разовая правка в GUI-Blender —
+черновик, пока не закреплена скриптом и не перепроверена headless.
+
+### Что MCP даёт и чего не даёт
+
+Проверено по таблице команд аддона 2.2.2: **команд моделирования, риггинга и анимации в
+нём нет**. Единственная команда, меняющая геометрию, — `execute_code` (тот же `bpy`,
+что и в headless). Остальное — инспекция (`get_scene_info`, `list_scene_items`,
+`material_info`, `pick_viewport_object`, `get_viewport_screenshot`), интроспекция API
+(`bpy_api_lookup`, `describe_node_type`), библиотеки и генераторы (Poly Haven, Sketchfab,
+Poly Pizza, Hyper3D, Tripo, Hunyuan3D, Meshy) и `export_scene`.
+
+| Задача | Чем решается |
+|---|---|
+| Сборка, риг, клипы, экспорт, регрессии | **`build_all.py`** (headless) |
+| Довести форму, посмотреть варианты, разобрать чужой `.blend` | GUI + MCP (черновик) |
+| Готовый статичный проп или текстуры/HDRI | библиотеки и генераторы аддона либо `generate_model_from_*` у Aura (без Blender) |
+
+Анимацию и скиннинг библиотеки не дают вообще: AI-меши приходят с трисовой топологией
+без управляемых UV и весов — это форма, а не модель под риг.
 
 ## Окружение и запуск
 
@@ -114,7 +169,7 @@ if bpy.app.background:
   "mcpServers": {
     "blenderMCP": {
       "command": "C:/Users/<user>/.local/bin/uvx.exe",
-      "args": ["--from", "mcp-for-blender==2.1.9", "mcp-for-blender"],
+      "args": ["--from", "mcp-for-blender==2.2.2", "mcp-for-blender"],
       "env": {
         "PYTHONUTF8": "1",
         "BLENDER_PORT": "9876"
@@ -134,13 +189,18 @@ if bpy.app.background:
   ```powershell
   $env:BLENDERMCP_ADDONS_DIR = "C:/Users/<user>/AppData/Roaming/Blender Foundation/Blender/5.2/scripts/addons"
   $env:PYTHONUTF8 = "1"
-  uvx --from mcp-for-blender==2.1.9 mcp-for-blender install-addon
+  uvx --from mcp-for-blender==2.2.2 mcp-for-blender install-addon
   ```
 
   `$env:PYTHONUTF8 = "1"` обязателен. Без него CLI может упасть на печати результата
   (`UnicodeEncodeError` на cp1251), хотя аддон уже скопирован. Проверяй каталог
-  аддонов, а не только код возврата. Команду сверяй с `--help` установленной версии:
-  мы её не запускали, аддон уже стоял.
+  аддонов, а не только код возврата.
+
+  Проверено 2026-10-22 на 5.2.3 → пакет 2.2.2: аддон `blender_mcp.py` установлен,
+  `ADDON_PROTOCOL_VERSION = 14` (у 2.1.3 было 13). В 2.2.2 добавился генератор Meshy
+  (`create_meshy_job` / `refine_meshy_job` / `import_generated_asset_meshy`).
+  После обновления аддона GUI-Blender надо перезапустить или сделать
+  disable/enable у `Interface: MCP for Blender`.
 
 ### Команды аддона
 
@@ -189,18 +249,27 @@ python Tools/Blender/blender_bridge.py ping
 
 ## Golden loop проверки ассетов
 
+Один вход вместо семи команд:
+
+```powershell
+python Tools/Blender/build_all.py --all --check --preview
 ```
-1. blender --background --python test_*.py      # инварианты геометрии, код возврата
-2. blender --background --python make_*.py      # сборка и экспорт
-3. python fbx_units.py <file.fbx>               # объявленная единица внутри FBX
-4. probe_fbx_import.py -- <file.fbx>            # габарит после обратного импорта
-5. render PNG -> inspect_image.py               # то, что числами не видно
-6. GUI+MCP: get_scene_info / viewport screenshot # только если нужен визуальный контроль
-7. записать в отчёт: что проверено, что нет
+
+Что внутри и что можно запускать отдельно:
+
+```
+1. сборка       build_all.py --asset <id>            # его же --dry-run показывает команду
+2. инварианты   build_all.py --check                  # selftest.py + fbx_units.py
+3. локомоция    build_all.py --asset robots --check    # measure_locomotion.py по каждому FBX
+4. габарит      probes/probe_fbx_import.py -- <fbx>   # ручная проба, когда нужна
+5. превью       build_all.py --asset <id> --preview --skip-build  # PNG для глаз
+6. MCP          GUI-Blender                          # только если нужен визуальный контроль
+7. отчёт        Tools/Blender/logs/build_all_*.log    # пишется сам
 ```
 
 `Tools/Blender/selftest.py` — минимальный прогон этого цикла для low-poly ядра: собирает
 меш, проверяет топологию, экспортирует FBX, импортирует обратно и сравнивает габарит.
+Он входит в `--check` всегда, независимо от выбранных ассетов.
 
 ## Blender 5.x: проверенные грабли
 

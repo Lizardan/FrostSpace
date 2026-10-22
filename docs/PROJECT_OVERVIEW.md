@@ -36,7 +36,8 @@
 | NPC | `NpcController` (ходьба по маршруту) и `AirPatrolController` (патруль) | `Assets/_Project/Scripts/Features/Npc/` |
 | Сборка и CI | `BuildWebGL.PerformBuild` (только CLI) + `.github/workflows/webgl.yml` (game-ci, `unityVersion: auto`) | `Assets/_Project/Editor/BuildWebGL.cs` |
 | Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-22 |
-| Blender | 5.2.2 LTS, аддон `blender_mcp` установлен | фактический запуск |
+| Blender | 5.2.3 LTS, аддон `blender_mcp` (протокол 14, сервер 2.2.2) установлен | `--version` и `install-addon` |
+| Пайплайн ассетов | единый вход `Tools/Blender/build_all.py`: сборка → проверки → превью (ADR 0017) | прогон 2026-10-22 |
 | Скиллы | 34 скилла Unity + проектный `plans`, мосты для всех агентов | `.Aura/Skills/`, `Tools/Agent/LinkAgentSkills.ps1` |
 
 ## Чего в проекте нет
@@ -71,7 +72,8 @@ NPC, CI и build-метод **есть** — см. таблицу выше.
 - **Unity MCP подключён к живому редактору.** Пока редактор открыт, batch-mode недоступен
   из-за `Temp/UnityLockfile`; для итераций используй MCP, для чистой проверки — batch.
 - **Blender MCP работает только в GUI.** Headless-сборка идёт скриптами; это штатный путь,
-  а не обходной.
+  а не обходной. Единственный вход сборки ассетов — `Tools/Blender/build_all.py` (ADR 0017);
+  MCP — черновик и визуальный контроль, а не пайплайн.
 - **`AssetSource/` не в git.** Это сырые архивы; в проект импортируется только нужное.
 
 ## Исходники ассетов
