@@ -412,8 +412,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cf6805f6e86da04fafea5c840d309ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Boot.BootScreen
-  _bootSeconds: 4
+  _bootSeconds: 3
   _readyHoldSeconds: 0.3
+  _warmupFrameSeconds: 0.15
+  _warmupFrames: 2
+  _warmupTimeoutSeconds: 8
+  _logStart: 1
   _steps:
   - THERMAL CORE
   - PNEUMACORE BUS

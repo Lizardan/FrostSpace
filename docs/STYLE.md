@@ -222,6 +222,7 @@
 | `Tools/Blender/hoverbike_parts.py`, `build_hoverbike.py` | ховербайк: геометрия и FBX (вариант B); макет A — `Assets/_Project/Editor/HoverbikeMockBuilder.cs` |
 | `Tools/Blender/motorcycle_parts.py`, `build_motorcycle.py` | мотоцикл: геометрия и FBX; pivot колёс — в оси, меш вокруг нуля |
 | `Tools/Blender/build_wreck_parts.py`, `build_menu_open.py` | обломки корабля и занос для открытого вида меню |
+| `Tools/Blender/build_menu_views.py` | декорации видов станции, каньона и депо (мачта, ледяная стена, мост, ворота) — ADR 0014 |
 | `Tools/Blender/robot_lib.py`, `robot_designs.py`, `build_robots.py` | роботы: ключи палитры, покраска, сборка |
 | `Tools/Blender/animal_lib.py`, `animal_designs.py`, `build_animals.py` | животные: срез головы, череп и броня, профили видов, сборка |
 | `Tools/Blender/render_*_previews.py` | превью для глазной проверки |

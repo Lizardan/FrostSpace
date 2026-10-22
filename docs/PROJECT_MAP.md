@@ -30,8 +30,9 @@ FrostSpace/
    │  │  │  │                    # ViewModule + ViewModuleSwitch (ПКМ-модули: первый/третий вид)
    │  │  │  ├─ Hud/              # PlayerHud — карусель модулей, подписи, подсказки
    │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
-   │  │  │  ├─ Menu/             # MainMenuScreen, MenuViewSwitch (два вида меню), MenuCameraOrbit,
-   │  │  │  │                    # MenuCameraSweep (проезд открытого вида), TechButtonFx, BeaconPulse
+   │  │  │  ├─ Menu/             # MainMenuScreen, MenuViewSwitch (пять видов меню), MenuCameraOrbit,
+   │  │  │  │                    # MenuCameraSweep (проезд равнины, лаборатории и депо), MenuRadarSweep,
+   │  │  │  │                    # MenuRobotPose (позы роботов меню), TechButtonFx, BeaconPulse
    │  │  │  ├─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
    │  │  │  ├─ Ride/             # Hoverbike, HoverbikeGlow, Motorcycle, MotorcycleRideVisual,
    │  │  │  │                    # RiderPose (посадка верхом поверх клипа)
@@ -79,7 +80,8 @@ FrostSpace/
    уходит в `DontDestroyOnLoad`, `BootScreen` три секунды показывает консоль загрузки
    сервисов и отдаёт переход `SceneController` → `MainMenu`.
 2. `Assets/Scenes/MainMenu.unity` (build index 1) — `MenuFlow` с `MainMenuScreen`,
-   камера-облёт `MenuCameraOrbit`, диорама `MenuDiorama`, снег, Volume.
+   пять видов меню с шагом 300 по Z (`MenuPerimeter`, `MenuOpen`, `MenuRepair`,
+   `MenuLab`, `MenuDepotQueue`), пять камер видов, снег, Volume.
    НАЧАТЬ → белый переход → `Game`.
 3. Сцена `Game` (build index 2, бывший `SnowLevel`) — обычный сохранённый ассет: рельеф,
    дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
@@ -122,7 +124,7 @@ FrostSpace/
 | Модули камеры (ПКМ) | `ViewModuleSwitch` + `ViewModule` в `Features/Camera/`, карусель — `ModuleCarousel` в `ViewModule.cs`, показ — `PlayerHud` (`Features/Hud/`) |
 | Ховербайк | `Hoverbike` + `HoverbikeGlow` в `Features/Ride/`; префабы — `Content/Prefabs/Ride/Hoverbike_A_Model`, `Hoverbike_B_Model`; сборка префабов — меню `FrostSpace → Ride` (`Editor/HoverbikeMockBuilder.cs`) |
 | Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
-| Виды главного меню | `MenuViewSwitch` на `MenuFlow` (ссылки на корни и камеры видов), переключатель строит `MainMenuScreen`; открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013) |
+| Виды главного меню | `MenuViewSwitch` на `MenuFlow` (массив видов: корень + камера + подпись), ленту `01 DIORAMA … 05 DEPOT` строит `MainMenuScreen`; открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013); станция, каньон и депо — `build_menu_views.py`, шейдеры `MenuAurora`/`MenuLightCone` (ADR 0014) |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |

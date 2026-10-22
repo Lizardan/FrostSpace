@@ -150,6 +150,20 @@ FBX-экспортёр конвертирует оси. Не «поправля�
 - Обломки и занос для открытого вида меню — `Tools/Blender/build_wreck_parts.py`
   (`MenuWreckWing` / `MenuWreckFin` / `MenuWreckEngine`) и `build_menu_open.py`
   (`MenuDrift`); палитра та же `Level_*`, в сцену ставятся как обычные пропы.
+- Декорации видов меню — `Tools/Blender/build_menu_views.py`:
+  `MenuStationMast` (внутри — отдельные `MastDish` и `MastBeacon`), `MenuIceWall`,
+  `MenuCanyonBridge`, `MenuDepotGate`; палитра `Level_*`, в сцене посажены на `−min.y`
+  (у всех моделей низ ниже нуля). Всё остальное в этих видах — старые пропы уровня.
+  Габариты и состав мешей — `BLENDER.md`, решение — ADR 0014.
+- После ADR 0015 виды пересобраны в сюжетные сцены. `MenuIceWall` и `MenuCanyonBridge`
+  больше нигде не стоят и оставлены в проекте неиспользованными: лаборатория — это
+  интерьер, собранный в сцене примитивами палитры `Level_*` (пол, три стены, потолок
+  с проломом, балки, стойка, кабели), а не FBX. Габариты интерьера задаются в сцене:
+  24 × 18 м при высоте 5 м.
+- Палитра меню (`Content/Materials/Menu/`): `Menu_Aurora` и `Menu_LightCone` —
+  unlit-шейдеры сияния и конуса прожектора; `Menu_TechGlow` — циановый аддитивный
+  материал маркеров, устьев и индикаторов; `Menu_OilStain` — тёмная лужа под
+  разорванным роботом (URP/Lit, база почти чёрная, smoothness 0.92, metallic 0.05).
 
 ## Unity: импорт FBX
 
