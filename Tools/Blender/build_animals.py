@@ -42,6 +42,7 @@ def build(species: str) -> dict:
         unity_scale = 1.0
         source = meta["cfg"]["target"]
         meta["clip_speed"] = 0.80
+        animal_lib.bake_root_motion(arm, meta)
     else:
         arm, source_mesh, meta = animal_lib.load(species)
         animal_lib.prepare_clips(arm, meta)
@@ -55,6 +56,7 @@ def build(species: str) -> dict:
                 species, arm, source_mesh)
         unity_scale, source = _unity_scale(meta)
         animal_lib.measure_speed(arm, meta)
+        animal_lib.bake_root_motion(arm, meta)
 
     robot_lib.bind(obj, arm)
     stats = robot_lib.stats(obj, arm)

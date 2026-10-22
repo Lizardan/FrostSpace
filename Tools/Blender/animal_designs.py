@@ -441,18 +441,20 @@ def _leg_armor(p, R, roles, cfg, M, width, height, length):
                    thick * 1.2, thick * 1.2, M["base"], chain[1])
             p.box(points[1], (thick * 2.2, thick * 2.0, thick * 2.0),
                   M["metal"], chain[1], bevel=0.025)
-        foot_bone = chain[-1]
-        foot = R[chain[-1]][1]
-        for name in roles.get("feet", []):
-            if name.endswith(side[-1].upper()):
-                foot_bone = name
-                break
+        # Стопа — своя кость на каждую ногу: у фермерских ригов она отдельная
+        # (FrontFoot.L и т.д.) и в цепочку ноги не входит, у волка/кота/собаки
+        # стопой служит конец цепочки. Броня стопы должна ехать за стопой,
+        # иначе шаг читается как «пятка болтается».
+        foot_bone = roles.get("feet_by_side", {}).get(side)
+        if not foot_bone or foot_bone not in R:
+            foot_bone = chain[-1]
+        foot = R[foot_bone][1]
         p.box(foot + UP * thick * 0.35,
               (thick * 1.9, thick * 2.6, thick * 0.85),
-              M["dark"], chain[-1], bevel=0.02)
+              M["dark"], foot_bone, bevel=0.02)
         p.box(foot + UP * thick * 0.35 + Vector((0.0, -thick * 0.75, 0.0)),
               (thick * 1.5, thick * 0.45, thick * 0.45),
-              M["accent"], chain[-1], bevel=0.01)
+              M["accent"], foot_bone, bevel=0.01)
 
 
 def _tail_armor(p, R, roles, cfg, M, width):

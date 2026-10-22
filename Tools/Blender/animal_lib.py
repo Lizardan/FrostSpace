@@ -15,7 +15,7 @@ import statistics
 import zipfile
 
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 import robot_lib
 
@@ -84,6 +84,12 @@ FARM_LEGS = {
     "back_r": ("BackLeg.R", "BackUpLeg.R", "BackLowLeg.R"),
 }
 FARM_FEET = ("FrontFoot.L", "FrontFoot.R", "BackFoot.L", "BackFoot.R")
+#: Стопа каждой ноги по стороне: у фермерских ригов стопа — отдельная кость,
+#: а не конец цепочки ноги, и привязывать броню стопы нужно именно к ней.
+FARM_FEET_BY_SIDE = {
+    "front_l": "FrontFoot.L", "front_r": "FrontFoot.R",
+    "back_l": "BackFoot.L", "back_r": "BackFoot.R",
+}
 
 
 def roles(arm) -> dict:
@@ -103,6 +109,10 @@ def roles(arm) -> dict:
                     "back_r": ["Bone.011", "Bone.012", "Bone.013"],
                 },
                 "feet": ["Bone.010", "Bone.013", "Bone.016", "Bone.019"],
+                "feet_by_side": {
+                    "front_l": "Bone.019", "front_r": "Bone.016",
+                    "back_l": "Bone.010", "back_r": "Bone.013",
+                },
             }
         if "Bone.020" in names:
             # Орёл: крылья 007–011 и 012–015, лапы 016–023.
@@ -122,6 +132,7 @@ def roles(arm) -> dict:
                                 "Bone.023"],
                 },
                 "feet": ["Bone.019", "Bone.023"],
+                "feet_by_side": {"front_r": "Bone.019", "front_l": "Bone.023"},
             }
         # Пиранья: хвост 005–006, боковые плавники 007–008.
         return {
@@ -131,6 +142,7 @@ def roles(arm) -> dict:
             "fins": ["Bone.007", "Bone.008"],
             "lower_fin": "Bone.004",
             "feet": [],
+            "feet_by_side": {},
         }
 
     tail = [name for name in ("Tail1", "Tail2", "Tail3", "Tail4")
@@ -140,6 +152,8 @@ def roles(arm) -> dict:
         "neck": "Neck", "head": "Head", "tail": tail,
         "legs": {side: list(bones) for side, bones in FARM_LEGS.items()},
         "feet": [name for name in FARM_FEET if name in names],
+        "feet_by_side": {side: name for side, name in FARM_FEET_BY_SIDE.items()
+                         if name in names},
     }
 
 
@@ -380,6 +394,7 @@ def prepare_clips(arm, meta) -> dict:
 
     arm.animation_data.action = None
     meta["clips"] = clips
+    flatten_feet(arm, meta)
     return clips
 
 
@@ -438,8 +453,10 @@ def normalize_size(arm, obj, target: float, metric: str) -> float:
 def measure_speed(arm, meta) -> float:
     """Скорость стопы в контакте, м/с, после масштабирования.
 
-    Клипы in-place: корень не едет. Поэтому скорость земли — это медианная
-    горизонтальная скорость стопы, пока она стоит на полу.
+    Клипы пока in-place: корень не едет. Поэтому скорость земли — это медианная
+    горизонтальная скорость стопы, пока она стоит на полу. Кадры переводятся в
+    секунды по текущему fps сцены: сколько кадров в секунду лежит в файле, таким
+    и будет время клипа в Unity.
     """
     cfg = meta["cfg"]
     if cfg["mode"] in ("hop", "fly", "swim"):
@@ -460,6 +477,7 @@ def measure_speed(arm, meta) -> float:
             track.mute = True
 
     positions = {name: [] for name in feet}
+    fps = float(bpy.context.scene.render.fps or 30.0)
     for frame in range(start, end + 1):
         bpy.context.scene.frame_set(frame)
         bpy.context.view_layer.update()
@@ -482,15 +500,328 @@ def measure_speed(arm, meta) -> float:
             # Стойка — стопа едет назад (+Y после нормализации осей).
             if b.y - a.y <= 0.0:
                 continue
-            speeds.append(math.hypot(b.x - a.x, b.y - a.y) * 30.0)
+            speeds.append(math.hypot(b.x - a.x, b.y - a.y) * fps)
 
     speed = statistics.median(speeds) if speeds else 0.0
     if speed < 0.05:
         speed = 1.0
     meta["clip_speed"] = speed
-    print("SPEED %s foot=%.3f m/s samples=%d" %
-          (meta["species"], speed, len(speeds)))
+    print("SPEED %s foot=%.3f m/s samples=%d (%.0f fps)" %
+          (meta["species"], speed, len(speeds), fps))
     arm.animation_data.action = None
     for track in arm.animation_data.nla_tracks:
         track.mute = False
     return speed
+
+
+# ------------------------------------------------ стопы и root motion
+
+#: Допустимое отклонение подошвы от плоскости пола в контакте, градусы.
+FLAT_TOLERANCE_DEG = 5.0
+
+#: Кость лежит вдоль подошвы, если её горизонтальная проекция длиннее этого
+#: отношения полной длины. Иначе «выпрямлять» нечего — кость смотрит вниз.
+HORIZONTAL_SHARE = 0.5
+
+#: Зона стойки: насколько высота стопы может уйти от уровня стойки, чтобы кадр
+#: считался контактом. Доля габарита тела.
+STANCE_BAND_SHARE = 0.005
+
+#: То же, но не уже этой доли размаха высоты стопы за клип: у высокого шага
+#: абсолютная зона слишком узкая.
+STANCE_BAND_OF_SPREAD = 0.05
+
+#: Стопа, гуляющая по высоте меньше этой доли габарита, стоит весь клип:
+#: у неё каждый кадр — контакт (покой, стойка на месте).
+STANCE_SPREAD_SHARE = 0.02
+
+
+def _use_action(arm, action) -> None:
+    """Включает клип для посева и глушит NLA, чтобы он не мешал."""
+    arm.data.pose_position = "POSE"
+    arm.animation_data_create()
+    arm.animation_data.action = action
+    for track in arm.animation_data.nla_tracks:
+        track.mute = True
+
+
+def _release_action(arm) -> None:
+    arm.animation_data.action = None
+    for track in arm.animation_data.nla_tracks:
+        track.mute = False
+
+
+def _action_fcurves(action):
+    """Кривые экшена: в Blender 5.x они лежат в слоях, а не в `action.fcurves`."""
+    try:
+        curves = list(action.fcurves)
+    except (AttributeError, RuntimeError):
+        curves = []
+    if curves:
+        return curves
+    curves = []
+    for layer in getattr(action, "layers", []):
+        for strip in getattr(layer, "strips", []):
+            for bag in getattr(strip, "channelbags", []):
+                curves.extend(bag.fcurves)
+    return curves
+
+
+def foot_samples(arm, feet, start, end):
+    """Точки стопы (голень/носок) по кадрам текущего клипа."""
+    samples = {name: [] for name in feet}
+    for frame in range(start, end + 1):
+        bpy.context.scene.frame_set(frame)
+        bpy.context.view_layer.update()
+        for name in feet:
+            bone = arm.pose.bones.get(name)
+            if bone is None:
+                continue
+            samples[name].append((arm.matrix_world @ bone.head,
+                                  arm.matrix_world @ bone.tail))
+    return samples
+
+
+def lie_flat_along_floor(samples) -> bool:
+    """Стопа лежит вдоль подошвы: её можно выпрямить, а не только повернуть вниз."""
+    for head, tail in samples:
+        direction = tail - head
+        if direction.length < 1e-6:
+            continue
+        if math.hypot(direction.x, direction.y) >= (HORIZONTAL_SHARE
+                                                    * direction.length):
+            return True
+    return False
+
+
+def stance_weights(samples, names, body: float) -> dict:
+    """Вес контакта стопы по кадрам: 1.0 в стойке, 0.5 на перекате, 0 — перенос.
+
+    Уровень стойки — медиана высоты сустава стопы (её головы) за клип: в стойке
+    стопа проводит большую часть цикла, поэтому медиана попадает на её уровень.
+    Минимум высоты брать нельзя: в переносе стопа проносится ниже собственного
+    уровня, и зона контакта уезжает на замах. Высота сустава, а не концов кости,
+    потому что доворот стопы идёт вокруг сустава: иначе сборка и проверка мерили
+    бы разные кадры, ведь после доворота минимум концов поднимается.
+
+    Первый и последний кадр серии — перекат (пятка/носок): там доворот
+    половинный, иначе стопа щёлкает на входе в стойку и на выходе из неё. Серии
+    считаются по кругу: клип замкнут, кадр `end` переходит в `start`.
+    """
+    weights = {}
+    for name in names:
+        points = samples.get(name) or []
+        if len(points) < 4:
+            continue
+        heights = [head.z for head, _tail in points]
+        spread = max(heights) - min(heights)
+        if spread <= STANCE_SPREAD_SHARE * body:
+            # Стопа стоит весь клип — выпрямлять можно каждый кадр.
+            weights[name] = [1.0] * len(heights)
+            continue
+        level = statistics.median(heights)
+        band = max(STANCE_BAND_SHARE * body, STANCE_BAND_OF_SPREAD * spread)
+        inside = [abs(height - level) <= band for height in heights]
+
+        count = len(inside)
+        first = next((i for i, flag in enumerate(inside) if not flag), None)
+        if first is None:
+            weights[name] = [1.0] * count
+            continue
+        order = [(first + i) % count for i in range(count)]
+        weight = [0.0] * count
+        index = 0
+        while index < count:
+            if not inside[order[index]]:
+                index += 1
+                continue
+            last = index
+            while last + 1 < count and inside[order[last + 1]]:
+                last += 1
+            if last > index:
+                for step in range(index, last + 1):
+                    weight[order[step]] = 1.0
+                weight[order[index]] = 0.5
+                weight[order[last]] = 0.5
+            index = last + 1
+        weights[name] = weight
+    return weights
+
+
+def flatten_feet(arm, meta) -> int:
+    """Ставит стопу ровно на пол в кадрах контакта.
+
+    Клипы Quaternius держат стопу под углом к земле: в контакте это читается
+    как «ломаный» шаг. Здесь в кадрах контакта кость стопы доворачивается так,
+    чтобы направление пятка→носок стало горизонтальным (рыскание сохраняется),
+    а на входе/выходе из контакта доворот половинный — иначе стопа щёлкает.
+    Ключ ставится на каждом кадре клипа, поэтому петля и шов не разъезжаются.
+    """
+    cfg = meta["cfg"]
+    if cfg["mode"] in ("fly", "swim"):
+        return 0
+    feet = [name for name in meta["roles"].get("feet", [])
+            if arm.pose.bones.get(name) is not None]
+    if not feet:
+        return 0
+    body = cfg["target"] / max(meta["scale"], 1e-6)
+
+    total = 0
+    for key in ("idle", "move"):
+        info = meta["clips"].get(key)
+        if info is None:
+            continue
+        action = info.get("action") or _find_action(key + "_loop")
+        if action is None:
+            continue
+        start = int(info.get("start", round(action.frame_range[0])))
+        end = int(info.get("end", round(action.frame_range[1])))
+        frames = list(range(start, end + 1))
+        _use_action(arm, action)
+        samples = foot_samples(arm, feet, start, end)
+        straight = [name for name in feet
+                    if samples[name] and lie_flat_along_floor(samples[name])]
+
+        rest = {name: [] for name in feet}
+        for frame in frames:
+            bpy.context.scene.frame_set(frame)
+            bpy.context.view_layer.update()
+            for name in feet:
+                rest[name].append(arm.pose.bones[name].rotation_quaternion.copy())
+
+        weights = stance_weights(samples, straight, body)
+
+        target = {name: [None] * len(frames) for name in straight}
+        for index, frame in enumerate(frames):
+            if not any(weights[name][index] > 0.0 for name in straight):
+                continue
+            bpy.context.scene.frame_set(frame)
+            bpy.context.view_layer.update()
+            for name in straight:
+                if weights[name][index] <= 0.0:
+                    continue
+                bone = arm.pose.bones[name]
+                if bone.rotation_mode != "QUATERNION":
+                    continue
+                head = arm.matrix_world @ bone.head
+                tail = arm.matrix_world @ bone.tail
+                direction = tail - head
+                planar = Vector((direction.x, direction.y, 0.0))
+                if direction.length < 1e-6 or planar.length < 1e-6:
+                    continue
+                turn = direction.normalized().rotation_difference(
+                    planar.normalized())
+                turned = (Matrix.Translation(head) @ turn.to_matrix().to_4x4()
+                          @ Matrix.Translation(-head)
+                          @ (arm.matrix_world @ bone.matrix))
+                bone.matrix = arm.matrix_world.inverted() @ turned
+                target[name][index] = bone.rotation_quaternion.copy()
+
+        moved = 0
+        for name in straight:
+            bone = arm.pose.bones[name]
+            if bone.rotation_mode != "QUATERNION":
+                print("FLAT %s: кость %s не в QUATERNION — пропуск"
+                      % (meta["species"], name))
+                continue
+            for index, frame in enumerate(frames):
+                quat = rest[name][index]
+                weight = weights[name][index]
+                if target[name][index] is not None and weight > 0.0:
+                    quat = quat.slerp(target[name][index], weight)
+                    moved += 1
+                bone.rotation_quaternion = quat
+                bone.keyframe_insert("rotation_quaternion", frame=frame)
+            path = 'pose.bones["%s"].rotation_quaternion' % name
+            for curve in _action_fcurves(action):
+                if curve.data_path != path:
+                    continue
+                for point in curve.keyframe_points:
+                    point.interpolation = "LINEAR"
+                curve.update()
+        total += moved
+        print("FLAT %s %s: довёрнуто кадров %d из %d" %
+              (meta["species"], key, moved, len(frames) * len(straight)))
+    _release_action(arm)
+    return total
+
+
+def _ensure_root_bone(arm):
+    """Кость Root над всем ригом: её ход Unity читает как root motion."""
+    if "Root" in arm.data.bones:
+        return arm.pose.bones["Root"]
+    bpy.ops.object.select_all(action="DESELECT")
+    arm.select_set(True)
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="EDIT")
+    root = arm.data.edit_bones.new("Root")
+    root.head = (0.0, 0.0, 0.0)
+    root.tail = (0.0, -0.25, 0.0)
+    root.roll = 0.0
+    root.use_deform = False
+    for bone in list(arm.data.edit_bones):
+        if bone.name == "Root":
+            continue
+        if bone.parent is None:
+            bone.parent = root
+            bone.use_connect = False
+    bpy.ops.object.mode_set(mode="OBJECT")
+    print("ROOT %s: добавлена кость Root над верхними костями" % arm.name)
+    return arm.pose.bones["Root"]
+
+
+def bake_root_motion(arm, meta) -> float:
+    """Печёт ход корня в `move_loop`: путь = clip_speed × длительность.
+
+    После этого клип не in-place: стопа стоит на полу, а корень едет вперёд
+    (−Y — та же ось, по которой меряется скорость стопы). Unity снимает его
+    через root motion, поэтому шаг не проскальзывает. В `idle_loop` ход нулевой.
+    """
+    cfg = meta["cfg"]
+    if cfg["mode"] in ("fly", "swim"):
+        return 0.0
+    clips = meta.get("clips") or {}
+    if not clips:
+        return 0.0
+    speed = float(meta.get("clip_speed", 1.0))
+    if speed < 0.05:
+        speed = 1.0
+    root = _ensure_root_bone(arm)
+    # Базовый мировой матрикс корня: ход задаётся в мировых единицах, а не в
+    # единицах кости — иначе масштаб арматуры (у импортированных FBX он не
+    # единичный) растягивает путь и клип проскальзывает.
+    root.location = (0.0, 0.0, 0.0)
+    bpy.context.view_layer.update()
+    base_world = arm.matrix_world @ root.matrix
+    # fps сцены — это fps файла: в нём и мереем, иначе скорость разъедется
+    # с временем клипа Unity на четверть (24 против 30).
+    fps = float(bpy.context.scene.render.fps or 30.0)
+    distances = {}
+    for key in ("idle", "move"):
+        info = clips.get(key)
+        if info is None:
+            continue
+        action = info.get("action") or _find_action(key + "_loop")
+        if action is None:
+            continue
+        start = int(info.get("start", round(action.frame_range[0])))
+        end = int(info.get("end", round(action.frame_range[1])))
+        _use_action(arm, action)
+        distance = 0.0 if key == "idle" else speed * (end - start) / fps
+        for frame, value in ((start, 0.0), (end, distance)):
+            bpy.context.scene.frame_set(frame)
+            target = Matrix.Translation(Vector((0.0, -value, 0.0))) @ base_world
+            root.matrix = arm.matrix_world.inverted() @ target
+            root.keyframe_insert("location", frame=frame)
+        for curve in _action_fcurves(action):
+            if curve.data_path != 'pose.bones["Root"].location':
+                continue
+            for point in curve.keyframe_points:
+                point.interpolation = "LINEAR"
+            curve.update()
+        distances[key] = round(distance, 5)
+        print("ROOT %s %s: ход %.4f за %.3f с (%.0f fps)" %
+              (meta["species"], key, distance, (end - start) / fps, fps))
+    _release_action(arm)
+    meta["root_travel"] = distances
+    return distances.get("move", 0.0)
