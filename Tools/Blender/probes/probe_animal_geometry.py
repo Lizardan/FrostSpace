@@ -78,7 +78,8 @@ def add_ground(z: float = 0.0) -> None:
     obj = bpy.data.objects.new("PreviewGround", mesh)
     bpy.context.scene.collection.objects.link(obj)
     mat = bpy.data.materials.new("PreviewSnow")
-    mat.use_nodes = True
+    if mat.node_tree is None:  # В Blender 4+ ноды уже есть, сеттер устарел.
+        mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     if bsdf:
         bsdf.inputs["Base Color"].default_value = (0.72, 0.80, 0.88, 1)

@@ -120,8 +120,10 @@ python Tools/Blender/build_all.py --list                  # реестр асс�
 python Tools/Blender/build_all.py --asset hoverbike --check
 python Tools/Blender/build_all.py --asset robots --ids R1 --preview
 
-# живой MCP — только GUI
-"G:/Steam/steamapps/common/Blender/blender.exe" --python Tools/Blender/blender_boot.py
+# живой MCP — только GUI, окно живёт на время шага
+python Tools/Blender/gui_session.py run Tools/Blender/probes/gui_ping.py --auto
+python Tools/Blender/gui_session.py status   # поднят ли мост
+python Tools/Blender/gui_session.py stop     # закрыть, если сессия осталась
 ```
 
 Профильные команды (`blender --background --python build_robots.py -- R1` и т.п.) остаются
@@ -149,6 +151,7 @@ python Tools/Blender/build_all.py --asset robots --ids R1 --preview
 | Play-замер прыжка | тот же стенд, строка `PROBE jump` | PASS (2026-10-21): height 1.19 м при цели 1.2, airtime 1.07 с |
 | Баланс шага на фасетном рельефе | длина клипа × клиповая скорость = путь за цикл (живой замер) | PASS (2026-10-18): клип 1.333 с × 0.912 м/с = 1.217 м против 1.215 м пути — стопа стоит |
 | Замер клипов роботов | `blender ... measure_locomotion.py -- R1_PolarMechanic.fbx` | walk 0.93, sprint 8.92 м/с |
+| Инварианты клипов животных | `python Tools/Blender/build_all.py --asset animals --check --skip-build` | PASS (2026-10-22): 13 FBX — длины клипов = манифест, 0 вершин без веса, скорость стопы 100 % от `clip_speed_source` |
 | Пересборка роботов | `blender ... build_robots.py -- R6 R7` | PASS (2026-10-18): 15 FBX второй партии, 0 вершин без веса |
 | Превью партии роботов | `blender ... render_robot_lineup.py -- <имена>` | PASS (2026-10-18): idle, спереди/сзади |
 | Контактный лист | `blender ... make_robot_sheet.py -- --cols 5 <имена>` | PASS (2026-10-18): 2400 px, с подписями |
@@ -157,9 +160,9 @@ python Tools/Blender/build_all.py --asset robots --ids R1 --preview
 
 ## Что не проверено
 
-- Реальный end-to-end мост к живому Blender: GUI-Blender не запускался. Mock-тест
-  проверяет клиент, но не совместимость с аддоном. Команда для проверки:
-  `python Tools/Blender/blender_bridge.py ping` при открытом Blender.
+- Мост к живому Blender проверен 2026-10-22 через `gui_session.py` (`start` → `ping`/`execute_code`
+  → `stop`), но только эти две команды: `get_viewport_screenshot`, `pick_viewport_object`,
+  `export_scene` и остальные — без сверки со схемой.
 - PlayMode-тестов нет: движение проверяет стенд `LocomotionDiagnostics` (`PROBE`) вручную,
   визуальную оценку заноса и кросфейдов делает человек.
   **Стенд меряет контакт относительно минимальной высоты стопы за прогон, поэтому на

@@ -117,6 +117,11 @@ FBX-экспортёр конвертирует оси. Не «поправля�
 - Визуальные префабы `RA_<Species>_Model.prefab` — варианты FBX-модели с `Animator` и
   `RA_<Species>.controller`; без `CharacterController`, `NpcController` и
   `AirPatrolController`, без тега.
+- **Проверка артефакта:** `check_animal_clips.py` (`build_all.py --asset animals --check`)
+  сверяет готовый FBX с манифестом: длины `idle_loop`/`move_loop`, наличие весов у всех
+  вершин и скорость стопы в контакте. Скорость замеряется там же, где её считает сборка,
+  поэтому расхождение с `clip_speed_source` означает, что клип или масштаб изменились,
+  а манифест (а с ним и `Animator.speed` в сцене) — нет.
 
 ## Уровень FrostSpace: статика
 

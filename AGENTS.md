@@ -57,7 +57,7 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 | Задача | Режим |
 |---|---|
 | Сборка/экспорт ассетов, тесты геометрии, замеры, регрессии | **headless-скрипт Blender** |
-| Визуальная проверка или интерактивная правка в Blender | **GUI + MCP**, только по необходимости |
+| Визуальная проверка или интерактивная правка в Blender | **GUI + MCP**: `python Tools/Blender/gui_session.py run <файл>.py --auto` поднимает сессию и закрывает её |
 | Компиляция, Console, тесты, сцена, скриншот в Unity | **живой Unity MCP** |
 | Чистая проверка, CI, сборка при закрытом редакторе | **Unity batch-mode** |
 | Долгий или unattended-прогон | headless/batch, не MCP |
@@ -291,7 +291,8 @@ pwsh -File Tools/Agent/LinkAgentSkills.ps1 -Check    # только провер
 3. Профильные пробы: `probes/probe_action_api.py`, `probes/probe_fbx_import.py`; единицы
    и габариты — `fbx_units.py`; рендер-разбор — `inspect_image.py`.
 4. GUI-MCP — только если нужен визуальный/интерактивный результат; его результат обязан
-   вернуться в скрипт и перепровериться headless.
+   вернуться в скрипт и перепровериться headless. Живую сессию не держи открытой:
+   `python Tools/Blender/gui_session.py run <файл>.py --auto` — поднялся, выполнил, закрылся.
 
 **Общее:** не заявляй, что код компилируется, сцена работает или тест проходит, если
 проверка фактически не выполнялась. Не удалось — напиши `Not verified` и причину.

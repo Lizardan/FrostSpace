@@ -83,7 +83,9 @@ PIPELINE: dict[str, dict] = {
         "outputs": [MODELS + "/RobotAnimals/*/RA_*.fbx"],
         "previews": [_step("render_animal_previews.py", "file",
                            ["--out", PREVIEWS + "/Animals"])],
-        "checks": [],
+        # Кости ball_l у животных нет, поэтому проверка своя: клипы, веса и
+        # скорость стопы против animal_manifest.json.
+        "checks": [_step("check_animal_clips.py", "file")],
     },
     "level": {
         "script": "build_level.py",

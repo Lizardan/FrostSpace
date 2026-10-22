@@ -81,7 +81,8 @@ def reset() -> None:
 
 def emission_material(name: str, color=None, image=None):
     mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
+    if mat.node_tree is None:  # В Blender 4+ ноды уже есть, сеттер устарел.
+        mat.use_nodes = True
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     nodes.clear()
@@ -176,7 +177,8 @@ def main() -> int:
 
     if scene.world is None:
         scene.world = bpy.data.worlds.new("SheetWorld")
-    scene.world.use_nodes = True
+    if scene.world.node_tree is None:
+        scene.world.use_nodes = True
     background = scene.world.node_tree.nodes.get("Background")
     if background is not None:
         background.inputs["Color"].default_value = (0.10, 0.11, 0.13, 1.0)

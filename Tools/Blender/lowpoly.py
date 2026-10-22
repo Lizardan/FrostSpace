@@ -479,7 +479,9 @@ def make_material(name: str, hex_color: str, roughness: float = 0.75,
                   metallic: float = 0.0):
     """Простой Principled-материал с цветом из sRGB-палитры."""
     mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
+    # В Blender 4+ ноды у материала уже есть, а сеттер use_nodes устарел (уйдёт в 6.0).
+    if mat.node_tree is None:
+        mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     if bsdf is None:
         for node in mat.node_tree.nodes:

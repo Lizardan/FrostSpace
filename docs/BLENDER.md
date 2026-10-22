@@ -13,11 +13,13 @@
 | Аддоны | `%APPDATA%\Blender Foundation\Blender\5.2\scripts\addons` | да |
 | MCP-аддон | `blender_mcp.py`, протокол аддона **14** | установлен пакетом 2.2.2 |
 | MCP-сервер | пакет `mcp-for-blender==2.2.2` | `--help` и `install-addon` проверены |
-| Порт моста | **9876** | по конфигурации; в этой сессии не слушал |
-| Наш мост | `Tools/Blender/blender_bridge.py` | mock-тест |
-| Загрузчик | `Tools/Blender/blender_boot.py` | headless-отказ проверен |
+| Порт моста | **9876** | живая сессия: поднялся за 2 с, команды прошли |
+| Наш мост | `Tools/Blender/blender_bridge.py` | `ping`/`execute_code` на живом аддоне |
+| Загрузчик | `Tools/Blender/blender_boot.py` | headless-отказ и GUI-старт проверены |
+| **Живой Blender по требованию** | `Tools/Blender/gui_session.py` (`start`/`run`/`stop`) | start → run → stop пройдены на 5.2.3 |
 | **Единый вход ассетов** | `Tools/Blender/build_all.py` (ADR 0017) | сборка, проверки и превью прогнаны на 5.2.3 |
 | Роботы | `robot_lib.py`, `robot_designs.py`, `build_robots.py`, `measure_locomotion.py` | сборка и замер прогоняются headless |
+| Робо-животные | `animal_lib.py`, `animal_designs.py`, `build_animals.py`, `check_animal_clips.py` | 13 FBX — `--check` PASS |
 
 Путь и версия — **параметр окружения**, а не константа в коде. На другой машине они
 будут другими; скрипты должны принимать их через env/CLI.
@@ -89,7 +91,7 @@ Poly Pizza, Hyper3D, Tripo, Hunyuan3D, Meshy) и `export_scene`.
 | Задача | Чем решается |
 |---|---|
 | Сборка, риг, клипы, экспорт, регрессии | **`build_all.py`** (headless) |
-| Довести форму, посмотреть варианты, разобрать чужой `.blend` | GUI + MCP (черновик) |
+| Довести форму, посмотреть варианты, разобрать чужой `.blend` | GUI + MCP (черновик); окно — через `gui_session.py` |
 | Готовый статичный проп или текстуры/HDRI | библиотеки и генераторы аддона либо `generate_model_from_*` у Aura (без Blender) |
 
 Анимацию и скиннинг библиотеки не дают вообще: AI-меши приходят с трисовой топологией
@@ -118,25 +120,39 @@ $env:BLENDER = "G:/Steam/steamapps/common/Blender/blender.exe"
 
 ### GUI
 
+Штатный путь — `gui_session.py`: он сам поднимает GUI-Blender с `blender_boot.py`,
+дожидается моста по сокету и умеет закрыть окно после шага.
+
+```powershell
+python Tools/Blender/gui_session.py run Tools/Blender/probes/gui_ping.py --auto  # поднялся, выполнил, закрылся
+python Tools/Blender/gui_session.py start    # окно живёт до stop
+python Tools/Blender/gui_session.py status   # процесс и мост
+python Tools/Blender/gui_session.py stop     # выйти по-хорошему, иначе taskkill
+```
+
+Вручную, если нужен именно открытый Blender под рукой:
+
 ```powershell
 & $env:BLENDER --python Tools/Blender/blender_boot.py
 ```
 
-Из агентского шелла GUI нельзя запускать как обычный дочерний процесс: на Windows
-отделённый процесс может умереть вместе с job-объектом родителя. Запускай GUI фоновой
-задачей или из терминала пользователя. Признак готовности — **слушающий порт**, а не
-старт процесса:
+Признак готовности — **слушающий порт и ответ на `ping`**, а не старт процесса:
 
 ```powershell
 netstat -ano | Select-String "127.0.0.1:9876.*LISTENING"
+python Tools/Blender/blender_bridge.py ping
 ```
 
 `blender_boot.py` пишет `BLENDER_READY` или `BLENDER_FAIL` в stdout и в
 `Tools/Blender/blender_boot.log` (лог игнорируется git). Лог нужен потому, что у
 GUI-приложения Windows stdout может не доехать до перенаправленного файла.
 
-**Не используй `--factory-startup` для GUI-сессии с MCP**: он сбрасывает список
-аддонов, и аддон придётся включать заново.
+`gui_session.py` запускает сессию с `--factory-startup`: аддоны при этом сбрасываются,
+но `blender_boot.py` включает `blender_mcp` заново — поэтому мост поднимается (проверено
+2026-10-22: готовность за 2.0 с). Запуск из агентского шелла рабочий, если Blender
+стартует отдельным процессом — PID хранится в `Tools/Blender/logs/gui_session.json`;
+если процесс всё-таки умер вместе с родителем, открывай `blender_boot.py` из терминала
+пользователя.
 
 ## MCP: только GUI
 
@@ -204,8 +220,9 @@ if bpy.app.background:
 
 ### Команды аддона
 
-Проверены вызовом в проекте-предшественнике: `ping`, `get_scene_info`, `execute_code`.
-В FrostSpace end-to-end не проверялись: GUI-Blender не запускался (см. статус ниже).
+Проверено end-to-end в FrostSpace (2026-10-22, Blender 5.2.3, аддон 2.2.2): `ping` и
+`execute_code` через `gui_session.py` → `blender_bridge.py`. Остальные команды ниже
+сверяй со схемой перед первым использованием.
 
 Есть, но требуют сверки со схемой перед первым использованием:
 `get_world_state_snapshot`, `get_object_info`, `list_scene_items`,
@@ -261,10 +278,11 @@ python Tools/Blender/build_all.py --all --check --preview
 1. сборка       build_all.py --asset <id>            # его же --dry-run показывает команду
 2. инварианты   build_all.py --check                  # selftest.py + fbx_units.py
 3. локомоция    build_all.py --asset robots --check    # measure_locomotion.py по каждому FBX
-4. габарит      probes/probe_fbx_import.py -- <fbx>   # ручная проба, когда нужна
-5. превью       build_all.py --asset <id> --preview --skip-build  # PNG для глаз
-6. MCP          GUI-Blender                          # только если нужен визуальный контроль
-7. отчёт        Tools/Blender/logs/build_all_*.log    # пишется сам
+4. животные     build_all.py --asset animals --check   # check_animal_clips.py по каждому FBX
+5. габарит      probes/probe_fbx_import.py -- <fbx>   # ручная проба, когда нужна
+6. превью       build_all.py --asset <id> --preview --skip-build  # PNG для глаз
+7. MCP          gui_session.py run <файл>.py --auto   # окно живёт только на время шага
+8. отчёт        Tools/Blender/logs/build_all_*.log    # пишется сам
 ```
 
 `Tools/Blender/selftest.py` — минимальный прогон этого цикла для low-poly ядра: собирает
@@ -285,6 +303,7 @@ python Tools/Blender/build_all.py --all --check --preview
 | Габарит не сходится | glTF Y-up vs Blender Z-up; мерили в разных пространствах | Мерить после импорта или с учётом конверсии осей |
 | Превью Quaternius пустое | `Alpha = 0` при `HASHED` | Принудительная непрозрачность только для превью; в Unity не переносить |
 | Кириллица падает на печати | Windows-консоль cp1251 | `$env:PYTHONUTF8 = "1"`; в наших скриптах stdout переконфигурируется в UTF-8 |
+| `DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0` | В 4+ у материала/мира ноды уже есть, а сеттер устарел | Не присваивать: `if mat.node_tree is None: mat.use_nodes = True`. Проверка: `blender --background --factory-startup --python-expr "import bpy; bpy.data.materials.new('M').use_nodes=True"` — без правки предупреждение печатается |
 
 ## Уровень FrostSpace
 
@@ -453,6 +472,13 @@ build_animals.py -> Content/Models/RobotAnimals/<S>/RA_<S>.fbx -> клипы Idl
 - Превью — `render_animal_previews.py` (rest/idle/move каждого вида) →
   `AssetSource/Previews/Animals/`; крупные планы головы и спины —
   `probes/probe_animal_geometry.py` (принимает один FBX за прогон).
+- **Проверка готового файла — `check_animal_clips.py`** (`build_all.py --asset animals --check`).
+  Кости `ball_l` у животных нет, поэтому `measure_locomotion.py` к ним не применим; вместо него
+  проверяются жёсткие инварианты артефакта: оба клипа на месте и их длина совпадает с
+  `animal_manifest.json`, у каждой вершины есть вес, а скорость стопы в контакте воспроизводит
+  `clip_speed_source` (±25 %) — это и есть скорость, с которой животное обязано ехать в Unity.
+  Замер не делается для режимов `hop`/`fly`/`swim` и там, где кости стоп не найдены (Spider — WARN).
+  Шов петли и габарит печатаются справочно; шов длиннее 0.30 — WARN, а не провал.
 - Разведка ригов — `probes/probe_animal_rigs.py` (кости, rest-точки, клипы, оси, fps),
   целостность мешей — `probes/probe_animal_mesh_health.py`. Первый проход «голый риг +
   процедурная геометрия» отклонён: модель читалась как стол на ножках.
@@ -481,7 +507,7 @@ build_animals.py -> Content/Models/RobotAnimals/<S>/RA_<S>.fbx -> клипы Idl
 - ❌ Заявлять «мост работает», не сделав реального вызова с ответом.
 - ❌ Хардкодить версию Blender или машинный путь в код.
 - ❌ Запускать MCP-режим через `--background`.
-- ❌ Использовать `--factory-startup` для GUI-сессии, где нужен аддон.
+- ❌ Полагаться на сохранённый список аддонов после `--factory-startup`: включай аддон сам (`blender_boot.py`).
 - ❌ Ожидать ответа MCP, пока в Blender открыт модальный диалог.
 - ❌ Тащить в проект чужие аддоны и пайплайны «за компанию».
 
@@ -506,6 +532,9 @@ build_animals.py -> Content/Models/RobotAnimals/<S>/RA_<S>.fbx -> клипы Idl
 | `probes/probe_animal_geometry.py` | **PASS** (2026-10-19): 13 прогонов по одному FBX; открытых границ, вырожденных и нулевых граней нет |
 | `probes/probe_animal_mesh_health.py` | **PASS** (2026-10-19): `RESULT PASS`, 0 вершин без веса |
 | `render_animal_previews.py` | **PASS** (2026-10-19): rest/idle/move каждого вида в `AssetSource/Previews/Animals/` |
+| `check_animal_clips.py` на 13 животных | **PASS** (2026-10-22): длины клипов = манифест, 0 вершин без веса, скорость стопы 100 % от `clip_speed_source`; у Spider — WARN «кости стоп не найдены» |
+| `build_all.py --asset animals --check` | **PASS** (2026-10-22): 13 проверок животных + `selftest.py` + `fbx_units.py` |
+| `gui_session.py run --auto` (живой мост) | **PASS** (2026-10-22): GUI-Blender поднят за 2.0 с, `execute_code` вернул вывод, Blender закрылся сам |
 | `build_robots.py` (R1–R5) | не запускался в этой сессии: FBX уже собраны |
 | `inspect_image.py` на PNG | **PASS**: размер, уникальные цвета, яркость |
 | `blender_boot.py` в `--background` | **PASS**: корректный отказ, код 0 |
