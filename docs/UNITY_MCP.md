@@ -37,7 +37,7 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 | `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 2)` | 10 корней (`Player`, `NPC`, дом, деревья, забор, свет...); `next_cursor: null` |
 | `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `Game` (2), все enabled |
 | `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` после сборки уровня и тестов |
-| `run_tests` + `get_test_job` | 41 EditMode-тест — `succeeded` (2026-10-22) |
+| `run_tests` + `get_test_job` | 42 EditMode-тест — `succeeded` (2026-10-23) |
 | `execute_code(action: "execute")` | работает, `compiler: roslyn`; видит типы проектных сборок (`FrostSpace.Features`, `FrostSpace.Editor`) |
 | `manage_asset(action: "delete")` | папка `Assets/Screenshots` удаляется после проверки (расходник, STYLE.md); на 2026-10-22 её в проекте нет |
 | `manage_camera(action: "screenshot", capture_source: "game_view")` | работает: PNG в `Assets/Screenshots/`, вид из `view_position` на `view_target`; **значения в файле линейные** — см. «Ловушки» |

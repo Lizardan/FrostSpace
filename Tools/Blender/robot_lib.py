@@ -283,7 +283,7 @@ def rig_points(arm):
     return points
 
 
-def load_rig(include_jump: bool = False):
+def load_rig(include_jump: bool = False, include_carry: bool = False):
     """Импортирует скелет ActionForge и клипы, возвращает арматуру.
 
     Все клипы переведены в in-place: смещение root по Y (вперёд) обнулено.
@@ -292,6 +292,10 @@ def load_rig(include_jump: bool = False):
     `include_jump=True` добавляет три клипа того же пака — jump_start,
     jump_loop, jump_land. Они нужны только игроку (R1), поэтому сборка без
     флага остаётся ровно прежней.
+
+    `include_carry=True` добавляет walk_carry_loop — клип переноски ящика для
+    складского носильщика (R18). Остальным роботам он не нужен и раздувал бы
+    каждый FBX.
     """
     clear_scene()
     bpy.context.scene.render.fps = 30
@@ -299,6 +303,8 @@ def load_rig(include_jump: bool = False):
     clips = ["walk_loop", "idle_loop", "sprint_loop"]
     if include_jump:
         clips += ["jump_start", "jump_loop", "jump_land"]
+    if include_carry:
+        clips += ["walk_carry_loop"]
 
     base = None
     actions = {}

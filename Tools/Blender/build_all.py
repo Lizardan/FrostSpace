@@ -138,6 +138,36 @@ PIPELINE: dict[str, dict] = {
         "previews": [],
         "checks": [],
     },
+    "menu-storage": {
+        "script": "build_menu_storage.py",
+        "outputs": [MODELS + "/Level/MenuStorageHall.fbx"],
+        "previews": [_step("render_menu_previews.py", "file",
+                           ["--out", PREVIEWS + "/Menu"])],
+        "checks": [],
+    },
+    "menu-train": {
+        "script": "build_menu_train.py",
+        "outputs": [
+            MODELS + "/Level/MenuTrainShed.fbx",
+            MODELS + "/Level/MenuTrainTrack.fbx",
+            MODELS + "/Level/MenuFreightTrain.fbx",
+        ],
+        "previews": [_step("render_menu_previews.py", "file",
+                           ["--out", PREVIEWS + "/Menu"])],
+        "checks": [],
+    },
+    "menu-ride": {
+        "script": "build_menu_ride.py",
+        "outputs": [
+            MODELS + "/Level/MenuRideSegment_A.fbx",
+            MODELS + "/Level/MenuRideSegment_B.fbx",
+            MODELS + "/Level/MenuRideSegment_C.fbx",
+            MODELS + "/Level/MenuRidePlain.fbx",
+        ],
+        "previews": [_step("render_menu_previews.py", "file",
+                           ["--out", PREVIEWS + "/Menu"])],
+        "checks": [],
+    },
 }
 
 #: Глобальные проверки: выполняются при `--check` независимо от выбранных ассетов.
@@ -186,11 +216,11 @@ def find_blender(explicit: str | None) -> str:
         if not os.path.exists(path):
             raise SystemExit("НЕТ ФАЙЛА: %s (--blender)" % path)
         return path
-    env = os.environ.get("BLENDER_EXE")
+    env = os.environ.get("BLENDER_EXE") or os.environ.get("BLENDER")
     if env:
         path = os.path.abspath(env)
         if not os.path.exists(path):
-            raise SystemExit("НЕТ ФАЙЛА: %s (BLENDER_EXE)" % path)
+            raise SystemExit("НЕТ ФАЙЛА: %s (BLENDER_EXE/BLENDER)" % path)
         return path
     from_path = shutil.which("blender")
     if from_path:
@@ -322,6 +352,8 @@ def main() -> int:
                         help="имена/секции для скрипта сборки (после --)")
     parser.add_argument("--jump", action="store_true",
                         help="прокинуть --jump в build_robots.py (клипы прыжка)")
+    parser.add_argument("--carry", action="store_true",
+                        help="прокинуть --carry в build_robots.py (переноска ящика)")
     parser.add_argument("--preview", action="store_true", help="рендерить превью")
     parser.add_argument("--check", action="store_true",
                         help="проверки: selftest.py, fbx_units.py, профильные шаги")
@@ -346,6 +378,8 @@ def main() -> int:
         parser.error("неизвестный ассет: %s (см. --list)" % ", ".join(unknown))
     if args.jump and any(name != "robots" for name in selected):
         print("предупреждение: --jump относится только к robots, для остальных игнорируется")
+    if args.carry and any(name != "robots" for name in selected):
+        print("предупреждение: --carry относится только к robots, для остальных игнорируется")
 
     python = sys.executable
     blender = "-" if args.dry_run else find_blender(args.blender)
@@ -372,6 +406,8 @@ def main() -> int:
                 extra.extend(args.ids)
             if args.jump and name == "robots":
                 extra.insert(0, "--jump")
+            if args.carry and name == "robots":
+                extra.insert(0, "--carry")
 
             print("[%s] сборка" % name)
             cmd = _command(blender, {"script": asset["script"], "runner": "blender"},

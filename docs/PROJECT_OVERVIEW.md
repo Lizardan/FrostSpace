@@ -28,7 +28,7 @@
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (2 файла), `FrostSpace.Features` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (5 файлов), `FrostSpace.Tests.EditMode` (41 тест) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (2 файла), `FrostSpace.Features` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (5 файлов), `FrostSpace.Tests.EditMode` (42 тест) | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
 | Интерфейс | строится кодом: `BootScreen`, `MainMenuScreen` (меню и лента видов), `PlayerHud` (модули, сканер) | `Assets/_Project/Scripts/Features/` |

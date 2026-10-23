@@ -75,9 +75,6 @@ namespace FrostSpace.Features.Menu
         [Tooltip("Переключатель пяти видов меню на MenuFlow")]
         [SerializeField] private MenuViewSwitch _viewSwitch;
 
-        [Tooltip("Скорость переезда подчёркивания между пунктами, 1/с")]
-        [SerializeField] private float _viewIndicatorSpeed = 12f;
-
         // Ключ общий с MusicManager: он же применяет сохранённую громкость на старте игры.
         private const string VolumeKey = MusicManager.MasterVolumeKey;
         private const float ButtonWidth = 360f;
@@ -88,18 +85,12 @@ namespace FrostSpace.Features.Menu
         private const float LabelIdleSpacing = 10f;
         private const float UnderlineThickness = 2f;
 
-        // Лента видов внизу: ширина пункта, шаг и внутренний отступ панели.
-        private const float ViewItemWidth = 200f;
-        private const float ViewItemHeight = 44f;
-        private const float ViewItemStep = 208f;
-        private const float ViewRibbonPadding = 8f;
-
         /// <summary>
         /// Подписи на случай, если вид ещё не назначен в MenuViewSwitch:
         /// лента должна собираться и без сцены-источника данных.
         /// </summary>
         private static readonly string[] FallbackViewLabels =
-            { "PERIMETER", "OPEN", "REPAIR", "LAB", "DEPOT" };
+            { "STORAGE", "OPEN", "REPAIR", "DEPOT", "RIDE" };
 
         /// <summary>
         /// Горизонтальный градиент для свечения: ярко у маркера, плавно уходит в прозрачность
@@ -130,14 +121,9 @@ namespace FrostSpace.Features.Menu
         private GameObject _settingsPanel;
         private Slider _volume;
         private Button[] _menuButtons;
-        private Button[] _viewButtons;
-        private TextMeshProUGUI[] _viewLabels;
-        private RectTransform _viewIndicator;
-        private RectTransform _viewIndicatorTrack;
-        private Image _viewIndicatorFill;
+        private MenuViewCarousel _carousel;
         private CanvasGroup _viewFade;
         private Image _viewFadeLine;
-        private float _viewIndicatorTargetX;
         private int _viewIndex;
         private bool _cursorApplied;
 
@@ -175,14 +161,7 @@ namespace FrostSpace.Features.Menu
 
             var settingsOpen = _settingsPanel != null && _settingsPanel.activeSelf;
             var canSwitch = !busy && _viewSwitch != null && !_viewSwitch.IsSwitching;
-            if (_viewButtons != null)
-            {
-                for (var i = 0; i < _viewButtons.Length; i++)
-                {
-                    if (_viewButtons[i] != null)
-                        _viewButtons[i].interactable = canSwitch;
-                }
-            }
+            _carousel?.SetInteractable(canSwitch);
 
             // Меню не должно перелистываться под руками: пауза на настройках и переходе.
             if (_viewSwitch != null)
@@ -190,7 +169,7 @@ namespace FrostSpace.Features.Menu
 
             if (_viewSwitch != null && canSwitch && !settingsOpen && Keyboard.current != null)
             {
-                var count = _viewButtons != null ? _viewButtons.Length : 0;
+                var count = _viewSwitch.ViewCount;
                 for (var i = 0; i < count && i < 9; i++)
                 {
                     if (!Keyboard.current[(Key)((int)Key.Digit1 + i)].wasPressedThisFrame)
@@ -201,27 +180,10 @@ namespace FrostSpace.Features.Menu
                 }
             }
 
-            var smoothing = 1f - Mathf.Exp(-_viewIndicatorSpeed * Time.unscaledDeltaTime);
-            if (_viewIndicator != null)
-            {
-                var x = Mathf.Lerp(
-                    _viewIndicator.anchoredPosition.x, _viewIndicatorTargetX, smoothing);
-                _viewIndicator.anchoredPosition = new Vector2(
-                    x, _viewIndicator.anchoredPosition.y);
-            }
-
-            if (_viewIndicatorTrack != null)
-            {
-                var x = Mathf.Lerp(
-                    _viewIndicatorTrack.anchoredPosition.x, _viewIndicatorTargetX, smoothing);
-                _viewIndicatorTrack.anchoredPosition = new Vector2(
-                    x, _viewIndicatorTrack.anchoredPosition.y);
-            }
-
-            // Заливка подчёркивания — остаток времени до авто-смены: пункт сам
-            // показывает, сколько ещё ждать, и обнуляется после переключения.
-            if (_viewIndicatorFill != null && _viewSwitch != null)
-                _viewIndicatorFill.fillAmount = _viewSwitch.AutoProgress;
+            // Полоска под выбранной строкой — остаток времени до авто-смены: пункт
+            // сам показывает, сколько ещё ждать, и обнуляется после переключения.
+            if (_viewSwitch != null)
+                _carousel?.SetAutoProgress(_viewSwitch.AutoProgress);
         }
 
         private void OnDisable()
@@ -321,41 +283,8 @@ namespace FrostSpace.Features.Menu
 
         private void OnVariantChanged(int index)
         {
-            var count = _viewButtons != null ? _viewButtons.Length : FallbackViewLabels.Length;
-            _viewIndex = Mathf.Clamp(index, 0, Mathf.Max(0, count - 1));
-            _viewIndicatorTargetX = ViewRibbonPadding + _viewIndex * ViewItemStep;
-            RefreshViewButtons();
-        }
-
-        /// <summary>
-        /// Активный пункт держит акцентный фон и цвет, неактивный остаётся
-        /// приглушённым. Цвета пишутся в ColorTint, иначе Button вернул бы свой
-        /// normalColor после первого наведения.
-        /// </summary>
-        private void RefreshViewButtons()
-        {
-            if (_viewButtons == null)
-                return;
-
-            var activeBackground = new Color(0.10f, 0.19f, 0.24f, 0.95f);
-            for (var i = 0; i < _viewButtons.Length; i++)
-            {
-                var active = i == _viewIndex;
-                if (_viewLabels != null && _viewLabels[i] != null)
-                    _viewLabels[i].color = active ? _accent : _dim;
-
-                if (_viewButtons[i] == null)
-                    continue;
-
-                var colors = _viewButtons[i].colors;
-                colors.normalColor = active ? activeBackground : _buttonIdle;
-                colors.selectedColor = active ? activeBackground : _buttonHover;
-                colors.highlightedColor = _buttonHover;
-                _viewButtons[i].colors = colors;
-
-                if (_viewButtons[i].targetGraphic != null)
-                    _viewButtons[i].targetGraphic.color = active ? activeBackground : _buttonIdle;
-            }
+            _viewIndex = Mathf.Max(0, index);
+            _carousel?.SetSelected(_viewIndex, false);
         }
 
         private void BuildInterface()
@@ -430,10 +359,11 @@ namespace FrostSpace.Features.Menu
         }
 
         /// <summary>
-        /// Нижняя лента видов: пункты по числу видов из MenuViewSwitch, по центру
-        /// экрана, с дорожкой и заполняющимся подчёркиванием под активным пунктом.
-        /// Ширина считается из количества видов: пятый пункт не ломает сетку,
-        /// а шестой добавится сам.
+        /// Правая вертикальная карусель видов: выбранная строка крупнее и
+        /// акцентнее, соседние мельче и прозрачнее, переключение прокручивает
+        /// столбец. Горизонтальной плашки внизу нет — диорама кадрируется по
+        /// всей высоте и не теряет передний план под доком. Сами строки строит
+        /// <see cref="MenuViewCarousel"/>: экран только отдаёт подписи и клик.
         /// </summary>
         private void BuildViewSwitch(Transform root)
         {
@@ -441,73 +371,13 @@ namespace FrostSpace.Features.Menu
             if (count < 2)
                 count = FallbackViewLabels.Length;
 
-            var ribbonWidth = count * ViewItemStep - (ViewItemStep - ViewItemWidth);
-
-            NewText(root, "ViewLabel", "VIEW MODE   /   AUTO", 15f, _dim,
-                TextAlignmentOptions.Bottom, new Vector2(0.5f, 0f),
-                new Vector2(0f, 164f), new Vector2(ribbonWidth, 22f), 10f);
-
-            var panelObject = new GameObject("ViewSwitch", typeof(RectTransform));
-            panelObject.transform.SetParent(root, false);
-            var panelRect = (RectTransform)panelObject.transform;
-            panelRect.anchorMin = new Vector2(0.5f, 0f);
-            panelRect.anchorMax = new Vector2(0.5f, 0f);
-            panelRect.pivot = new Vector2(0.5f, 0f);
-            panelRect.sizeDelta = new Vector2(ribbonWidth + ViewRibbonPadding * 2f, 56f);
-            panelRect.anchoredPosition = new Vector2(0f, 96f);
-
-            var panel = panelObject.AddComponent<Image>();
-            panel.color = new Color(_panelColor.r, _panelColor.g, _panelColor.b, 0.72f);
-            panel.raycastTarget = false;
-
-            var edge = NewImage(panelObject.transform, "TopEdge", _accent);
-            var edgeRect = edge.rectTransform;
-            edgeRect.anchorMin = new Vector2(0f, 1f);
-            edgeRect.anchorMax = new Vector2(1f, 1f);
-            edgeRect.pivot = new Vector2(0.5f, 1f);
-            edgeRect.sizeDelta = new Vector2(0f, 2f);
-            edgeRect.anchoredPosition = Vector2.zero;
-
-            _viewButtons = new Button[count];
-            _viewLabels = new TextMeshProUGUI[count];
+            var labels = new string[count];
             for (var i = 0; i < count; i++)
-            {
-                _viewButtons[i] = NewViewButton(
-                    panelObject.transform,
-                    $"View{i + 1}",
-                    $"{i + 1:00}  {LabelFor(i)}",
-                    i,
-                    new Vector2(ViewRibbonPadding + i * ViewItemStep, 8f));
-                _viewLabels[i] = _viewButtons[i].GetComponentInChildren<TextMeshProUGUI>();
-            }
+                labels[i] = LabelFor(i);
 
-            // Дорожка на всю ширину пункта: видно, где стоим, даже когда заливка
-            // прогресса обнулилась после переключения.
-            var track = NewImage(panelObject.transform, "ActiveTrack",
-                new Color(_accent.r, _accent.g, _accent.b, 0.16f));
-            _viewIndicatorTrack = track.rectTransform;
-            _viewIndicatorTrack.anchorMin = Vector2.zero;
-            _viewIndicatorTrack.anchorMax = Vector2.zero;
-            _viewIndicatorTrack.pivot = Vector2.zero;
-            _viewIndicatorTrack.sizeDelta = new Vector2(ViewItemWidth, 3f);
-            _viewIndicatorTrack.anchoredPosition = new Vector2(ViewRibbonPadding, 5f);
-
-            var indicator = NewImage(panelObject.transform, "ActiveLine", _accent);
-            _viewIndicator = indicator.rectTransform;
-            _viewIndicator.anchorMin = Vector2.zero;
-            _viewIndicator.anchorMax = Vector2.zero;
-            _viewIndicator.pivot = Vector2.zero;
-            _viewIndicator.sizeDelta = new Vector2(ViewItemWidth, 3f);
-            _viewIndicator.anchoredPosition = new Vector2(ViewRibbonPadding, 5f);
-
-            // Заливка слева направо: длина полосы и есть остаток до авто-смены.
-            indicator.type = Image.Type.Filled;
-            indicator.fillMethod = Image.FillMethod.Horizontal;
-            indicator.fillOrigin = (int)Image.OriginHorizontal.Left;
-            indicator.fillAmount = 0f;
-            _viewIndicatorFill = indicator;
-
-            _viewIndicatorTargetX = ViewRibbonPadding;
+            _carousel = gameObject.AddComponent<MenuViewCarousel>();
+            _carousel.Build(root, labels, _viewSwitch != null ? _viewSwitch.Variant : 0,
+                OnViewPressed, _accent, _text, _dim);
         }
 
         private string LabelFor(int index)
@@ -560,42 +430,6 @@ namespace FrostSpace.Features.Menu
             _viewFadeLine = lineObject.AddComponent<Image>();
             _viewFadeLine.color = new Color(_accent.r, _accent.g, _accent.b, 0f);
             _viewFadeLine.raycastTarget = false;
-        }
-
-        private Button NewViewButton(
-            Transform parent, string name, string label, int index, Vector2 position)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            var rect = (RectTransform)go.transform;
-            rect.anchorMin = new Vector2(0f, 0f);
-            rect.anchorMax = new Vector2(0f, 0f);
-            rect.pivot = new Vector2(0f, 0f);
-            rect.sizeDelta = new Vector2(ViewItemWidth, ViewItemHeight);
-            rect.anchoredPosition = position;
-
-            var background = go.AddComponent<Image>();
-            background.color = _buttonIdle;
-            background.raycastTarget = true;
-
-            var button = go.AddComponent<Button>();
-            button.targetGraphic = background;
-            button.transition = Selectable.Transition.ColorTint;
-            var colors = button.colors;
-            colors.normalColor = _buttonIdle;
-            colors.highlightedColor = _buttonHover;
-            colors.pressedColor = _accent;
-            colors.selectedColor = _buttonHover;
-            colors.disabledColor = new Color(_buttonIdle.r, _buttonIdle.g, _buttonIdle.b, 0.35f);
-            colors.fadeDuration = 0.1f;
-            button.colors = colors;
-            button.onClick.AddListener(() => OnViewPressed(index));
-
-            NewText(go.transform, "Label", label, 19f, _dim, TextAlignmentOptions.Center,
-                new Vector2(0.5f, 0.5f), Vector2.zero,
-                new Vector2(ViewItemWidth, ViewItemHeight), 8f);
-
-            return button;
         }
 
         private GameObject BuildSettingsPanel(Transform root)

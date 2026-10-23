@@ -4,10 +4,13 @@
     blender --background --factory-startup --python Tools/Blender/build_robots.py -- R1
     blender --background --factory-startup --python Tools/Blender/build_robots.py
     blender --background --factory-startup --python Tools/Blender/build_robots.py -- --jump -- R1
+    blender --background --factory-startup --python Tools/Blender/build_robots.py -- --carry -- R18
 
 Без аргументов собираются все дизайны из `robot_designs.BUILDERS`.
 Флаг `--jump` добавляет к клипам jump_start/jump_loop/jump_land из ActionForge;
 без списка роботов он собирает только R1 — прыжок нужен игроку, а не всем NPC.
+Флаг `--carry` добавляет walk_carry_loop; без списка роботов он собирает R18 —
+переноска ящика нужна только складскому носильщику в меню.
 """
 
 from __future__ import annotations
@@ -34,11 +37,15 @@ def main() -> int:
     print("Blender", bpy.app.version_string)
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     include_jump = any(a.lower() == "--jump" for a in args)
+    include_carry = any(a.lower() == "--carry" for a in args)
     selected = {a.lower() for a in args if not a.startswith("--")}
     if include_jump and not selected:
         selected = {"r1"}
+    if include_carry and not selected:
+        selected = {"r18"}
 
-    arm, _actions = robot_lib.load_rig(include_jump=include_jump)
+    arm, _actions = robot_lib.load_rig(include_jump=include_jump,
+                                      include_carry=include_carry)
     built = []
     for builder in robot_designs.BUILDERS:
         name, obj, _mats = builder(arm)

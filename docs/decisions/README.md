@@ -25,6 +25,7 @@
 | [0015](0015-five-menu-scenes.md) | Пять сюжетных сцен меню: процедурные позы вместо клипов, интерьер из примитивов, разорванный робот | Accepted |
 | [0016](0016-unified-graphics-preset.md) | Единый пресет графики: один уровень качества и один URP-ассет | Accepted |
 | [0017](0017-single-asset-pipeline.md) | Единая точка входа пайплайна ассетов: `build_all.py` | Accepted |
+| [0018](0018-menu-showcase-carousel-and-ice-road.md) | Виды меню второго цикла: FBX-декорации STORAGE/DEPOT/RIDE, ледяная дорога, карусель справа, carry-клип | Accepted |
 
 ## Когда создавать ADR
 

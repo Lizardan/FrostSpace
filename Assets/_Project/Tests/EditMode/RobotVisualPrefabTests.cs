@@ -147,6 +147,61 @@ namespace FrostSpace.Tests
             Assert.AreEqual(AnimatorControllerParameterType.Bool, airborne.type);
         }
 
+        /// <summary>
+        /// Переноска ящика есть только у складского носильщика <c>R18_Forge</c>:
+        /// клип добавляется в FBX сборкой с флагом <c>--carry</c>, состояние
+        /// <c>CarryWalk</c> — состояние без параметров (идёт всегда, пока включён
+        /// <see cref="FrostSpace.Features.Menu.MenuRobotWalker"/> с флагом carry).
+        /// Остальные роботы клип не получают — иначе весь отряд нёс бы ящик.
+        /// </summary>
+        [Test]
+        public void CarrierRobot_HasCarryWalkAndOthersDoNot()
+        {
+            const string carrier = "R18_Forge";
+            var carrierPath = ModelFolder + "/" + carrier + ".fbx";
+            var clips = AssetDatabase.LoadAllAssetsAtPath(carrierPath)
+                .OfType<AnimationClip>()
+                .Where(clip => !clip.name.StartsWith("__preview"))
+                .GroupBy(clip => clip.name)
+                .ToDictionary(group => group.Key, group => group.First());
+
+            Assert.IsTrue(clips.ContainsKey("CarryWalk"),
+                carrierPath + ": нет клипа CarryWalk (сборка --carry не прогонялась)");
+            Assert.AreEqual(60f / 30f, clips["CarryWalk"].length, 0.02f,
+                carrierPath + ": длина CarryWalk");
+            Assert.IsTrue(
+                AnimationUtility.GetAnimationClipSettings(clips["CarryWalk"]).loopTime,
+                "CarryWalk должен зацикливаться");
+            Assert.IsFalse(clips["CarryWalk"].hasRootCurves,
+                "клип CarryWalk должен быть in-place");
+
+            var path = PrefabFolder + "/" + carrier + "_Model.prefab";
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            var animator = prefab.GetComponent<Animator>();
+            var controller = animator.runtimeAnimatorController as AnimatorController;
+            Assert.IsNotNull(controller, path + ": controller не AnimatorController");
+            var stateNames = controller.layers[0].stateMachine.states
+                .Select(state => state.state.name)
+                .ToArray();
+            CollectionAssert.Contains(stateNames, "CarryWalk",
+                path + ": нет состояния CarryWalk");
+
+            foreach (var robot in Robots())
+            {
+                if (robot == carrier)
+                    continue;
+
+                var otherPath = ModelFolder + "/" + robot + ".fbx";
+                var otherClips = AssetDatabase.LoadAllAssetsAtPath(otherPath)
+                    .OfType<AnimationClip>()
+                    .Select(clip => clip.name)
+                    .Where(name => !name.StartsWith("__preview"))
+                    .ToArray();
+                CollectionAssert.DoesNotContain(otherClips, "CarryWalk",
+                    otherPath + ": клип переноски не должен попадать остальным роботам");
+            }
+        }
+
         [Test]
         public void RobotModel_HasThreeInPlaceClips()
         {

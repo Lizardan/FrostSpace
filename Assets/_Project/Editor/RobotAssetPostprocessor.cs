@@ -59,7 +59,21 @@ namespace FrostSpace.Editor
             },
         };
 
+        /// <summary>
+        /// Переноска ящика есть только у складского носильщика: клип добавлен в
+        /// FBX сборкой `build_robots.py --carry`, остальным роботам он не нужен.
+        /// </summary>
+        private static readonly ModelImporterClipAnimation[] CarryClips =
+        {
+            new ModelImporterClipAnimation
+            {
+                name = "CarryWalk", takeName = "walk_carry_loop",
+                firstFrame = 0, lastFrame = 60, loopTime = true,
+            },
+        };
+
         private const string PlayerRobot = "R1_PolarMechanic";
+        private const string CarrierRobot = "R18_Forge";
 
         private void OnPreprocessModel()
         {
@@ -74,9 +88,12 @@ namespace FrostSpace.Editor
             importer.importAnimation = true;
             importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
 
+            var name = Path.GetFileNameWithoutExtension(assetPath);
             var clips = new List<ModelImporterClipAnimation>(Clips);
-            if (Path.GetFileNameWithoutExtension(assetPath) == PlayerRobot)
+            if (name == PlayerRobot)
                 clips.AddRange(JumpClips);
+            if (name == CarrierRobot)
+                clips.AddRange(CarryClips);
 
             importer.clipAnimations = CloneClips(clips);
         }

@@ -86,8 +86,8 @@ FrostSpace/
    уходит в `DontDestroyOnLoad`, `BootScreen` три секунды показывает консоль загрузки
    сервисов и отдаёт переход `SceneController` → `MainMenu`.
 2. `Assets/Scenes/MainMenu.unity` (build index 1) — `MenuFlow` с `MainMenuScreen`,
-   пять видов меню с шагом 300 по Z (`MenuPerimeter`, `MenuOpen`, `MenuRepair`,
-   `MenuLab`, `MenuDepotQueue`), пять камер видов, снег, Volume.
+   пять видов меню (`MenuOpen`, `MenuRepair`, `MenuStorage`, `MenuTrainDepot`,
+   `MenuRide`), пять камер видов, снег, Volume.
    НАЧАТЬ → белый переход → `Game`.
 3. Сцена `Game` (build index 2) — обычный сохранённый ассет: рельеф,
    дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
@@ -130,7 +130,7 @@ FrostSpace/
 | Модули камеры (ПКМ) | `ViewModuleSwitch` + `ViewModule` в `Features/Camera/`, карусель — `ModuleCarousel` в `ViewModule.cs`, показ — `PlayerHud` (`Features/Hud/`) |
 | Ховербайк | `Hoverbike` + `HoverbikeGlow` в `Features/Ride/`; префаб — `Content/Prefabs/Ride/Hoverbike_Model` (корень с `CharacterController`, дочерние `Visual`, `Seat`, `Cushion`, `ExitPoint`, `EngineGlow`); сборка — `Editor/HoverbikeModelBuilder.cs` (ADR 0012) |
 | Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
-| Виды главного меню | `MenuViewSwitch` на `MenuFlow` (массив видов: корень + камера + подпись), ленту `01 DIORAMA … 05 DEPOT` строит `MainMenuScreen`; открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013); станция, каньон и депо — `build_menu_views.py`, шейдеры `MenuAurora`/`MenuLightCone` (ADR 0014) |
+| Виды главного меню | `MenuViewSwitch` на `MenuFlow` (массив видов: корень + камера + подпись), правая вертикальная карусель `01 STORAGE … 05 RIDE` — `MenuViewCarousel`, собирается `MainMenuScreen` (ADR 0018); открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013); склад, депо и проезд — `Tools/Blender/build_menu_storage.py` / `build_menu_train.py` / `build_menu_ride.py` через `build_all.py` (ADR 0017, 0018); цикл поезда — `MenuTrainCycle`, прокрутка местности — `MenuRideScroll`, ходьба роботов — `MenuRobotWalker` (носильщик R18 играет `CarryWalk`) |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |

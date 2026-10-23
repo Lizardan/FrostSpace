@@ -19,7 +19,10 @@ namespace FrostSpace.Features.Menu
         HoldLamp,
 
         /// <summary>Сидит на ящике: бёдра вперёд, голени вниз.</summary>
-        Sit
+        Sit,
+
+        /// <summary>Несёт груз перед собой: корпус вперёд, руки на грузе.</summary>
+        Carry
     }
 
     /// <summary>
@@ -297,6 +300,7 @@ namespace FrostSpace.Features.Menu
                 case MenuPose.Kneel: return 26f;
                 case MenuPose.HoldLamp: return -5f;
                 case MenuPose.Sit: return 6f;
+                case MenuPose.Carry: return 14f;
                 default: return 10f;
             }
         }
@@ -309,6 +313,7 @@ namespace FrostSpace.Features.Menu
                 case MenuPose.Kneel: return 16f;
                 case MenuPose.HoldLamp: return -10f;
                 case MenuPose.Sit: return 14f;
+                case MenuPose.Carry: return 6f;
                 default: return 28f;
             }
         }

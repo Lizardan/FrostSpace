@@ -42,9 +42,9 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 41 тест:
-проверки префабов и клипов роботов и животных, `ViewBlend`, экранный вырез, карусель
-модулей). Флаг `-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
+Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 42 тест:
+проверки префабов и клипов роботов и животных (включая carry-контракт R18), `ViewBlend`, экранный
+вырез, карусель модулей). Флаг `-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
 не существует. `total: 0` в отчёте означает, что тесты не найдены, а не что «всё прошло».
 
 Сборка: build-метод есть — `FrostSpace.Editor.BuildWebGL.PerformBuild` (см. раздел
@@ -146,7 +146,7 @@ python Tools/Blender/gui_session.py stop     # закрыть, если сесс
 | Unity MCP Console | `read_console(types: ["error"])` | 0 ошибок |
 | Unity MCP сцена | `manage_scene(get_active)` | `Boot` (index 0) — активная сцена редактора; `MainMenu` — index 1 |
 | Unity MCP Build Settings | `manage_scene(get_build_settings)` | `Boot` 0, `MainMenu` 1, `Game` 2 |
-| Тесты Unity | `run_tests` + `get_test_job` | 41 EditMode — PASS (2026-10-21): префабы и клипы роботов/животных, `ViewBlend`, вырез, карусель модулей |
+| Тесты Unity | `run_tests` + `get_test_job` | 42 EditMode — PASS (2026-10-23): префабы и клипы роботов/животных (включая carry-контракт R18), `ViewBlend`, вырез, карусель модулей |
 | Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | базлайн 2026-10-18: walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° — **на ровном рельефе** |
 | Play-замер прыжка | тот же стенд, строка `PROBE jump` | PASS (2026-10-21): height 1.19 м при цели 1.2, airtime 1.07 с |
 | Баланс шага на фасетном рельефе | длина клипа × клиповая скорость = путь за цикл (живой замер) | PASS (2026-10-18): клип 1.333 с × 0.912 м/с = 1.217 м против 1.215 м пути — стопа стоит |
