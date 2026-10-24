@@ -18,7 +18,7 @@
 | Загрузчик | `Tools/Blender/blender_boot.py` | headless-отказ и GUI-старт проверены |
 | **Живой Blender по требованию** | `Tools/Blender/gui_session.py` (`start`/`run`/`stop`) | start → run → stop пройдены на 5.2.3 |
 | **Единый вход ассетов** | `Tools/Blender/build_all.py` (ADR 0017) | сборка, проверки и превью прогнаны на 5.2.3 |
-| Роботы | `robot_lib.py`, `robot_designs.py`, `build_robots.py`, `measure_locomotion.py` | сборка и замер прогоняются headless |
+| Роботы | `robot_lib.py`, `robot_designs.py`, `build_robots.py`, `measure_locomotion.py`, `check_hand_symmetry.py` | сборка и замер прогоняются headless |
 | Робо-животные | `animal_lib.py`, `animal_designs.py`, `build_animals.py`, `check_animal_clips.py` | 13 FBX — `--check` PASS |
 
 Путь и версия — **параметр окружения**, а не константа в коде. На другой машине они
@@ -64,7 +64,7 @@ python Tools/Blender/build_all.py --all --dry-run           # напечатат
 | `--asset <id>` / `--all` | какие ассеты гнать (повторяемый `--asset`); `--list` показывает id |
 | `--ids <имена...>` | аргументы скрипта сборки (имена роботов, виды, секции) **и** фильтр превью/проверок по имени файла |
 | `--jump` | прокинуть `--jump` в `build_robots.py` (клипы прыжка) |
-| `--check` | `selftest.py` + `fbx_units.py` по всем файлам + профильные шаги (локомоция роботов) |
+| `--check` | `selftest.py` + `fbx_units.py` по всем файлам + профильные шаги (локомоция и симметрия кистей роботов) |
 | `--preview` | рендер PNG в `AssetSource/Previews/...` |
 | `--skip-build` | не пересобирать: только превью/проверки по готовым файлам |
 | `--dry-run` | напечатать команды, ничего не запускать |
@@ -278,6 +278,7 @@ python Tools/Blender/build_all.py --all --check --preview
 1. сборка       build_all.py --asset <id>            # его же --dry-run показывает команду
 2. инварианты   build_all.py --check                  # selftest.py + fbx_units.py
 3. локомоция    build_all.py --asset robots --check    # measure_locomotion.py по каждому FBX
+3b. кисти       build_all.py --asset robots --check    # + check_hand_symmetry.py (ADR 0019)
 4. животные     build_all.py --asset animals --check   # check_animal_clips.py по каждому FBX
 5. габарит      probes/probe_fbx_import.py -- <fbx>   # ручная проба, когда нужна
 6. превью       build_all.py --asset <id> --preview --skip-build  # PNG для глаз
@@ -441,6 +442,8 @@ build_robots.py -> Content/Models/Robots/R*.fbx -> клипы Walk/Idle/Sprint, 
   автоматические веса и протечки здесь не применяются.
 - Клипы in-place; скорость стопы в контакте меряется `measure_locomotion.py` (Blender).
   Числа и контракт — в `ASSETS.md`.
+- Кисти симметричны и без предметов (ADR 0019); проверка — `check_hand_symmetry.py`,
+  она же шаг `--check`. Предмет в руке или кисть разного размера роняет `--check`.
 - Разделение «визуальный префаб / сценовый актёр» — ADR 0004.
 
 ## Робо-животные FrostSpace

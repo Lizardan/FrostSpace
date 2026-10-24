@@ -76,7 +76,9 @@ PIPELINE: dict[str, dict] = {
         "previews": [_step("render_robot_previews.py", "file",
                            ["--out", PREVIEWS + "/Robots"])],
         # ball_l есть только у роботов: для животных замер локомотива не применим.
-        "checks": [_step("measure_locomotion.py", "file")],
+        # Второй шаг — кисти: они обязаны быть одинаковыми и без предметов в руке.
+        "checks": [_step("measure_locomotion.py", "file"),
+                   _step("check_hand_symmetry.py", "file")],
     },
     "animals": {
         "script": "build_animals.py",

@@ -323,7 +323,7 @@ def build_robot_02(arm):
     p.box((-0.32, 0.0, 1.45), (0.24, 0.28, 0.14), rust, "clavicle_r", bevel=0.04, rot=(0, -8, -4))
     _snow_cap(p, (-0.32, -0.01, 1.525), (0.22, 0.24, 0.03), snow, "clavicle_r")
     _snow_cap(p, (0.36, -0.02, 1.555), (0.26, 0.28, 0.03), snow, "clavicle_l")
-    _arms(p, R, 1, "l", M, upper=(0.20, 0.21, 0.15, 0.155), lower=(0.21, 0.22, 0.16, 0.165), hand=(0.18, 0.22, 0.22), glove="dark")
+    _arms(p, R, 1, "l", M, upper=(0.20, 0.21, 0.15, 0.155), lower=(0.21, 0.22, 0.16, 0.165), hand=(0.20, 0.24, 0.24), glove="dark")
     _arms(p, R, -1, "r", M, upper=(0.20, 0.21, 0.15, 0.155), lower=(0.21, 0.22, 0.16, 0.165), hand=(0.20, 0.24, 0.24), glove="dark")
     # поршень на левом предплечье
     shoulder, elbow, wrist = R["upperarm_l"][0], R["lowerarm_l"][0], R["hand_l"][0]
@@ -437,7 +437,7 @@ def build_robot_03(arm):
 
 
 def build_robot_04(arm):
-    """Кочегар: сгорбленный корпус, котёл выше плеч и крюк вместо кисти."""
+    """Кочегар: сгорбленный корпус, котёл выше плеч, обе кисти пустые."""
     name = "R4_Hauler"
     keys = ["base", "panel", "dark", "snow", "rust", "orange", "metal", "yellow"]
     mats, M = make_materials(name, keys, colors={
@@ -472,19 +472,9 @@ def build_robot_04(arm):
                [(0.04, 0.04), (0.035, 0.035), (0.03, 0.03)], metal, "spine_02", n=6)
         p.box((sx * 0.37, 0.02, 1.47), (0.20, 0.26, 0.13), rust, "clavicle_" + ("l" if sx > 0 else "r"), bevel=0.035, rot=(0, sx * 8, 0))
         _snow_cap(p, (sx * 0.37, 0.01, 1.545), (0.18, 0.22, 0.03), snow, "clavicle_" + ("l" if sx > 0 else "r"))
-    _arms(p, R, 1, "l", M, upper=(0.20, 0.22, 0.16, 0.17), lower=(0.22, 0.23, 0.17, 0.18), hand=None, glove="metal")
+    # Обе руки одинаковы: кисть правая (в проекте руки не держат предметов).
+    _arms(p, R, 1, "l", M, upper=(0.22, 0.24, 0.18, 0.19), lower=(0.24, 0.25, 0.19, 0.20), hand=(0.22, 0.26, 0.26), glove="orange")
     _arms(p, R, -1, "r", M, upper=(0.22, 0.24, 0.18, 0.19), lower=(0.24, 0.25, 0.19, 0.20), hand=(0.22, 0.26, 0.26), glove="orange")
-    wrist_l = R["hand_l"][0]
-    # крюк выходит вперёд и загибается вниз (в T-позе загиб уходит наружу)
-    p.tube([(wrist_l.x + 0.01, wrist_l.y, wrist_l.z),
-            (wrist_l.x + 0.02, wrist_l.y - 0.15, wrist_l.z),
-            (wrist_l.x + 0.08, wrist_l.y - 0.26, wrist_l.z - 0.02),
-            (wrist_l.x + 0.17, wrist_l.y - 0.31, wrist_l.z - 0.05),
-            (wrist_l.x + 0.22, wrist_l.y - 0.27, wrist_l.z - 0.10)],
-           [(0.055, 0.055), (0.05, 0.05), (0.045, 0.045), (0.04, 0.04),
-            (0.032, 0.032)], metal, "hand_l", n=6)
-    p.box((wrist_l.x + 0.02, wrist_l.y - 0.09, wrist_l.z),
-          (0.10, 0.10, 0.10), yellow, "hand_l", bevel=0.02)
     _legs(p, R, 1, "l", M, thigh=(0.25, 0.26, 0.21, 0.22), calf=(0.24, 0.25, 0.20, 0.21),
           boot=(0.25, 0.32, 0.17), sole=(0.27, 0.42, 0.055), toe=(0.24, 0.30, 0.16),
           knee_pad=(0.22, 0.10, 0.19))
@@ -506,7 +496,7 @@ def build_robot_04(arm):
 
 
 def build_robot_05(arm):
-    """Смотритель: длинное пальто, меховая накидка, прожектор и ледоруб."""
+    """Смотритель: длинное пальто, меховая накидка и прожектор на груди."""
     name = "R5_Ranger"
     keys = ["base", "panel", "dark", "snow", "fur", "orange", "cyan", "metal"]
     mats, M = make_materials(name, keys, colors={
@@ -658,7 +648,7 @@ def _hazard(p, center, size, mat, bone, count=3, gap=0.055, rot=None):
 
 
 def build_robot_06(arm):
-    """Литейщик: бочкообразный корпус, горн в груди, два выхлопа, ковш."""
+    """Литейщик: бочкообразный корпус, горн в груди, два выхлопа, рукавицы."""
     name = "R6_Smelter"
     keys = ["base", "panel", "dark", "snow", "metal", "glow", "rust", "yellow", "accent"]
     mats, M = make_materials(name, keys, colors={
@@ -710,12 +700,11 @@ def build_robot_06(arm):
         p.disc((sx * 0.28, 0.25, 1.925), 0.05, 0.02, glow, "spine_03", axis="Z",
                n=8)
 
-    # руки: слева обычная кисть, справа литейная рукавица с ковшом
+    # руки: обе — литейные рукавицы одного размера, кисти пустые
     _arms(p, R, 1, "l", M, upper=(0.22, 0.23, 0.17, 0.18),
-          lower=(0.23, 0.24, 0.18, 0.19), hand=(0.18, 0.22, 0.22), glove="accent")
+          lower=(0.23, 0.24, 0.18, 0.19), hand=(0.22, 0.26, 0.26), glove="accent")
     _arms(p, R, -1, "r", M, upper=(0.22, 0.23, 0.17, 0.18),
           lower=(0.23, 0.24, 0.18, 0.19), hand=(0.22, 0.26, 0.26), glove="accent")
-    # ковш убран по просьбе владельца: правая рука остаётся рукавицей
 
     # ноги с жёсткими щитками
     for sx, side in ((1, "l"), (-1, "r")):
@@ -740,7 +729,7 @@ def build_robot_06(arm):
 
 
 def build_robot_07(arm):
-    """Бродяга: тонкий сгорбленный корпус, рваный плащ, один глаз и посох."""
+    """Бродяга: тонкий сгорбленный корпус, рваный плащ и один глаз."""
     name = "R7_Drifter"
     keys = ["base", "panel", "dark", "snow", "metal", "fur", "accent", "warm",
             "rust"]
@@ -859,13 +848,11 @@ def build_robot_08(arm):
                    (sx * 0.30, -0.17, 1.55), (sx * 0.40, -0.17, 1.55)],
                metal, clav, 0.02)
 
-    _arms(p, R, 1, "l", M, upper=(0.21, 0.22, 0.16, 0.17),
-          lower=(0.22, 0.23, 0.17, 0.18), hand=(0.19, 0.23, 0.23), glove="dark")
+    # Обе руки одинаковы и без предметов; щит остаётся экипировкой предплечья.
+    _arms(p, R, 1, "l", M, upper=(0.23, 0.24, 0.18, 0.19),
+          lower=(0.24, 0.25, 0.19, 0.20), hand=(0.22, 0.26, 0.26), glove="accent")
     _arms(p, R, -1, "r", M, upper=(0.23, 0.24, 0.18, 0.19),
           lower=(0.24, 0.25, 0.19, 0.20), hand=(0.22, 0.26, 0.26), glove="accent")
-    # кастет правой руки
-    p.box((-0.72, -0.06, 1.44), (0.14, 0.22, 0.20), metal, "hand_r", bevel=0.02)
-    p.box((-0.86, -0.06, 1.44), (0.16, 0.24, 0.22), panel, "hand_r", bevel=0.03)
 
     # круглый щит на внешней стороне предплечья: плоскость вдоль руки,
     # лицом наружу (в T-позе лежит сверху, в idle встаёт сбоку)
@@ -897,7 +884,7 @@ def build_robot_08(arm):
 
 
 def build_robot_09(arm):
-    """Ремонтник: короткий, большеголовый, с ящиками на спине и набором отвёрток."""
+    """Ремонтник: короткий, большеголовый, с ящиками на спине и пустыми кистями."""
     name = "R9_Tinker"
     keys = ["base", "panel", "dark", "snow", "metal", "accent", "glow", "rust"]
     mats, M = make_materials(name, keys, colors={
@@ -950,17 +937,6 @@ def build_robot_09(arm):
     _arms(p, R, -1, "r", M, upper=(0.18, 0.19, 0.14, 0.15),
           lower=(0.19, 0.20, 0.15, 0.16), hand=(0.16, 0.20, 0.20), glove="dark")
 
-    # набор инструментов вместо левой кисти
-    wrist_l = R["hand_l"][0]
-    for i, (dy, dz) in enumerate(((0.06, 0.05), (0.0, -0.05), (-0.06, 0.04))):
-        p.tube([(wrist_l.x + 0.08, wrist_l.y + dy, wrist_l.z + dz),
-                (wrist_l.x + 0.30, wrist_l.y + dy, wrist_l.z + dz)],
-               [(0.032, 0.032), (0.026, 0.026)], metal, "hand_l", n=6)
-        p.box((wrist_l.x + 0.31, wrist_l.y + dy, wrist_l.z + dz),
-              (0.05, 0.05, 0.05), accent if i == 1 else metal, "hand_l", bevel=0.0)
-    p.box((wrist_l.x + 0.10, wrist_l.y, wrist_l.z), (0.10, 0.20, 0.20), dark,
-          "hand_l", bevel=0.02)
-
     # большая голова с лупой и вторым объективом
     p.tube([(0, 0.02, 1.42), (0, 0.02, 1.54)], [(0.09, 0.09), (0.08, 0.08)],
            metal, "neck_01", n=8)
@@ -984,7 +960,7 @@ def build_robot_09(arm):
 
 
 def build_robot_10(arm):
-    """Трубоукладчик: вентиль на груди, трубы через плечи, бак и трубный ключ."""
+    """Трубоукладчик: вентиль на груди, трубы через плечи, бак; кисти пустые."""
     name = "R10_Pipewright"
     keys = ["base", "panel", "dark", "snow", "metal", "copper", "brass", "glow",
             "patina"]
@@ -1033,18 +1009,6 @@ def build_robot_10(arm):
           lower=(0.20, 0.21, 0.16, 0.17), hand=(0.17, 0.21, 0.21), glove="brass")
     _arms(p, R, -1, "r", M, upper=(0.19, 0.20, 0.15, 0.16),
           lower=(0.20, 0.21, 0.16, 0.17), hand=(0.17, 0.21, 0.21), glove="brass")
-
-    # трубный ключ в левой руке
-    wrist_l = R["hand_l"][0]
-    p.tube([(wrist_l.x + 0.06, wrist_l.y, wrist_l.z),
-            (wrist_l.x + 0.40, wrist_l.y, wrist_l.z - 0.02)],
-           [(0.055, 0.05), (0.05, 0.045)], metal, "hand_l", n=6)
-    p.box((wrist_l.x + 0.44, wrist_l.y, wrist_l.z - 0.02), (0.10, 0.16, 0.10),
-          metal, "hand_l", bevel=0.012)
-    p.box((wrist_l.x + 0.52, wrist_l.y, wrist_l.z + 0.06), (0.10, 0.16, 0.05),
-          metal, "hand_l", bevel=0.008, rot=(0, 18, 0))
-    p.disc((wrist_l.x + 0.34, wrist_l.y, wrist_l.z), 0.055, 0.10, brass, "hand_l",
-           axis="X", n=10)
 
     # ноги с трубами-усилителями
     for sx, side in ((1, "l"), (-1, "r")):
@@ -1232,7 +1196,7 @@ def build_robot_12(arm):
 
 
 def build_robot_13(arm):
-    """Старатель: шахтёрский шлем с лампой, бур вместо правой кисти, мешок за спиной."""
+    """Старатель: шахтёрский шлем с лампой, мешок за спиной, обе кисти пустые."""
     name = "R13_Prospector"
     keys = ["base", "panel", "dark", "snow", "metal", "yellow", "rust", "glow"]
     mats, M = make_materials(name, keys, colors={
@@ -1274,35 +1238,11 @@ def build_robot_13(arm):
         p.box((sx * 0.31, -0.01, 1.535), (0.24, 0.28, 0.04), rust, clav,
               bevel=0.01, rot=(0, sx * 7, 0))
 
+    # Обе кисти одинаковы: правая раньше была буром, теперь это кисть левой руки.
     _arms(p, R, 1, "l", M, upper=(0.20, 0.21, 0.15, 0.16),
           lower=(0.21, 0.22, 0.16, 0.17), hand=(0.18, 0.22, 0.22), glove="dark")
     _arms(p, R, -1, "r", M, upper=(0.20, 0.21, 0.15, 0.16),
-          lower=(0.21, 0.22, 0.16, 0.17), hand=None, glove="metal")
-
-    # бур на правой руке
-    wrist_r = R["hand_r"][0]
-    p.tube([(wrist_r.x - 0.02, wrist_r.y, wrist_r.z),
-            (wrist_r.x - 0.26, wrist_r.y, wrist_r.z)],
-           [(0.11, 0.11), (0.10, 0.10)], metal, "hand_r", n=8)
-    p.tube([(wrist_r.x - 0.26, wrist_r.y, wrist_r.z),
-            (wrist_r.x - 0.38, wrist_r.y, wrist_r.z),
-            (wrist_r.x - 0.48, wrist_r.y, wrist_r.z)],
-           [(0.10, 0.10), (0.07, 0.07), (0.02, 0.02)], metal, "hand_r", n=8)
-    for i, (dx, r) in enumerate(((0.30, 0.125), (0.36, 0.105), (0.42, 0.085))):
-        p.disc((wrist_r.x - dx, wrist_r.y, wrist_r.z), r, 0.03, dark, "hand_r",
-               axis="X", n=8)
-    p.box((wrist_r.x - 0.06, wrist_r.y, wrist_r.z + 0.10), (0.10, 0.10, 0.05),
-          yellow, "hand_r", bevel=0.008)
-
-    # лопата в левой руке
-    wrist_l = R["hand_l"][0]
-    p.tube([(wrist_l.x + 0.05, wrist_l.y, wrist_l.z),
-            (wrist_l.x + 0.34, wrist_l.y, wrist_l.z - 0.03)],
-           [(0.035, 0.035), (0.032, 0.032)], metal, "hand_l", n=6)
-    p.box((wrist_l.x + 0.42, wrist_l.y, wrist_l.z - 0.04), (0.06, 0.22, 0.26),
-          metal, "hand_l", bevel=0.02)
-    p.box((wrist_l.x + 0.40, wrist_l.y, wrist_l.z - 0.04), (0.04, 0.16, 0.20),
-          rust, "hand_l", bevel=0.01)
+          lower=(0.21, 0.22, 0.16, 0.17), hand=(0.18, 0.22, 0.22), glove="dark")
 
     for sx, side in ((1, "l"), (-1, "r")):
         _legs(p, R, sx, side, M, thigh=(0.25, 0.26, 0.21, 0.22),
@@ -1329,7 +1269,7 @@ def build_robot_13(arm):
 
 
 def build_robot_14(arm):
-    """Фельдшер: светлый корпус, красный крест, сумка и шприц вместо кисти."""
+    """Фельдшер: светлый корпус, красный крест, сумка на бедре, кисти пустые."""
     name = "R14_Medic"
     keys = ["base", "panel", "dark", "snow", "metal", "red", "glass", "warm"]
     mats, M = make_materials(name, keys, colors={
@@ -1374,19 +1314,6 @@ def build_robot_14(arm):
           lower=(0.18, 0.19, 0.14, 0.15), hand=(0.15, 0.19, 0.19), glove="dark")
     _arms(p, R, -1, "r", M, upper=(0.17, 0.18, 0.13, 0.14),
           lower=(0.18, 0.19, 0.14, 0.15), hand=(0.15, 0.19, 0.19), glove="dark")
-
-    # инъектор в левой руке
-    wrist_l = R["hand_l"][0]
-    p.tube([(wrist_l.x + 0.06, wrist_l.y, wrist_l.z),
-            (wrist_l.x + 0.26, wrist_l.y, wrist_l.z)],
-           [(0.05, 0.05), (0.045, 0.045)], glass, "hand_l", n=8)
-    p.disc((wrist_l.x + 0.05, wrist_l.y, wrist_l.z), 0.06, 0.03, metal, "hand_l",
-           axis="X", n=8)
-    p.tube([(wrist_l.x + 0.26, wrist_l.y, wrist_l.z),
-            (wrist_l.x + 0.44, wrist_l.y, wrist_l.z)],
-           [(0.018, 0.018), (0.012, 0.012)], metal, "hand_l", n=6)
-    p.box((wrist_l.x + 0.14, wrist_l.y, wrist_l.z + 0.06), (0.10, 0.08, 0.04),
-          red, "hand_l", bevel=0.0)
 
     for sx, side in ((1, "l"), (-1, "r")):
         _legs(p, R, sx, side, M, thigh=(0.20, 0.21, 0.17, 0.18),
@@ -1484,7 +1411,7 @@ def build_robot_15(arm):
 
 
 def build_robot_16(arm):
-    """Надзиратель: тяжёлые блоки плеч, решётка вместо лица, дубинка и ключи."""
+    """Надзиратель: тяжёлые блоки плеч, решётка вместо лица, дубинка на спине."""
     name = "R16_Warden"
     keys = ["base", "panel", "dark", "snow", "metal", "yellow", "red", "warm"]
     mats, M = make_materials(name, keys, colors={
@@ -1528,26 +1455,6 @@ def build_robot_16(arm):
           lower=(0.22, 0.23, 0.17, 0.18), hand=(0.19, 0.23, 0.23), glove="dark")
     _arms(p, R, -1, "r", M, upper=(0.21, 0.22, 0.16, 0.17),
           lower=(0.22, 0.23, 0.17, 0.18), hand=(0.19, 0.23, 0.23), glove="dark")
-
-    # дубинка в правой руке (в idle встаёт вниз)
-    wrist_r = R["hand_r"][0]
-    p.tube([(wrist_r.x - 0.04, wrist_r.y, wrist_r.z),
-            (wrist_r.x - 0.50, wrist_r.y, wrist_r.z)],
-           [(0.042, 0.042), (0.05, 0.05)], dark, "hand_r", n=8)
-    for i in range(3):
-        p.disc((wrist_r.x - 0.12 - i * 0.05, wrist_r.y, wrist_r.z), 0.055, 0.02,
-               metal, "hand_r", axis="X", n=8)
-    p.box((wrist_r.x - 0.56, wrist_r.y, wrist_r.z), (0.08, 0.08, 0.08), metal,
-          "hand_r", bevel=0.012)
-    p.box((wrist_r.x - 0.62, wrist_r.y, wrist_r.z), (0.05, 0.05, 0.05), warm,
-          "hand_r", bevel=0.0)
-    # связка ключей на левой кисти
-    wrist_l = R["hand_l"][0]
-    p.disc((wrist_l.x + 0.10, wrist_l.y, wrist_l.z), 0.07, 0.03, metal, "hand_l",
-           axis="X", n=10)
-    for i, dz in enumerate((-0.08, 0.02)):
-        p.box((wrist_l.x + 0.14, wrist_l.y, wrist_l.z + dz), (0.10, 0.03, 0.04),
-              metal, "hand_l", bevel=0.0, rot=(0, 0, i * 10))
 
     for sx, side in ((1, "l"), (-1, "r")):
         _legs(p, R, sx, side, M, thigh=(0.24, 0.25, 0.20, 0.21),
@@ -1655,7 +1562,7 @@ def build_robot_17(arm):
 
 
 def build_robot_18(arm):
-    """Кузнец: сгорбленный, кожаный фартук, молот вместо кисти и наковальня за спиной."""
+    """Кузнец: сгорбленный, кожаный фартук, наковальня за спиной, кисти пустые."""
     name = "R18_Forge"
     keys = ["base", "panel", "dark", "snow", "metal", "rust", "glow", "wood",
             "yellow"]
@@ -1694,7 +1601,7 @@ def build_robot_18(arm):
     p.box((0, 0.30, 1.12), (0.26, 0.20, 0.10), rust, "spine_02", bevel=0.015)
 
     for sx, clav in ((1, "clavicle_l"), (-1, "clavicle_r")):
-        width = 0.26 if sx > 0 else 0.34
+        width = 0.30
         p.box((sx * 0.33, 0.0, 1.47), (width, 0.34, 0.15), panel, clav, bevel=0.035,
               rot=(0, sx * 7, 0))
         p.box((sx * 0.33, -0.01, 1.555), (width * 0.85, 0.30, 0.05), metal, clav,
@@ -1702,26 +1609,11 @@ def build_robot_18(arm):
         _hazard(p, (sx * 0.33, -0.19, 1.46), (width * 0.6, 0.02, 0.03), yellow,
                 clav, count=2, gap=0.06)
 
+    # Обе руки одинаковы: правая раньше была молотом, теперь это кисть левой руки.
     _arms(p, R, 1, "l", M, upper=(0.22, 0.23, 0.17, 0.18),
           lower=(0.23, 0.24, 0.18, 0.19), hand=(0.18, 0.22, 0.22), glove="wood")
-    _arms(p, R, -1, "r", M, upper=(0.24, 0.25, 0.19, 0.20),
-          lower=(0.25, 0.26, 0.20, 0.21), hand=None, glove="metal")
-
-    # молот на правой руке
-    wrist_r = R["hand_r"][0]
-    p.tube([(wrist_r.x - 0.02, wrist_r.y, wrist_r.z),
-            (wrist_r.x - 0.46, wrist_r.y, wrist_r.z)],
-           [(0.055, 0.055), (0.05, 0.05)], wood, "hand_r", n=6)
-    p.box((wrist_r.x - 0.56, wrist_r.y, wrist_r.z), (0.18, 0.24, 0.24), metal,
-          "hand_r", bevel=0.02)
-    p.box((wrist_r.x - 0.47, wrist_r.y, wrist_r.z), (0.05, 0.26, 0.26), rust,
-          "hand_r", bevel=0.0)
-    # клещи в левой руке
-    wrist_l = R["hand_l"][0]
-    for dz in (-0.06, 0.06):
-        p.tube([(wrist_l.x + 0.06, wrist_l.y, wrist_l.z + dz * 0.4),
-                (wrist_l.x + 0.32, wrist_l.y, wrist_l.z + dz)],
-               [(0.032, 0.032), (0.026, 0.026)], metal, "hand_l", n=6)
+    _arms(p, R, -1, "r", M, upper=(0.22, 0.23, 0.17, 0.18),
+          lower=(0.23, 0.24, 0.18, 0.19), hand=(0.18, 0.22, 0.22), glove="wood")
 
     for sx, side in ((1, "l"), (-1, "r")):
         _legs(p, R, sx, side, M, thigh=(0.26, 0.27, 0.22, 0.23),
@@ -1742,7 +1634,7 @@ def build_robot_18(arm):
 
 
 def build_robot_19(arm):
-    """Зимний рыбак: водолазный шлем с иллюминатором, плащ, удочка и ведро."""
+    """Зимний рыбак: водолазный шлем с иллюминатором, плащ и ведро на бедре."""
     name = "R19_Tide"
     keys = ["base", "panel", "dark", "snow", "metal", "rope", "warm", "glass",
             "fur"]
@@ -1884,15 +1776,6 @@ def build_robot_20(arm):
           teeth=10)
     _gear(p, (1.00, -0.12, 1.38), 0.06, 0.04, copper, "lowerarm_l", axis="Y",
           teeth=6)
-    # гаечный ключ в правой руке
-    wrist_r = R["hand_r"][0]
-    p.tube([(wrist_r.x - 0.05, wrist_r.y, wrist_r.z),
-            (wrist_r.x - 0.34, wrist_r.y, wrist_r.z)],
-           [(0.045, 0.04), (0.04, 0.035)], metal, "hand_r", n=6)
-    p.box((wrist_r.x - 0.40, wrist_r.y, wrist_r.z + 0.04), (0.10, 0.06, 0.05),
-          metal, "hand_r", bevel=0.0)
-    p.box((wrist_r.x - 0.40, wrist_r.y, wrist_r.z - 0.04), (0.10, 0.06, 0.05),
-          metal, "hand_r", bevel=0.0)
 
     for sx, side in ((1, "l"), (-1, "r")):
         _legs(p, R, sx, side, M, thigh=(0.21, 0.22, 0.18, 0.19),
