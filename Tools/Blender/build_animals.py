@@ -42,7 +42,7 @@ def build(species: str) -> dict:
         unity_scale = 1.0
         source = meta["cfg"]["target"]
         meta["clip_speed"] = 0.80
-        animal_lib.bake_root_motion(arm, meta)
+        animal_lib.bake_root_motion(arm, meta, in_place=True)
     else:
         arm, source_mesh, meta = animal_lib.load(species)
         animal_lib.prepare_clips(arm, meta)
@@ -56,9 +56,17 @@ def build(species: str) -> dict:
                 species, arm, source_mesh)
         unity_scale, source = _unity_scale(meta)
         animal_lib.measure_speed(arm, meta)
-        animal_lib.bake_root_motion(arm, meta)
+        animal_lib.bake_root_motion(arm, meta, in_place=True)
 
     robot_lib.bind(obj, arm)
+
+    # Обе оболочки должны уехать в Unity с одной системой координат: иначе тело
+    # и броня рисуются со сдвигом (ADR 0022). В Blender сдвиг не виден.
+    # Порядок важен: bind() вешает родителя и matrix_parent_inverse, поэтому
+    # обнуление трансформа идёт после него.
+    animal_lib.bake_mesh_transform(source_mesh)
+    animal_lib.bake_mesh_transform(obj)
+
     stats = robot_lib.stats(obj, arm)
 
     path = os.path.join(animal_lib.OUT, species, name + ".fbx")

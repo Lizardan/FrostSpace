@@ -161,6 +161,7 @@ GameObject:
   - component: {fileID: 11746798}
   - component: {fileID: 11746800}
   - component: {fileID: 11746799}
+  - component: {fileID: 11746801}
   m_Layer: 7
   m_Name: NPC_R2_Furnace
   m_TagString: Untagged
@@ -232,6 +233,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.85, z: 0}
+--- !u!114 &11746801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 11746797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: R2 FURNACE
+  _category: NPC
 --- !u!1 &13249030
 GameObject:
   m_ObjectHideFlags: 0
@@ -336,6 +351,7 @@ GameObject:
   - component: {fileID: 21403660}
   - component: {fileID: 21403662}
   - component: {fileID: 21403661}
+  - component: {fileID: 21403663}
   m_Layer: 0
   m_Name: AN_Cat
   m_TagString: Untagged
@@ -412,6 +428,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.30449998, z: 0}
+--- !u!114 &21403663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 21403659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: CAT
+  _category: ANIMAL
 --- !u!1 &21705444
 GameObject:
   m_ObjectHideFlags: 0
@@ -457,7 +487,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Hud.PlayerHud
   _rig: {fileID: 1896362467}
-  _modules: {fileID: 1896362468}
   _scanner: {fileID: 1896362469}
   _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
   _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
@@ -466,13 +495,6 @@ MonoBehaviour:
   _crosshairThickness: 2
   _crosshairGap: 7
   _crosshairAlpha: 0.6
-  _rowSpacing: 38
-  _carouselMargin: 68
-  _carouselWidth: 280
-  _carouselFill: {r: 0.13, g: 0.38, b: 0.42, a: 0.68}
-  _carouselPadding: 18
-  _rowFontSize: 21
-  _scrollSmoothing: 16
   _labelLift: 68
   _labelArm: 150
   _labelNameSize: 34
@@ -480,10 +502,20 @@ MonoBehaviour:
   _labelLineWidth: 3
   _labelOutline: 0.24
   _labelOutlineColor: {r: 0.02, g: 0.05, b: 0.07, a: 1}
+  _labelCount: 12
   _plateFill: {r: 0.13, g: 0.38, b: 0.42, a: 0.68}
   _plateHeight: 104
   _platePadding: 18
   _framePadding: 14
+  _scanHint: Q SCAN
+  _scanActive: SCANNING
+  _statusMargin: 64
+  _hintSize: 18
+  _statusSize: 22
+  _fpsMargin: 36
+  _fpsLabelSize: 16
+  _fpsValueSize: 26
+  _fpsInterval: 0.5
 --- !u!1 &21950600
 GameObject:
   m_ObjectHideFlags: 0
@@ -677,6 +709,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 54704864}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 54704867}
   m_SourcePrefab: {fileID: 100100000, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
 --- !u!4 &54704862 stripped
 Transform:
@@ -711,6 +746,20 @@ CapsuleCollider:
   m_Height: 4.9626
   m_Direction: 1
   m_Center: {x: 0, y: 2.4813, z: 0}
+--- !u!114 &54704867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 54704863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1 &56205569
 GameObject:
   m_ObjectHideFlags: 0
@@ -857,6 +906,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
       insertIndex: -1
       addedObject: {fileID: 68970965}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 68970968}
   m_SourcePrefab: {fileID: 100100000, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
 --- !u!4 &68970963 stripped
 Transform:
@@ -891,6 +943,20 @@ CapsuleCollider:
   m_Height: 4.9626
   m_Direction: 1
   m_Center: {x: 0, y: 2.4813, z: 0}
+--- !u!114 &68970968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 68970964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &73231333
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -950,6 +1016,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9a4ce52ee176359418945b6ef1704424, type: 3}
       insertIndex: -1
       addedObject: {fileID: 73231336}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9a4ce52ee176359418945b6ef1704424, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 73231339}
   m_SourcePrefab: {fileID: 100100000, guid: 9a4ce52ee176359418945b6ef1704424, type: 3}
 --- !u!4 &73231334 stripped
 Transform:
@@ -982,6 +1051,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.95, y: 1.02, z: 1.05}
   m_Center: {x: 0, y: 0.5, z: 0}
+--- !u!114 &73231339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 73231335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &82901868
 GameObject:
   m_ObjectHideFlags: 0
@@ -1084,6 +1167,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 84786519}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 84786522}
   m_SourcePrefab: {fileID: 100100000, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
 --- !u!4 &84786517 stripped
 Transform:
@@ -1118,6 +1204,20 @@ CapsuleCollider:
   m_Height: 4.6872
   m_Direction: 1
   m_Center: {x: 0, y: 2.3436, z: 0}
+--- !u!114 &84786522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 84786518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1 &86317377
 GameObject:
   m_ObjectHideFlags: 0
@@ -1208,6 +1308,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 93487785}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 93487788}
   m_SourcePrefab: {fileID: 100100000, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
 --- !u!4 &93487783 stripped
 Transform:
@@ -1242,6 +1345,20 @@ CapsuleCollider:
   m_Height: 1.02
   m_Direction: 1
   m_Center: {x: 0, y: 0.52, z: 0}
+--- !u!114 &93487788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 93487784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &106764783
 GameObject:
   m_ObjectHideFlags: 0
@@ -1340,6 +1457,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 108687102}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 108687105}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &108687100 stripped
 Transform:
@@ -1372,6 +1492,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &108687105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 108687101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &125684447
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1435,6 +1569,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 125684450}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 125684453}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &125684448 stripped
 Transform:
@@ -1467,6 +1604,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &125684453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 125684449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &150964017
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1648,6 +1799,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 176540821}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 176540824}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &176540819 stripped
 Transform:
@@ -1680,6 +1834,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &176540824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 176540820}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &178552138
 GameObject:
   m_ObjectHideFlags: 0
@@ -1691,6 +1859,7 @@ GameObject:
   - component: {fileID: 178552139}
   - component: {fileID: 178552141}
   - component: {fileID: 178552140}
+  - component: {fileID: 178552142}
   m_Layer: 0
   m_Name: AN_Pug
   m_TagString: Untagged
@@ -1767,6 +1936,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.22375, z: 0}
+--- !u!114 &178552142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 178552138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: PUG
+  _category: ANIMAL
 --- !u!1001 &181496553
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1830,6 +2013,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 181496556}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 181496559}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &181496554 stripped
 Transform:
@@ -1862,6 +2048,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &181496559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 181496555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &193868814
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2081,6 +2281,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 261080767}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 261080770}
   m_SourcePrefab: {fileID: 100100000, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
 --- !u!4 &261080765 stripped
 Transform:
@@ -2113,6 +2316,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8, y: 0.84, z: 0.8}
   m_Center: {x: 0, y: 0.42, z: 0}
+--- !u!114 &261080770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 261080766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &264349877
 GameObject:
   m_ObjectHideFlags: 0
@@ -4453,6 +4670,7 @@ GameObject:
   - component: {fileID: 298408548}
   - component: {fileID: 298408550}
   - component: {fileID: 298408549}
+  - component: {fileID: 298408551}
   m_Layer: 0
   m_Name: AN_Pig
   m_TagString: Untagged
@@ -4529,6 +4747,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.41375, z: 0}
+--- !u!114 &298408551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298408547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: PIG
+  _category: ANIMAL
 --- !u!1001 &305712103
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4592,6 +4824,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 305712106}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 305712109}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &305712104 stripped
 Transform:
@@ -4624,6 +4859,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &305712109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 305712105}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &319777658
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4695,6 +4944,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 319777661}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 319777664}
   m_SourcePrefab: {fileID: 100100000, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
 --- !u!4 &319777659 stripped
 Transform:
@@ -4729,6 +4981,20 @@ CapsuleCollider:
   m_Height: 5.6106005
   m_Direction: 1
   m_Center: {x: 0, y: 2.8053002, z: 0}
+--- !u!114 &319777664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 319777660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1 &356229448
 GameObject:
   m_ObjectHideFlags: 0
@@ -4856,6 +5122,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1235398368}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1235398371}
     - targetCorrespondingSourceObject: {fileID: -5898584250744311565, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 373934640}
@@ -5108,6 +5377,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 387119187}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 387119190}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &387119185 stripped
 Transform:
@@ -5140,6 +5412,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &387119190
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387119186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!64 &394848751
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -5240,6 +5526,7 @@ GameObject:
   - component: {fileID: 446027254}
   - component: {fileID: 446027256}
   - component: {fileID: 446027255}
+  - component: {fileID: 446027257}
   m_Layer: 0
   m_Name: AN_Sheep
   m_TagString: Untagged
@@ -5316,6 +5603,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.46124998, z: 0}
+--- !u!114 &446027257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 446027253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: SHEEP
+  _category: ANIMAL
 --- !u!1 &451580034
 GameObject:
   m_ObjectHideFlags: 0
@@ -5660,6 +5961,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 545384331}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 545384334}
   m_SourcePrefab: {fileID: 100100000, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
 --- !u!4 &545384329 stripped
 Transform:
@@ -5692,6 +5996,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8, y: 0.84, z: 0.8}
   m_Center: {x: 0, y: 0.42, z: 0}
+--- !u!114 &545384334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 545384330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &547187240
 GameObject:
   m_ObjectHideFlags: 0
@@ -5703,6 +6021,7 @@ GameObject:
   - component: {fileID: 547187241}
   - component: {fileID: 547187243}
   - component: {fileID: 547187242}
+  - component: {fileID: 547187244}
   m_Layer: 0
   m_Name: AN_Spider
   m_TagString: Untagged
@@ -5779,6 +6098,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.445, z: 0}
+--- !u!114 &547187244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547187240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: SPIDER
+  _category: ANIMAL
 --- !u!1 &559448911
 GameObject:
   m_ObjectHideFlags: 0
@@ -5891,6 +6224,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 600804662}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 600804665}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &600804660 stripped
 Transform:
@@ -5923,6 +6259,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &600804665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600804661}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &619766992 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -1156332618356698383, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
@@ -6188,6 +6538,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 673208446}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 673208449}
   m_SourcePrefab: {fileID: 100100000, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
 --- !u!4 &673208444 stripped
 Transform:
@@ -6222,6 +6575,20 @@ CapsuleCollider:
   m_Height: 5.4432
   m_Direction: 1
   m_Center: {x: 0, y: 2.7216, z: 0}
+--- !u!114 &673208449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 673208445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &694198266
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6285,6 +6652,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 694198269}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 694198272}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &694198267 stripped
 Transform:
@@ -6317,6 +6687,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &694198272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 694198268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &713072089
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6376,6 +6760,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 713072092}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 713072095}
   m_SourcePrefab: {fileID: 100100000, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
 --- !u!4 &713072090 stripped
 Transform:
@@ -6408,6 +6795,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8, y: 0.84, z: 0.8}
   m_Center: {x: 0, y: 0.42, z: 0}
+--- !u!114 &713072095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 713072091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &713326730
 GameObject:
   m_ObjectHideFlags: 0
@@ -6418,6 +6819,7 @@ GameObject:
   m_Component:
   - component: {fileID: 713326731}
   - component: {fileID: 713326732}
+  - component: {fileID: 713326733}
   m_Layer: 0
   m_Name: AN_Eagle
   m_TagString: Untagged
@@ -6466,6 +6868,20 @@ MonoBehaviour:
   _arriveRadius: 1
   _idleMin: 1
   _idleMax: 3
+--- !u!114 &713326733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 713326730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: EAGLE
+  _category: ANIMAL
 --- !u!1001 &729846832
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6525,6 +6941,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
       insertIndex: -1
       addedObject: {fileID: 729846835}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 729846838}
   m_SourcePrefab: {fileID: 100100000, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
 --- !u!4 &729846833 stripped
 Transform:
@@ -6558,6 +6977,20 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1310537184856882200, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
+--- !u!114 &729846838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 729846834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &766363131
 GameObject:
   m_ObjectHideFlags: 0
@@ -6569,6 +7002,7 @@ GameObject:
   - component: {fileID: 766363132}
   - component: {fileID: 766363134}
   - component: {fileID: 766363133}
+  - component: {fileID: 766363135}
   m_Layer: 0
   m_Name: AN_Zebra
   m_TagString: Untagged
@@ -6645,6 +7079,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.77, z: 0}
+--- !u!114 &766363135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 766363131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: ZEBRA
+  _category: ANIMAL
 --- !u!1001 &788088511
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6704,6 +7152,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
       insertIndex: -1
       addedObject: {fileID: 788088514}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 788088517}
   m_SourcePrefab: {fileID: 100100000, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
 --- !u!4 &788088512 stripped
 Transform:
@@ -6737,6 +7188,20 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1310537184856882200, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
+--- !u!114 &788088517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788088513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &796764605
 GameObject:
   m_ObjectHideFlags: 0
@@ -6928,6 +7393,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 832609788}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 832609791}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &832609786 stripped
 Transform:
@@ -6960,6 +7428,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &832609791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 832609787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &834270042
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7143,6 +7625,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
       insertIndex: -1
       addedObject: {fileID: 840855306}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 840855309}
   m_SourcePrefab: {fileID: 100100000, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
 --- !u!4 &840855304 stripped
 Transform:
@@ -7176,6 +7661,20 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1519720907770311119, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
+--- !u!114 &840855309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 840855305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &853674511
 GameObject:
   m_ObjectHideFlags: 0
@@ -7270,6 +7769,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
       insertIndex: -1
       addedObject: {fileID: 854037037}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 854037040}
   m_SourcePrefab: {fileID: 100100000, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
 --- !u!4 &854037035 stripped
 Transform:
@@ -7303,6 +7805,20 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1519720907770311119, guid: e3384d4922f0ea846836d79574e6b254, type: 3}
+--- !u!114 &854037040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 854037036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &858185090
 GameObject:
   m_ObjectHideFlags: 0
@@ -7314,6 +7830,7 @@ GameObject:
   - component: {fileID: 858185091}
   - component: {fileID: 858185093}
   - component: {fileID: 858185092}
+  - component: {fileID: 858185094}
   m_Layer: 0
   m_Name: AN_Llama
   m_TagString: Untagged
@@ -7390,6 +7907,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.86499995, z: 0}
+--- !u!114 &858185094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 858185090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: LLAMA
+  _category: ANIMAL
 --- !u!1001 &869749732
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7449,6 +7980,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 869749735}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 869749738}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &869749733 stripped
 Transform:
@@ -7481,6 +8015,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &869749738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 869749734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &873962027
 GameObject:
   m_ObjectHideFlags: 0
@@ -8104,6 +8652,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1109269849}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1109269852}
   m_SourcePrefab: {fileID: 100100000, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
 --- !u!4 &1109269847 stripped
 Transform:
@@ -8138,6 +8689,20 @@ CapsuleCollider:
   m_Height: 1.02
   m_Direction: 1
   m_Center: {x: 0, y: 0.52, z: 0}
+--- !u!114 &1109269852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109269848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1114614623
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8201,6 +8766,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1114614626}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1114614629}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &1114614624 stripped
 Transform:
@@ -8233,6 +8801,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &1114614629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114614625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1128957700
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8304,6 +8886,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1128957703}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1128957706}
   m_SourcePrefab: {fileID: 100100000, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
 --- !u!4 &1128957701 stripped
 Transform:
@@ -8338,6 +8923,20 @@ CapsuleCollider:
   m_Height: 6.5340004
   m_Direction: 1
   m_Center: {x: 0, y: 3.2670002, z: 0}
+--- !u!114 &1128957706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1128957702}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &1131368495
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8570,6 +9169,7 @@ GameObject:
   - component: {fileID: 1184847402}
   - component: {fileID: 1184847404}
   - component: {fileID: 1184847403}
+  - component: {fileID: 1184847405}
   m_Layer: 0
   m_Name: AN_Cow
   m_TagString: Untagged
@@ -8646,6 +9246,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.72249997, z: 0}
+--- !u!114 &1184847405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1184847401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: COW
+  _category: ANIMAL
 --- !u!1 &1198385707
 GameObject:
   m_ObjectHideFlags: 0
@@ -8892,6 +9506,20 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 8227158862604195802, guid: be2aa4c14a6f90f4fa0ede09fe510e6c, type: 3}
+--- !u!114 &1235398371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1235398364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: SNOW CABIN
+  _category: STRUCTURE
 --- !u!1 &1247073537
 GameObject:
   m_ObjectHideFlags: 0
@@ -8964,7 +9592,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.2
+      value: 6.33
       objectReference: {fileID: 0}
     - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8972,7 +9600,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -8.8
+      value: -7.57
       objectReference: {fileID: 0}
     - target: {fileID: 7667169759134803795, guid: 64dcac57e9795c54ebe18316190352a5, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9119,6 +9747,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1261779054}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1261779057}
   m_SourcePrefab: {fileID: 100100000, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
 --- !u!4 &1261779052 stripped
 Transform:
@@ -9153,6 +9784,20 @@ CapsuleCollider:
   m_Height: 6.5448003
   m_Direction: 1
   m_Center: {x: 0, y: 3.2724001, z: 0}
+--- !u!114 &1261779057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1261779053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &1263216470
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9226,6 +9871,7 @@ GameObject:
   - component: {fileID: 1266721764}
   - component: {fileID: 1266721766}
   - component: {fileID: 1266721765}
+  - component: {fileID: 1266721767}
   m_Layer: 0
   m_Name: AN_Wolf
   m_TagString: Untagged
@@ -9302,6 +9948,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.55625, z: 0}
+--- !u!114 &1266721767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1266721763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: WOLF
+  _category: ANIMAL
 --- !u!1 &1267987072
 GameObject:
   m_ObjectHideFlags: 0
@@ -9404,6 +10064,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1292940790}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1292940793}
   m_SourcePrefab: {fileID: 100100000, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
 --- !u!4 &1292940788 stripped
 Transform:
@@ -9438,6 +10101,20 @@ CapsuleCollider:
   m_Height: 6.6636
   m_Direction: 1
   m_Center: {x: 0, y: 3.3318, z: 0}
+--- !u!114 &1292940793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1292940789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1 &1310819455
 GameObject:
   m_ObjectHideFlags: 0
@@ -9449,6 +10126,7 @@ GameObject:
   - component: {fileID: 1310819456}
   - component: {fileID: 1310819458}
   - component: {fileID: 1310819457}
+  - component: {fileID: 1310819459}
   m_Layer: 7
   m_Name: NPC_R3_Scout
   m_TagString: Untagged
@@ -9528,6 +10206,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.85, z: 0}
+--- !u!114 &1310819459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1310819455}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: R3 SCOUT
+  _category: NPC
 --- !u!1001 &1311303197
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9587,6 +10279,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1311303200}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1311303203}
   m_SourcePrefab: {fileID: 100100000, guid: 83c8953ff381bd34fac87c3ca30b70a9, type: 3}
 --- !u!4 &1311303198 stripped
 Transform:
@@ -9619,6 +10314,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8, y: 0.84, z: 0.8}
   m_Center: {x: 0, y: 0.42, z: 0}
+--- !u!114 &1311303203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1311303199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &1320459548
 GameObject:
   m_ObjectHideFlags: 0
@@ -9806,6 +10515,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1357338396}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1357338399}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &1357338394 stripped
 Transform:
@@ -9838,6 +10550,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &1357338399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1357338395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1371651300
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9909,6 +10635,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1371651303}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1371651306}
   m_SourcePrefab: {fileID: 100100000, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
 --- !u!4 &1371651301 stripped
 Transform:
@@ -9943,6 +10672,20 @@ CapsuleCollider:
   m_Height: 6.0642004
   m_Direction: 1
   m_Center: {x: 0, y: 3.0321002, z: 0}
+--- !u!114 &1371651306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1371651302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1 &1376695502
 GameObject:
   m_ObjectHideFlags: 0
@@ -9954,6 +10697,7 @@ GameObject:
   - component: {fileID: 1376695503}
   - component: {fileID: 1376695505}
   - component: {fileID: 1376695504}
+  - component: {fileID: 1376695506}
   m_Layer: 0
   m_Name: AN_Dog
   m_TagString: Untagged
@@ -10030,6 +10774,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.43749997, z: 0}
+--- !u!114 &1376695506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376695502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: DOG
+  _category: ANIMAL
 --- !u!1001 &1401430579
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10089,6 +10847,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1401430582}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1401430585}
   m_SourcePrefab: {fileID: 100100000, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
 --- !u!4 &1401430580 stripped
 Transform:
@@ -10123,6 +10884,20 @@ CapsuleCollider:
   m_Height: 1.02
   m_Direction: 1
   m_Center: {x: 0, y: 0.52, z: 0}
+--- !u!114 &1401430585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1401430581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &1406194241
 GameObject:
   m_ObjectHideFlags: 0
@@ -10212,6 +10987,7 @@ GameObject:
   - component: {fileID: 1411700833}
   - component: {fileID: 1411700835}
   - component: {fileID: 1411700834}
+  - component: {fileID: 1411700836}
   m_Layer: 0
   m_Name: AN_Horse
   m_TagString: Untagged
@@ -10288,6 +11064,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1.0074999, z: 0}
+--- !u!114 &1411700836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1411700832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: HORSE
+  _category: ANIMAL
 --- !u!1 &1418344396
 GameObject:
   m_ObjectHideFlags: 0
@@ -10559,6 +11349,7 @@ GameObject:
   - component: {fileID: 1491490876}
   - component: {fileID: 1491490878}
   - component: {fileID: 1491490877}
+  - component: {fileID: 1491490879}
   m_Layer: 7
   m_Name: NPC_R5_Ranger
   m_TagString: Untagged
@@ -10640,6 +11431,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.85, z: 0}
+--- !u!114 &1491490879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1491490875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: R5 RANGER
+  _category: NPC
 --- !u!1 &1497351644
 GameObject:
   m_ObjectHideFlags: 0
@@ -10649,6 +11454,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1497351646}
+  - component: {fileID: 1497351647}
   m_Layer: 0
   m_Name: GameFlow
   m_TagString: Untagged
@@ -10671,6 +11477,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1497351647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497351644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d60abc43e6537684090e43d331e33652, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Menu.PauseMenuScreen
+  _mainMenuScene: MainMenu
+  _rig: {fileID: 0}
+  _scanner: {fileID: 0}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
+  _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
+  _panelColor: {r: 0.016, g: 0.026, b: 0.038, a: 0.96}
+  _shadeColor: {r: 0.008, g: 0.016, b: 0.026, a: 0.78}
+  _buttonIdle: {r: 0.055, g: 0.085, b: 0.105, a: 0.82}
+  _buttonHover: {r: 0.1, g: 0.19, b: 0.24, a: 0.95}
 --- !u!1 &1502673543
 GameObject:
   m_ObjectHideFlags: 0
@@ -10827,6 +11655,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1556980869}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1556980872}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &1556980867 stripped
 Transform:
@@ -10859,6 +11690,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &1556980872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1556980868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &1571778972
 GameObject:
   m_ObjectHideFlags: 0
@@ -11011,6 +11856,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1608349330}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1608349333}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &1608349328 stripped
 Transform:
@@ -11043,6 +11891,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &1608349333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1608349329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &1616425481
 GameObject:
   m_ObjectHideFlags: 0
@@ -11141,6 +12003,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1617213030}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1617213033}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &1617213028 stripped
 Transform:
@@ -11173,6 +12038,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &1617213033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1617213029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &1623150375
 GameObject:
   m_ObjectHideFlags: 0
@@ -11280,6 +12159,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1656232491}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1656232494}
   m_SourcePrefab: {fileID: 100100000, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
 --- !u!4 &1656232489 stripped
 Transform:
@@ -11314,6 +12196,20 @@ CapsuleCollider:
   m_Height: 5.5782
   m_Direction: 1
   m_Center: {x: 0, y: 2.7891, z: 0}
+--- !u!114 &1656232494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1656232490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &1662385440
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11447,6 +12343,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1665082719}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1665082722}
   m_SourcePrefab: {fileID: 100100000, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
 --- !u!4 &1665082717 stripped
 Transform:
@@ -11481,6 +12380,20 @@ CapsuleCollider:
   m_Height: 5.0112
   m_Direction: 1
   m_Center: {x: 0, y: 2.5056, z: 0}
+--- !u!114 &1665082722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665082718}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &1665648919
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11540,6 +12453,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1665648922}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1665648925}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &1665648920 stripped
 Transform:
@@ -11572,6 +12488,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &1665648925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665648921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1669857063
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11643,6 +12573,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1669857066}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1669857069}
   m_SourcePrefab: {fileID: 100100000, guid: 96ce95da33cdbd844a4d9cfdfd7456f1, type: 3}
 --- !u!4 &1669857064 stripped
 Transform:
@@ -11677,6 +12610,20 @@ CapsuleCollider:
   m_Height: 5.0058002
   m_Direction: 1
   m_Center: {x: 0, y: 2.5029001, z: 0}
+--- !u!114 &1669857069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669857065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1 &1675685080
 GameObject:
   m_ObjectHideFlags: 0
@@ -11798,6 +12745,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1687141947}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1687141950}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &1687141945 stripped
 Transform:
@@ -11830,6 +12780,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &1687141950
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1687141946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1704138079
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11893,6 +12857,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1704138082}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1704138085}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &1704138080 stripped
 Transform:
@@ -11925,6 +12892,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &1704138085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1704138081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1708033349
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12089,6 +13070,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1733943213}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1733943216}
   m_SourcePrefab: {fileID: 100100000, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
 --- !u!4 &1733943211 stripped
 Transform:
@@ -12123,6 +13107,20 @@ CapsuleCollider:
   m_Height: 6.3936
   m_Direction: 1
   m_Center: {x: 0, y: 3.1968, z: 0}
+--- !u!114 &1733943216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1733943212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &1741278388
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12497,14 +13495,19 @@ MonoBehaviour:
   _pelvis: {fileID: 0}
   _spine: {fileID: 0}
   _neck: {fileID: 0}
-  _leanAngle: 26
-  _neckShare: 0.6
+  _seatLift: 0.08
+  _seatForward: 0.12
+  _leanAngle: 30
+  _neckShare: 0.45
   _gripForward: 0.86
   _gripUp: 0.06
   _gripHalfWidth: 0.22
-  _kneeDrop: 0.15
-  _kneeSplay: 0.35
-  _shinBack: 0.2
+  _palmOffset: 0.06
+  _footForward: 0.6
+  _footDrop: 0
+  _footHalfWidth: 0.27
+  _footToeDown: 12
+  _kneeOut: 0.25
   _weightSpeed: 7
 --- !u!1 &1805958810
 GameObject:
@@ -12692,6 +13695,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1830694066}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1830694069}
   m_SourcePrefab: {fileID: 100100000, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
 --- !u!4 &1830694064 stripped
 Transform:
@@ -12725,6 +13731,20 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1310537184856882200, guid: ca4b23c910951944b9b0be49ca955d04, type: 3}
+--- !u!114 &1830694069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830694065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1833632067
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12788,6 +13808,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1833632070}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1833632073}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &1833632068 stripped
 Transform:
@@ -12820,6 +13843,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &1833632073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1833632069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &1834929407
 GameObject:
   m_ObjectHideFlags: 0
@@ -12830,6 +13867,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1834929408}
   - component: {fileID: 1834929409}
+  - component: {fileID: 1834929410}
   m_Layer: 0
   m_Name: AN_Piranha
   m_TagString: Untagged
@@ -12878,6 +13916,20 @@ MonoBehaviour:
   _arriveRadius: 1
   _idleMin: 1
   _idleMax: 3
+--- !u!114 &1834929410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1834929407}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: PIRANHA
+  _category: ANIMAL
 --- !u!1 &1835705378
 GameObject:
   m_ObjectHideFlags: 0
@@ -13007,6 +14059,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1842252097}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1842252100}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &1842252095 stripped
 Transform:
@@ -13039,6 +14094,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &1842252100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1842252096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1845829698
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13098,6 +14167,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1845829701}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1845829704}
   m_SourcePrefab: {fileID: 100100000, guid: 6fe263ceecee6764093774d234dce85e, type: 3}
 --- !u!4 &1845829699 stripped
 Transform:
@@ -13130,6 +14202,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.2, y: 1.2, z: 0.2}
   m_Center: {x: 0, y: 0.6, z: 0}
+--- !u!114 &1845829704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1845829700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1846360710
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13201,6 +14287,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1846360713}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1846360716}
   m_SourcePrefab: {fileID: 100100000, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
 --- !u!4 &1846360711 stripped
 Transform:
@@ -13235,6 +14324,20 @@ CapsuleCollider:
   m_Height: 5.3190002
   m_Direction: 1
   m_Center: {x: 0, y: 2.6595001, z: 0}
+--- !u!114 &1846360716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846360712}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &1858422876
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13399,7 +14502,6 @@ GameObject:
   - component: {fileID: 1896362465}
   - component: {fileID: 1896362466}
   - component: {fileID: 1896362467}
-  - component: {fileID: 1896362468}
   - component: {fileID: 1896362469}
   m_Layer: 0
   m_Name: Main Camera
@@ -13497,7 +14599,6 @@ MonoBehaviour:
   _view: {fileID: 1896362462}
   _rig: {fileID: 1896362467}
   _target: {fileID: 1786677825}
-  _modules: {fileID: 1896362468}
   _occluders:
     serializedVersion: 2
     m_Bits: 183
@@ -13617,21 +14718,6 @@ MonoBehaviour:
   _blockers:
     serializedVersion: 2
     m_Bits: 183
---- !u!114 &1896362468
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1896362459}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35cffe8ef7bfeab4ca6a7fcd6e75cb6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.ViewModuleSwitch
-  _start: 0
-  _scrollPerStep: 0.5
-  _stepCooldown: 0.12
 --- !u!114 &1896362469
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13646,9 +14732,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ObjectScanner
   _view: {fileID: 1896362462}
   _rig: {fileID: 1896362467}
-  _modules: {fileID: 1896362468}
+  _player: {fileID: 0}
   _shader: {fileID: 4800000, guid: b373580b7ef06b14da2eba65ac68355c, type: 3}
-  _cone: {fileID: 0}
+  _pulse: {fileID: 0}
   _targets:
     serializedVersion: 2
     m_Bits: 183
@@ -13658,6 +14744,16 @@ MonoBehaviour:
   _maxRenderers: 48
   _scanAreaHalf: 0.14
   _scanSamples: 5
+  _nearestRadius: 20
+  _sonarRadius: 25
+  _maxSonarTargets: 24
+  _maxLabels: 12
+  _aimSwitchMargin: 0.25
+  _aimSwitchSeconds: 0.12
+  _aimHoldSeconds: 0.2
+  _pulseSeconds: 1.1
+  _scanHoldSeconds: 2.5
+  _buildsPerFrame: 3
   _scanColor: {r: 0.302, g: 0.902, b: 1, a: 1}
   _outlineWidth: 2.6
 --- !u!1 &1896362969
@@ -13894,6 +14990,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1946350754}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1946350757}
   m_SourcePrefab: {fileID: 100100000, guid: f2c188684db7bb540b31de3d7f2c81c2, type: 3}
 --- !u!4 &1946350752 stripped
 Transform:
@@ -13928,6 +15027,20 @@ CapsuleCollider:
   m_Height: 5.3028
   m_Direction: 1
   m_Center: {x: 0, y: 2.6514, z: 0}
+--- !u!114 &1946350757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1946350753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1001 &1960382094
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13987,6 +15100,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1960382097}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1960382100}
   m_SourcePrefab: {fileID: 100100000, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
 --- !u!4 &1960382095 stripped
 Transform:
@@ -14021,6 +15137,20 @@ CapsuleCollider:
   m_Height: 1.02
   m_Direction: 1
   m_Center: {x: 0, y: 0.52, z: 0}
+--- !u!114 &1960382100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960382096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &1960504472
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14092,6 +15222,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1960504475}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1960504478}
   m_SourcePrefab: {fileID: 100100000, guid: 27001d0442f721e4997c72143d9d58ea, type: 3}
 --- !u!4 &1960504473 stripped
 Transform:
@@ -14126,6 +15259,20 @@ CapsuleCollider:
   m_Height: 4.7088
   m_Direction: 1
   m_Center: {x: 0, y: 2.3544, z: 0}
+--- !u!114 &1960504478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960504474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: TREE
 --- !u!1 &1964769844
 GameObject:
   m_ObjectHideFlags: 0
@@ -14566,6 +15713,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2006302468}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2006302471}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &2006302466 stripped
 Transform:
@@ -14598,6 +15748,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &2006302471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2006302467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &2023518295
 GameObject:
   m_ObjectHideFlags: 0
@@ -17241,6 +18405,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2102761481}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2102761484}
   m_SourcePrefab: {fileID: 100100000, guid: 4956b0a5e4ed13040950a46769a3628e, type: 3}
 --- !u!4 &2102761479 stripped
 Transform:
@@ -17273,6 +18440,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.3, y: 0.16, z: 0.15}
   m_Center: {x: 0, y: 0.08, z: 0}
+--- !u!114 &2102761484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2102761480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1001 &2110264838
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17332,6 +18513,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2110264841}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2110264844}
   m_SourcePrefab: {fileID: 100100000, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
 --- !u!4 &2110264839 stripped
 Transform:
@@ -17366,6 +18550,20 @@ CapsuleCollider:
   m_Height: 1.02
   m_Direction: 1
   m_Center: {x: 0, y: 0.52, z: 0}
+--- !u!114 &2110264844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2110264840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &2113349313
 GameObject:
   m_ObjectHideFlags: 0
@@ -17456,6 +18654,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2114963176}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2114963179}
   m_SourcePrefab: {fileID: 100100000, guid: 7d1eeb1146370d74696b12cc957277f0, type: 3}
 --- !u!4 &2114963174 stripped
 Transform:
@@ -17490,6 +18691,20 @@ CapsuleCollider:
   m_Height: 1.02
   m_Direction: 1
   m_Center: {x: 0, y: 0.52, z: 0}
+--- !u!114 &2114963179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2114963175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: 
+  _category: PROP
 --- !u!1 &2115495055
 GameObject:
   m_ObjectHideFlags: 0
@@ -17501,6 +18716,7 @@ GameObject:
   - component: {fileID: 2115495056}
   - component: {fileID: 2115495058}
   - component: {fileID: 2115495057}
+  - component: {fileID: 2115495059}
   m_Layer: 7
   m_Name: NPC_R4_Hauler
   m_TagString: Untagged
@@ -17580,6 +18796,20 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.85, z: 0}
+--- !u!114 &2115495059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115495055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e5b7e57f62a08d4c8cd87b981cd490f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
+  _displayName: R4 HAULER
+  _category: NPC
 --- !u!1 &2116555853
 GameObject:
   m_ObjectHideFlags: 0

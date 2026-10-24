@@ -7,13 +7,16 @@ namespace FrostSpace.Features.View
     /// <summary>
     /// Круговой вырез в геометрии по перекрестию прицела.
     ///
-    /// Работает в третьем лице, пока удерживается ПКМ и на HUD выбран модуль
-    /// <see cref="ViewModule.Aperture"/>. Из камеры в точку прицела
+    /// Работает в третьем лице, пока удерживается ПКМ. Из камеры в точку прицела
     /// и по краям круга летят лучи; рендереры, в которые они попали, получают материал
     /// с шейдером <c>FrostSpace/VFX/OcclusionReveal</c>. Шейдер вырезает круг в экранном
     /// пространстве вокруг перекрестия и только те пиксели, что ближе к камере, чем точка
     /// прицела: сквозь дерево или стену видно то, во что целимся. Край круга ступенчатый,
     /// распадается кубическими ячейками, по кромке идёт холодное свечение.
+    ///
+    /// Выбора модуля больше нет: ленты APERTURE/SCANNER на HUD не существует, поэтому
+    /// просвет — безусловный эффект ПКМ, а сканирование переехало на Q
+    /// (<c>ObjectScanner</c>) и работает независимо от кнопки прицела.
     ///
     /// Спокойный режим больше ничего не прорезает: крыша дома остаётся целой, а игрока
     /// за перекрытием показывает силуэт (<see cref="PlayerSilhouette"/>). Поэтому глубина
@@ -43,8 +46,6 @@ namespace FrostSpace.Features.View
         [SerializeField] private PlayerCameraRig _rig;
         [Tooltip("Игрок — его коллайдеры не считаются перекрытием")]
         [SerializeField] private Transform _target;
-        [Tooltip("Модули HUD: просвет работает, только когда выбран Aperture")]
-        [SerializeField] private ViewModuleSwitch _modules;
 
         [Header("Что скрывать")]
         [Tooltip("Слои, которые могут вырезаться (слой Player исключить)")]
@@ -120,8 +121,6 @@ namespace FrostSpace.Features.View
                 _view = Camera.main;
             if (_rig == null)
                 _rig = FindAnyObjectByType<PlayerCameraRig>();
-            if (_modules == null)
-                _modules = FindAnyObjectByType<ViewModuleSwitch>();
         }
 
         private void LateUpdate()
@@ -142,10 +141,9 @@ namespace FrostSpace.Features.View
                 return;
             }
 
-            // Модуль Aperture: ПКМ в третьем лице. В первом лице и на байке модули
-            // не работают, поэтому circle там не рисуется вовсе.
-            var aiming = _rig != null && _rig.IsAiming &&
-                         (_modules == null || _modules.Current == ViewModule.Aperture);
+            // Просвет — эффект ПКМ в третьем лице. В первом лице и на байке он
+            // не работает, поэтому круг там не рисуется вовсе.
+            var aiming = _rig != null && _rig.IsAiming;
             var distance = _maxAimDistance;
             var point = _view.transform.position + _view.transform.forward * _maxAimDistance;
 

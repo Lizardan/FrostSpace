@@ -334,25 +334,34 @@ build_level.py -> Content/Models/Level/*.fbx (19 шт.) -> плоские нор
 Статика того же конвейера, но отдельным скриптом: файл нужен один, в раскладку уровня он
 не входит, поэтому `build_level.py` его не трогает.
 
-```bat
-$env:PYTHONUTF8 = "1"
-"%BLENDER%" --background --factory-startup --python Tools/Blender/build_hoverbike.py
+```powershell
+python Tools/Blender/build_all.py --asset hoverbike --check --preview
 ```
 
 - Геометрия — `hoverbike_parts.py` (`level_lib.LevelBuilder`, палитра `Level_*`), выход —
   `Assets/_Project/Content/Models/Level/Hoverbike.fbx`, постпроцессор уровня подставит
   материалы как остальному статическому уровню.
+- Композиция: передний обтекатель с козырьком и фарой → бак → низкое седло в «талии» →
+  корма с двумя дюзами; по бокам талии — низкие выносные поплавки. Отдельные массы важнее
+  деталей: силуэт должен читаться сбоку, а не сливаться в один брусок.
 - Нос смотрит в Blender −Y: после `export_static` (зеркало X) это Unity +Z, то есть
   `transform.forward` байка. Ориентацию проверяй асимметричной деталью — подножкой
   и выхлопом по правому борту: bbox отражение по X не ловит (ADR 0007).
-- Низ корпуса поднят на `hoverbike_parts.CLEARANCE` (0.53 м): это парение, а не ошибка —
+- Низ корпуса поднят на `hoverbike_parts.CLEARANCE` (0.46 м): это парение, а не ошибка —
   подушка под днищем рисуется шейдером `HoverCushion`. Детали при этом все посажены на
   корпус; правило «ничего не парит» — про них (`STYLE.md`).
-- Контроль (2026-10-20, Blender 5.2.2): `verts=448 tris=820 shells=19`, габарит
-  `(1.040, 3.014, 0.726)` м, non-manifold = 0.
-- Префабы собираются меню `FrostSpace → Ride`: `Build Hoverbike Mock` (вариант A из
-  примитивов) и `Build Hoverbike Prefab B` (обёртка над FBX: корень + компоненты +
-  подушка). Код игры от варианта не зависит.
+- Контроль (2026-10-24, Blender 5.2.3): `verts=1744 tris=3196 shells=72`, габарит
+  `(1.123, 2.467, 0.825)` м, non-manifold = 0, `selftest` PASS.
+- Превью — `AssetSource/Previews/Ride/Hoverbike_{side,three_quarter,front,top}.png`
+  (`render_ride_previews.py`): сбоку проверяется силуэт, спереди — ширина и фара,
+  сверху — седло и поплавки.
+- Префаб собирается меню `FrostSpace → Ride → Build Hoverbike Model`
+  (`Editor/HoverbikeModelBuilder.cs`, ADR 0012): корень + компоненты + подушка, внутри
+  `Visual` (FBX) и якоря позы `Grip L/R`, `Foot L/R`, `Seat`, `Seat Point` — все под
+  `Visual`, чтобы наездник качался вместе с моделью. Высоты якорей берутся из
+  `hoverbike_parts.py`: `SEAT_TOP` 0.88, рукоятки 1.05, подножки 0.66. Наклон наездника,
+  доля шеи, вынос колена (`KneeOut = −0.30`) и точка таза — в компоненте `RiderCockpit`
+  на корне, а не в коде позы.
 
 ## Мотоцикл FrostSpace
 
@@ -373,10 +382,15 @@ $env:PYTHONUTF8 = "1"
 - Контроль (2026-10-21, Blender 5.2.2): body 1 696 тр., каждое колесо 464 тр.,
   габарит колеса `(0.245, 0.760, 0.741)` м, общий bbox `0.76 × 1.13 × 2.55` м.
 - Префаб `Prefabs/Ride/Motorcycle_Model` собирается в редакторе: корень +
-  `CharacterController` + `Motorcycle` + `MotorcycleRideVisual`, дети `Visual`
-  (FBX, внутри него `Seat`), `ExitPoint`, `Headlight`, `BrakeLight`, `SnowSprayL/R`,
-  `Exhaust`. `Seat` живёт **внутри** `Visual`: иначе наездник не качается и не кренится
-  вместе с байком.
+  `CharacterController` + `Motorcycle` + `MotorcycleRideVisual` + `RiderCockpit`, дети
+  `Visual` (FBX, внутри него `Seat`), `Seat Point`, `ExitPoint`, `Headlight`,
+  `BrakeLight`, `SnowSprayL/R`, `Exhaust`. `Seat` живёт **внутри** `Visual`: иначе
+  наездник не качается и не кренится вместе с байком.
+- `RiderCockpit` задаёт посадку данными: наклон 30°, шея 0.45, таз — `Seat Point`
+  `(0, 1.08, −0.26)`, на 0.16 м дальше по седлу, чем расчёт «сиденье + 0.12 вперёд».
+  Якоря `Grip L/R` и `Foot L/R` не двигались: руки и ноги стоят как раньше.
+- Превью — `AssetSource/Previews/Ride/Motorcycle_{side,three_quarter,front,top}.png`
+  (`python Tools/Blender/build_all.py --asset motorcycle --preview --skip-build`).
 - Обломки и занос открытого вида меню — `build_wreck_parts.py` и `build_menu_open.py`
   (те же `Level_*`; в сцене масштабируются как пропы).
 
@@ -464,18 +478,19 @@ build_animals.py -> Content/Models/RobotAnimals/<S>/RA_<S>.fbx -> клипы Idl
 - `animal_lib.py` — извлечение рига из архива `AssetSource/*.zip`, роли костей по именам
   (они обезличены: у Wolf/Cat/Dog голова — `Bone.003`, у фермерских — `Head`), два take
   (`idle_loop`, `move_loop`), обнуление корневого смещения, нормировка размера, замер
-  скорости стопы в контакте, выпрямление подошвы (`flatten_feet`) и root motion
-  (`bake_root_motion`).
+  скорости стопы в контакте, выпрямление подошвы (`flatten_feet`) и кость `Root`
+  (`bake_root_motion`, клипы in-place).
 - **Стопа ставится ровно.** Клипы Quaternius держат стопу под углом к земле — 24–30° в стойке.
   `flatten_feet` доворачивает кость стопы до горизонтали вокруг сустава (рыскание сохраняется),
   половинным весом на входе в стойку и на выходе из неё и ключами на каждом кадре.
   Границы стойки — `stance_weights`: медиана высоты сустава, а не минимум концов кости
   (в переносе стопа проносится ниже своего уровня), серии считаются по кругу — клип замкнут.
-- **Root motion вместо in-place.** `bake_root_motion` создаёт кость `Root` в начале координат,
-  репарентит к ней верхние кости и ведёт её по −Y на `clip_speed × длительность` (в `idle_loop` —
-  ноль). Ход задаётся мировыми матрицами: `pose.bones[].location` живёт в пространстве кости и
-  умножается на масштаб арматуры (у импортированных FBX он 1.4577), и путь разъезжается в 1.45×.
-  Для `fly`/`swim` ход не печётся.
+- **Кость `Root` есть, ход в клипе — нет.** `bake_root_motion` создаёт кость `Root` в начале
+  координат и репарентит к ней верхние кости — это нужно для единой точки отсчёта скорости
+  стопы и для замеров чекера. Ход при этом нулевой (`in_place=True`): животных двигает
+  `NpcController`, а `applyRootMotion` в Unity выключен. Пока ход запекался, модель уезжала
+  вперёд на длину шага и щёлкала назад на стыке цикла — это и было «животные дёргаются»
+  (ADR 0022). Для `fly`/`swim` кость тоже есть, ход так же нулевой.
 - `animal_designs.py` — гибрид: срез органической головы по весам, квадратный череп с
   визором, панели корпуса, броня суставов и хвоста; паук — свой риг и своя геометрия.
 - **Стоячий хвост клипа.** У фермерской пачки Quaternius `Walk` вдвое длиннее цикла:

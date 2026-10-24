@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
@@ -9,40 +9,33 @@ using FrostSpace.Features.View;
 namespace FrostSpace.Features.Hud
 {
     /// <summary>
-    /// Игровой HUD: перекрестие, лента модулей справа и подпись отсканированного объекта.
+    /// Игровой HUD: перекрестие, пул подписей сканера, рамка прицельной цели, индикатор
+    /// режима сонара и счётчик FPS в правом верхнем углу.
     ///
     /// Собирается кодом при старте сцены — в <c>Game</c> нет ни Canvas, ни EventSystem,
     /// а HUD только отображает состояние, мышь в него не кликает. Поэтому GraphicRaycaster
     /// не добавляется: без него UI не может «съесть» захваченный курсор и ничего не стоит
-    /// в EventSystem.
+    /// в EventSystem. Меню паузы свой Canvas и GraphicRaycaster строит само.
     ///
     /// Оформление повторяет меню (<c>MainMenuScreen</c>): тот же циановый акцент, dim-текст,
     /// разрядка букв и размеры под 1920×1080. Все подписи латиницей — в атласе
     /// <c>LiberationSans SDF</c> нет кириллицы.
     ///
-    /// Лента модулей показывается только в третьем лице: в первом лице и на байке модули
-    /// не работают, и заголовок из двух пунктов вводил бы в заблуждение.
+    /// Правой ленты модулей больше нет: просвет живёт на ПКМ постоянно, а сканирование
+    /// стало способностью на Q, поэтому подписи приходят списком от
+    /// <see cref="ObjectScanner"/> и раскладываются по пулу.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(250)]
     public sealed class PlayerHud : MonoBehaviour
     {
-        private static readonly ViewModule[] Modules = (ViewModule[])Enum.GetValues(typeof(ViewModule));
-
-        /// <summary>Подпись модуля в ленте HUD.</summary>
-        private static string ModuleLabel(ViewModule module) => module switch
-        {
-            ViewModule.Aperture => "APERTURE",
-            ViewModule.Scanner => "SCANNER",
-            _ => module.ToString().ToUpperInvariant()
-        };
+        /// <summary>Габарит плашки подписи от её точки, px: по нему считается перекрытие.</summary>
+        private static readonly Vector2 LabelExtent = new(300f, 108f);
 
         [Header("Ссылки")]
-        [Tooltip("Риг камеры: видимость ленты модулей и проекция подписи")]
+        [Tooltip("Риг камеры: режим и пауза")]
         [SerializeField] private PlayerCameraRig _rig;
-        [Tooltip("Модули HUD: какой модуль выбран")]
-        [SerializeField] private ViewModuleSwitch _modules;
-        [Tooltip("Сканер: что нарисовать в подписи")]
+        [Tooltip("Сканер: что подписать и где рамка")]
         [SerializeField] private ObjectScanner _scanner;
 
         [Header("Палитра")]
@@ -60,20 +53,6 @@ namespace FrostSpace.Features.Hud
         [Tooltip("Прозрачность перекрестия: оно не должно закрывать то, что просвечивает")]
         [SerializeField, Range(0f, 1f)] private float _crosshairAlpha = 0.6f;
 
-        [Header("Лента модулей")]
-        [Tooltip("Шаг между строками, px")]
-        [SerializeField] private float _rowSpacing = 38f;
-        [Tooltip("Отступ ленты от правого края, px")]
-        [SerializeField] private float _carouselMargin = 68f;
-        [SerializeField] private float _carouselWidth = 280f;
-        [Tooltip("Фон ленты: тот же полупрозрачный циан, что у подписи сканера")]
-        [SerializeField] private Color _carouselFill = new(0.13f, 0.38f, 0.42f, 0.68f);
-        [Tooltip("Насколько фон ленты шире строк, px")]
-        [SerializeField] private float _carouselPadding = 18f;
-        [SerializeField] private float _rowFontSize = 21f;
-        [Tooltip("Сглаживание прокрутки ленты, 1/с")]
-        [SerializeField] private float _scrollSmoothing = 16f;
-
         [Header("Подпись сканера")]
         [Tooltip("Высота выноса от объекта, px")]
         [SerializeField] private float _labelLift = 68f;
@@ -87,6 +66,9 @@ namespace FrostSpace.Features.Hud
         [SerializeField, Range(0f, 1f)] private float _labelOutline = 0.24f;
         [Tooltip("Цвет обводки — почти чёрный холодный")]
         [SerializeField] private Color _labelOutlineColor = new(0.02f, 0.05f, 0.07f, 1f);
+        [Tooltip("Сколько подписей может висеть одновременно")]
+        [SerializeField] private int _labelCount = 12;
+
         [Header("Подложка подписи")]
         [Tooltip("Заливка плашки: полупрозрачный циан — текст на нём читается и на снегу")]
         [SerializeField] private Color _plateFill = new(0.13f, 0.38f, 0.42f, 0.68f);
@@ -97,42 +79,45 @@ namespace FrostSpace.Features.Hud
         [Tooltip("Отступ рамки цели от экранной проекции объекта, px")]
         [SerializeField] private float _framePadding = 14f;
 
+        [Header("Индикатор скана")]
+        [Tooltip("Подсказка о способности внизу экрана")]
+        [SerializeField] private string _scanHint = "Q SCAN";
+        [Tooltip("Индикатор включённого режима")]
+        [SerializeField] private string _scanActive = "SCANNING";
+        [Tooltip("Отступ строк от нижнего края, px")]
+        [SerializeField] private float _statusMargin = 64f;
+        [SerializeField] private float _hintSize = 18f;
+        [SerializeField] private float _statusSize = 22f;
+
+        [Header("Счётчик FPS")]
+        [Tooltip("Отступ счётчика от правого и верхнего края экрана, px")]
+        [SerializeField] private float _fpsMargin = 36f;
+        [SerializeField] private float _fpsLabelSize = 16f;
+        [SerializeField] private float _fpsValueSize = 26f;
+        [Tooltip("Как часто пересчитывать значение, с")]
+        [SerializeField] private float _fpsInterval = 0.5f;
+
         private RectTransform _canvasRect;
         private GameObject _crosshair;
-        private GameObject _carousel;
-        private RectTransform[] _rows;
-        private TextMeshProUGUI[] _rowLabels;
-        private Image[] _rowMarkers;
+        private ScanLabelView[] _labels;
+        private ScanTarget[] _slotTargets;
+        private Rect[] _slotRects;
+        private readonly GameObject[] _frames = new GameObject[2];
+        private readonly CanvasGroup[] _frameGroups = new CanvasGroup[2];
+        private TextMeshProUGUI _hint;
+        private TextMeshProUGUI _status;
 
-        private GameObject _label;
-        private RectTransform _labelRect;
-        private Image _labelDiagonal;
-        private Image _labelArmImage;
-        private TextMeshProUGUI _labelName;
-        private TextMeshProUGUI _labelCategory;
-        private TextMeshProUGUI _labelDistance;
-        private RectTransform _plateRect;
-        private CanvasGroup _plateGroup;
-        private GameObject _frame;
-        private CanvasGroup _frameGroup;
+        private TextMeshProUGUI _fpsValue;
+        private int _fpsFrames;
+        private float _fpsElapsed;
+        private int _fpsShown = -1;
 
-        private float _scrollOffset;
-        private int _selected;
         private Camera _camera;
-
-        // Кэш подписи скана: строки и ширина плашки пересчитываются только при изменении.
-        private string _lastName;
-        private string _lastCategory;
-        private float _lastDistance = -1f;
-        private bool _labelTextDirty = true;
-        private float _plateWidth = 180f;
 
         private void Awake()
         {
             if (_rig == null)
                 _rig = FindAnyObjectByType<PlayerCameraRig>();
-            if (_modules == null)
-                _modules = FindAnyObjectByType<ViewModuleSwitch>();
             if (_scanner == null)
                 _scanner = FindAnyObjectByType<ObjectScanner>();
 
@@ -140,9 +125,10 @@ namespace FrostSpace.Features.Hud
 
             BuildCanvas();
             BuildCrosshair();
-            BuildCarousel();
-            BuildScanLabel();
+            BuildLabels();
             BuildTargetFrame();
+            BuildStatus();
+            BuildFps();
         }
 
         private void LateUpdate()
@@ -153,9 +139,10 @@ namespace FrostSpace.Features.Hud
             if (_crosshair != null)
                 _crosshair.SetActive(third || mode == CameraMode.FirstPerson);
 
-            UpdateCarousel(third);
-            UpdateScanLabel(third);
+            UpdateLabels(third);
             UpdateTargetFrame(third);
+            UpdateStatus(third);
+            UpdateFps();
         }
 
         private void OnDestroy()
@@ -203,124 +190,116 @@ namespace FrostSpace.Features.Hud
                 new Vector2(reach, 0f), new Vector2(_crosshairLength, _crosshairThickness), 0f);
         }
 
-        private void BuildCarousel()
-        {
-            _carousel = NewContainer(_canvasRect, "Modules", new Vector2(1f, 0.5f),
-                new Vector2(_carouselWidth, _rowSpacing * Modules.Length + 24f));
-            var rect = (RectTransform)_carousel.transform;
-            rect.pivot = new Vector2(1f, 0.5f);
-            rect.anchoredPosition = new Vector2(-_carouselMargin, 0f);
-
-            // Фон ленты: без него строки висят в воздухе и теряются на светлом снегу.
-            // Рисуется первым ребёнком, поэтому остаётся за строками.
-            var back = NewImage(_carousel.transform, "Back", _carouselFill);
-            var backRect = back.rectTransform;
-            Stretch(backRect);
-            backRect.offsetMin = new Vector2(-_carouselPadding, -12f);
-            backRect.offsetMax = new Vector2(_carouselPadding, 12f);
-
-            _rows = new RectTransform[Modules.Length];
-            _rowLabels = new TextMeshProUGUI[Modules.Length];
-            _rowMarkers = new Image[Modules.Length];
-
-            for (var i = 0; i < Modules.Length; i++)
-            {
-                var row = new GameObject(Modules[i].ToString(), typeof(RectTransform));
-                row.transform.SetParent(_carousel.transform, false);
-                var rowRect = (RectTransform)row.transform;
-                rowRect.anchorMin = new Vector2(1f, 0.5f);
-                rowRect.anchorMax = new Vector2(1f, 0.5f);
-                rowRect.pivot = new Vector2(1f, 0.5f);
-                rowRect.sizeDelta = new Vector2(_carouselWidth, 30f);
-                _rows[i] = rowRect;
-
-                var label = NewText(row.transform, "Label",
-                    $"{i + 1:00}   {ModuleLabel(Modules[i])}", _rowFontSize, _dim,
-                    TextAlignmentOptions.Right, new Vector2(1f, 0.5f), new Vector2(-24f, 0f),
-                    new Vector2(_carouselWidth - 24f, 30f), 8f);
-                _rowLabels[i] = label;
-
-                var marker = NewImage(row.transform, "Marker", new Color(_accent.r, _accent.g, _accent.b, 0f));
-                var markerRect = marker.rectTransform;
-                markerRect.anchorMin = new Vector2(1f, 0.5f);
-                markerRect.anchorMax = new Vector2(1f, 0.5f);
-                markerRect.pivot = new Vector2(1f, 0.5f);
-                markerRect.sizeDelta = new Vector2(3f, 26f);
-                markerRect.anchoredPosition = Vector2.zero;
-                _rowMarkers[i] = marker;
-            }
-        }
-
-        private void BuildScanLabel()
-        {
-            _label = NewContainer(_canvasRect, "Scan Label", new Vector2(0.5f, 0.5f), new Vector2(1f, 1f));
-            _labelRect = (RectTransform)_label.transform;
-            _labelRect.pivot = Vector2.zero;
-            _labelRect.anchoredPosition = Vector2.zero;
-
-            _labelDiagonal = NewLine(_label.transform, "Diagonal", out var diagonalRect);
-            // Диагональ задаётся от точки объекта вверх-наискосок; геометрия
-            // пересчитывается каждый кадр, потому что цель уезжает.
-            diagonalRect.anchorMin = Vector2.zero;
-            diagonalRect.anchorMax = Vector2.zero;
-
-            _labelArmImage = NewLine(_label.transform, "Arm", out var armRect);
-            armRect.anchorMin = Vector2.zero;
-            armRect.anchorMax = Vector2.zero;
-
-            var dx = _labelLift * 0.75f;
-            var textX = dx + _labelArm + 14f;
-            var sideBox = new Vector2(460f, _labelCategorySize * 1.5f);
-            BuildHoloPlate(textX);
-
-            _labelCategory = NewText(_label.transform, "Category", "SCAN", _labelCategorySize, _dim,
-                TextAlignmentOptions.Left, Vector2.zero, Vector2.zero, sideBox, 10f);
-            _labelCategory.rectTransform.pivot = new Vector2(0f, 0.5f);
-            _labelCategory.rectTransform.anchoredPosition =
-                new Vector2(textX, _labelLift + _labelNameSize * 0.8f);
-
-            _labelName = NewText(_label.transform, "Name", string.Empty, _labelNameSize, _text,
-                TextAlignmentOptions.Left, Vector2.zero, Vector2.zero,
-                new Vector2(460f, _labelNameSize * 1.4f), 4f);
-            _labelName.rectTransform.pivot = new Vector2(0f, 0.5f);
-            _labelName.rectTransform.anchoredPosition = new Vector2(textX, _labelLift);
-
-            _labelDistance = NewText(_label.transform, "Distance", string.Empty, _labelCategorySize,
-                new Color(_accent.r, _accent.g, _accent.b, 0.75f),
-                TextAlignmentOptions.Left, Vector2.zero, Vector2.zero, sideBox, 10f);
-            _labelDistance.rectTransform.pivot = new Vector2(0f, 0.5f);
-            _labelDistance.rectTransform.anchoredPosition =
-                new Vector2(textX, _labelLift - _labelNameSize * 0.8f - 6f);
-
-            // Обводка создаёт у текста отдельный экземпляр материала (TMP): дефолтный
-            // шрифт проекта при этом не мутируется и меню не меняется.
-            AddOutline(_labelCategory);
-            AddOutline(_labelName);
-            AddOutline(_labelDistance);
-
-            _label.SetActive(false);
-        }
         /// <summary>
-        /// Квадратная рамка цели: те же уголки, что у плашки, но без фона — объект просто
-        /// обводится по экранной проекции своих границ. Контейнер меняет размер под цель,
-        /// уголки привязаны к его углам, поэтому рамка масштабируется вместе с объектом.
+        /// Пул подписей: все элементы строятся один раз, дальше только заполняются.
+        /// Пересоздавать их каждый кадр — это аллокации Canvas и рваная раскладка.
+        /// </summary>
+        private void BuildLabels()
+        {
+            var style = new ScanLabelStyle
+            {
+                Accent = _accent,
+                Text = _text,
+                Dim = _dim,
+                PlateFill = _plateFill,
+                OutlineColor = _labelOutlineColor,
+                Lift = _labelLift,
+                Arm = _labelArm,
+                NameSize = _labelNameSize,
+                CategorySize = _labelCategorySize,
+                LineWidth = _labelLineWidth,
+                Outline = _labelOutline,
+                PlateHeight = _plateHeight,
+                PlatePadding = _platePadding
+            };
+
+            var count = Mathf.Clamp(_labelCount, 1, 32);
+            _labels = new ScanLabelView[count];
+            _slotTargets = new ScanTarget[count];
+            _slotRects = new Rect[count];
+            for (var i = 0; i < count; i++)
+                _labels[i] = new ScanLabelView(_canvasRect, style);
+        }
+
+        /// <summary>
+        /// Квадратные рамки целей: те же уголки, что у плашки, но без фона — объект просто
+        /// обводится по экранной проекции своих границ.
+        ///
+        /// Рамок две: прицельная цель и ближайшая. Обе роли равноправны — ближайший объект
+        /// тоже подсвечивается рамкой, иначе он отличался бы от прицельного только текстом.
+        /// Если обе роли выпали на одну цель, рисуется одна рамка: вторая легла бы ровно
+        /// поверх первой и мигала от разницы альф.
         /// </summary>
         private void BuildTargetFrame()
         {
-            _frame = NewContainer(_canvasRect, "Target Frame", new Vector2(0.5f, 0.5f),
-                new Vector2(180f, 180f));
-            _frameGroup = _frame.AddComponent<CanvasGroup>();
-            _frameGroup.alpha = 0f;
-            _frameGroup.interactable = false;
-            _frameGroup.blocksRaycasts = false;
+            for (var i = 0; i < _frames.Length; i++)
+            {
+                var frame = NewContainer(_canvasRect,
+                    i == 0 ? "Target Frame Aim" : "Target Frame Nearest",
+                    new Vector2(0.5f, 0.5f), new Vector2(180f, 180f));
 
-            var rect = (RectTransform)_frame.transform;
-            AddBracket(rect, new Vector2(0f, 1f), 1f, -1f);
-            AddBracket(rect, new Vector2(0f, 0f), 1f, 1f);
-            AddBracket(rect, new Vector2(1f, 1f), -1f, -1f);
-            AddBracket(rect, new Vector2(1f, 0f), -1f, 1f);
+                var group = frame.AddComponent<CanvasGroup>();
+                group.alpha = 0f;
+                group.interactable = false;
+                group.blocksRaycasts = false;
 
-            _frame.SetActive(false);
+                var rect = (RectTransform)frame.transform;
+                AddBracket(rect, new Vector2(0f, 1f), 1f, -1f);
+                AddBracket(rect, new Vector2(0f, 0f), 1f, 1f);
+                AddBracket(rect, new Vector2(1f, 1f), -1f, -1f);
+                AddBracket(rect, new Vector2(1f, 0f), -1f, 1f);
+
+                frame.SetActive(false);
+                _frames[i] = frame;
+                _frameGroups[i] = group;
+            }
+        }
+
+        /// <summary>
+        /// Низ экрана: подсказка способности и индикатор режима. Подсказка видна всегда,
+        /// пока скан доступен; индикатор появляется только при включённом сонаре.
+        /// </summary>
+        private void BuildStatus()
+        {
+            _hint = NewText(_canvasRect, "Scan Hint", _scanHint, _hintSize, _dim,
+                TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0f, _statusMargin),
+                new Vector2(400f, 28f), 14f);
+
+            _status = NewText(_canvasRect, "Scan Status", _scanActive, _statusSize, _accent,
+                TextAlignmentOptions.Center, new Vector2(0.5f, 0f),
+                new Vector2(0f, _statusMargin + 30f), new Vector2(400f, 32f), 16f);
+            _status.gameObject.SetActive(false);
+
+            AddOutline(_hint);
+            AddOutline(_status);
+        }
+
+        /// <summary>
+        /// Счётчик FPS в правом верхнем углу: число акцентом и подпись «FPS» dim-цветом.
+        /// Плашки нет — на фоне неба и снега текст держит тёмная обводка, та же, что
+        /// у подписи сканера.
+        /// </summary>
+        private void BuildFps()
+        {
+            var readout = NewContainer(_canvasRect, "FPS", new Vector2(1f, 1f),
+                new Vector2(120f, 32f));
+            var rect = (RectTransform)readout.transform;
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(-_fpsMargin, -_fpsMargin);
+
+            // Число стоит левее подписи: строку читают как «60 FPS», а не как название.
+            _fpsValue = NewText(readout.transform, "Value", "--", _fpsValueSize, _accent,
+                TextAlignmentOptions.Right, new Vector2(1f, 0.5f), new Vector2(-46f, 0f),
+                new Vector2(72f, 32f), 2f);
+
+            var label = NewText(readout.transform, "Label", "FPS", _fpsLabelSize, _dim,
+                TextAlignmentOptions.Right, new Vector2(1f, 0.5f), Vector2.zero,
+                new Vector2(44f, 24f), 8f);
+
+            // Обводка создаёт отдельный экземпляр материала только у этих двух текстов;
+            // дефолтный шрифт проекта и меню не меняются.
+            AddOutline(_fpsValue);
+            AddOutline(label);
         }
 
         /// <summary>
@@ -334,6 +313,164 @@ namespace FrostSpace.Features.Hud
                 _camera = _rig != null ? _rig.ViewCamera : Camera.main;
 
             return _camera;
+        }
+
+        // ---------- обновление ----------
+
+        /// <summary>
+        /// Подписи по пулу. Сканер отдаёт список уже в нужном порядке — прицельная цель
+        /// первой, остальные по дистанции, — поэтому HUD заполняет первые слоты и прячет
+        /// остальные.
+        ///
+        /// Плашки не наезжают друг на друга: подпись, чей габарит пересекается с уже
+        /// поставленной, не рисуется. На кучном заборе из десятка секций иначе получается
+        /// сплошное пятно, в котором не прочитать ни одного имени. Контур у такой цели
+        /// остаётся, поэтому объект не теряется — он просто не подписан дважды в одном месте.
+        /// </summary>
+        /// <summary>
+        /// Подписи по пулу. Слот **закреплён за целью**: пока цель в списке, подпись живёт
+        /// в своём слоте и едет за ней. Раньше слоты раздавались по порядку списка каждый
+        /// кадр, и стоило порядку измениться (цель вошла в прицел, обогнала другую по
+        /// дистанции), подписи перескакивали с объекта на объект — это читалось как рывки.
+        ///
+        /// Новые подписи занимают свободные слоты, но не ставятся поверх уже занятых:
+        /// плашка, чей габарит пересекается с поставленной, ждёт. На кучном заборе иначе
+        /// получается сплошное пятно, в котором не прочитать ни одного имени.
+        /// </summary>
+        private void UpdateLabels(bool visible)
+        {
+            if (_labels == null || _slotTargets == null)
+                return;
+
+            var views = _scanner != null && visible ? _scanner.Views : null;
+            var limit = _scanner != null ? Mathf.Min(_labels.Length, _scanner.MaxLabels) : 0;
+            var camera = ResolveCamera();
+
+            // Первый проход: слоты, чья цель ещё в списке, обновляем на месте.
+            for (var i = 0; i < _labels.Length; i++)
+            {
+                var target = _slotTargets[i];
+                if (target == null)
+                    continue;
+
+                var index = IndexOf(views, target, limit);
+                if (index < 0 || !TryProjectPoint(views[index].Anchor, camera, out var local))
+                {
+                    ReleaseSlot(i);
+                    continue;
+                }
+
+                _slotRects[i] = LabelRect(local);
+                _labels[i].Show(local, views[index], views[index].Aim);
+            }
+
+            // Второй проход: свободные слоты получают цели, которым места ещё нет.
+            for (var i = 0; views != null && i < views.Count && i < limit; i++)
+            {
+                var view = views[i];
+                if (IsAssigned(view.Target))
+                    continue;
+
+                var slot = FreeSlot();
+                if (slot < 0)
+                    break;
+
+                if (!TryProjectPoint(view.Anchor, camera, out var local))
+                    continue;
+
+                var rect = LabelRect(local);
+                if (Overlaps(rect, slot))
+                    continue;
+
+                _slotTargets[slot] = view.Target;
+                _slotRects[slot] = rect;
+                _labels[slot].Show(local, view, view.Aim);
+            }
+        }
+
+        /// <summary>Индекс цели в списке сканера или <c>-1</c>.</summary>
+        private static int IndexOf(IReadOnlyList<ScanView> views, ScanTarget target, int limit)
+        {
+            if (views == null)
+                return -1;
+
+            var count = Mathf.Min(views.Count, limit);
+            for (var i = 0; i < count; i++)
+            {
+                if (views[i].Target == target)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private bool IsAssigned(ScanTarget target)
+        {
+            for (var i = 0; i < _slotTargets.Length; i++)
+            {
+                if (_slotTargets[i] == target)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private int FreeSlot()
+        {
+            for (var i = 0; i < _slotTargets.Length; i++)
+            {
+                if (_slotTargets[i] == null)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void ReleaseSlot(int index)
+        {
+            _slotTargets[index] = null;
+            _slotRects[index] = default;
+            _labels[index].Hide();
+        }
+
+        /// <summary>Габарит плашки: она уходит вправо от точки и стоит по центру по высоте.</summary>
+        private static Rect LabelRect(Vector2 point)
+        {
+            return new Rect(
+                point.x - 20f,
+                point.y - LabelExtent.y * 0.5f,
+                LabelExtent.x,
+                LabelExtent.y);
+        }
+
+        /// <summary>Габарит пересекается с подписью в другом слоте.</summary>
+        private bool Overlaps(Rect rect, int own)
+        {
+            for (var i = 0; i < _slotTargets.Length; i++)
+            {
+                if (i == own || _slotTargets[i] == null)
+                    continue;
+
+                if (_slotRects[i].Overlaps(rect))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Мировая точка в координатах Canvas; <c>false</c> — точка за камерой.</summary>
+        private bool TryProjectPoint(Vector3 world, Camera camera, out Vector2 local)
+        {
+            local = default;
+            if (camera == null || _canvasRect == null)
+                return false;
+
+            var screen = camera.WorldToScreenPoint(world);
+            if (screen.z <= 0f)
+                return false;
+
+            return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                _canvasRect, screen, null, out local);
         }
 
         /// <summary>
@@ -379,71 +516,133 @@ namespace FrostSpace.Features.Hud
         }
 
         /// <summary>
-        /// Рамка вокруг цели: появляется и гаснет вместе с подписью и контуром скана.
+        /// Рамки целей: [0] — прицельная, [1] — ближайшая. Обе едут по свежим границам
+        /// цели, поэтому рамка стоит вокруг объекта, а не догоняет его рывками.
         /// </summary>
         private void UpdateTargetFrame(bool visible)
         {
-            if (_frame == null)
-                return;
-
-            var show = visible && _scanner != null && _scanner.HasTarget && _scanner.IsVisible;
-            if (!show || !TryProjectBounds(_scanner.TargetBounds, out var center, out var size))
+            if (_scanner == null || !visible)
             {
-                if (_frame.activeSelf)
-                    _frame.SetActive(false);
+                HideFrame(0);
+                HideFrame(1);
                 return;
             }
 
-            if (!_frame.activeSelf)
-                _frame.SetActive(true);
+            var views = _scanner.Views;
+            var aim = FindView(views, true);
+            var nearest = FindView(views, false);
 
-            var rect = (RectTransform)_frame.transform;
+            // Одна цель на две роли — одна рамка.
+            if (aim.HasValue && nearest.HasValue && aim.Value.Target == nearest.Value.Target)
+                nearest = null;
+
+            UpdateFrame(0, aim);
+            UpdateFrame(1, nearest);
+        }
+
+        /// <summary>Первая цель с нужным флагом или <c>null</c>.</summary>
+        private static ScanView? FindView(IReadOnlyList<ScanView> views, bool aim)
+        {
+            for (var i = 0; i < views.Count; i++)
+            {
+                if (aim ? views[i].Aim : views[i].Nearest)
+                    return views[i];
+            }
+
+            return null;
+        }
+
+        private void UpdateFrame(int index, ScanView? view)
+        {
+            if (!view.HasValue || !TryProjectBounds(view.Value.Bounds, out var center, out var size))
+            {
+                HideFrame(index);
+                return;
+            }
+
+            var frame = _frames[index];
+            if (frame == null)
+                return;
+
+            if (!frame.activeSelf)
+                frame.SetActive(true);
+
+            var rect = (RectTransform)frame.transform;
             rect.sizeDelta = new Vector2(size.x + _framePadding * 2f, size.y + _framePadding * 2f);
             rect.anchoredPosition = center;
-            _frameGroup.alpha = Mathf.Clamp01(_scanner.Strength);
+            _frameGroups[index].alpha = Mathf.Clamp01(view.Value.Strength);
+        }
+
+        private void HideFrame(int index)
+        {
+            var frame = _frames[index];
+            if (frame != null && frame.activeSelf)
+                frame.SetActive(false);
         }
 
         /// <summary>
-        /// Подложка под подпись: ровный полупрозрачный циан цифрового слоя, тонкая линия
-        /// сверху и уголки по краям — без сетки и других узоров.
-        /// Без неё имя объекта терялось на светлом снегу и сливалось с тёмным металлом.
-        ///
-        /// Альфа задаётся группой: подпись гаснет целиком вместе с контуром скана.
+        /// Подсказка и индикатор режима. Пока идёт волна, индикатор пульсирует в такт
+        /// кольцу; после прохода волны горит ровно — режим остался включённым, но волны
+        /// больше нет, и мигать нечему.
         /// </summary>
-        private void BuildHoloPlate(float textX)
+        private void UpdateStatus(bool visible)
         {
-            var plate = NewContainer(_label.transform, "Holo Plate", Vector2.zero,
-                new Vector2(320f, _plateHeight));
-            _plateRect = (RectTransform)plate.transform;
-            _plateRect.pivot = new Vector2(0f, 0.5f);
-            _plateRect.anchoredPosition = new Vector2(textX - _platePadding, _labelLift + 2f);
+            if (_hint == null || _status == null)
+                return;
 
-            _plateGroup = plate.AddComponent<CanvasGroup>();
-            _plateGroup.alpha = 0f;
-            _plateGroup.interactable = false;
-            _plateGroup.blocksRaycasts = false;
+            var scanning = _scanner != null && _scanner.IsScanning;
 
-            // Фон — ровная полупрозрачная заливка цветом цифрового слоя, без узоров.
-            var fill = NewImage(plate.transform, "Fill", _plateFill);
-            Stretch(fill.rectTransform);
+            // В первом лице сканера нет: подсказка про Q там врала бы.
+            var hintVisible = visible && !scanning;
+            if (_hint.gameObject.activeSelf != hintVisible)
+                _hint.gameObject.SetActive(hintVisible);
 
-            // Верхняя линия — «шапка прибора»: по ней читается верхний край плашки.
-            var header = NewImage(plate.transform, "Header", WithAlpha(_accent, 0.55f));
-            var headerRect = header.rectTransform;
-            headerRect.anchorMin = new Vector2(0f, 1f);
-            headerRect.anchorMax = new Vector2(1f, 1f);
-            headerRect.pivot = new Vector2(0.5f, 1f);
-            headerRect.sizeDelta = new Vector2(-20f, 1.5f);
-            headerRect.anchoredPosition = new Vector2(0f, -7f);
+            if (_status.gameObject.activeSelf != scanning)
+                _status.gameObject.SetActive(scanning);
 
-            // Уголки: по два коротких штриха на угол — плашка читается как экран.
-            AddBracket(plate.transform, new Vector2(0f, 1f), 1f, -1f);
-            AddBracket(plate.transform, new Vector2(0f, 0f), 1f, 1f);
-            AddBracket(plate.transform, new Vector2(1f, 1f), -1f, -1f);
-            AddBracket(plate.transform, new Vector2(1f, 0f), -1f, 1f);
+            if (!scanning)
+                return;
+
+            // Пока волна идёт — пульс в такт кольцу, после — ровный акцент.
+            var alpha = _scanner.IsWaveActive
+                ? Mathf.Lerp(1f, 0.35f, Mathf.Clamp01(_scanner.SonarWave))
+                : 1f;
+            _status.color = WithAlpha(_accent, alpha);
         }
 
-        /// <summary>Пара штрихов в углу плашки: горизонтальный и вертикальный.</summary>
+        /// <summary>
+        /// Счётчик FPS: среднее за интервал, а не мгновенное значение — иначе цифра
+        /// дёргается на каждом кадре. Время нескалированное: счётчик показывает
+        /// частоту отрисовки и при остановленной игре.
+        /// </summary>
+        private void UpdateFps()
+        {
+            if (_fpsValue == null)
+                return;
+
+            _fpsFrames++;
+            _fpsElapsed += Time.unscaledDeltaTime;
+
+            var interval = Mathf.Max(0.05f, _fpsInterval);
+            if (_fpsElapsed < interval)
+                return;
+
+            var fps = Mathf.RoundToInt(_fpsFrames / _fpsElapsed);
+            _fpsFrames = 0;
+            _fpsElapsed = 0f;
+
+            // Строка пересоздаётся только при смене значения: на стабильных 60 FPS
+            // аллокаций нет.
+            if (fps == _fpsShown)
+                return;
+
+            _fpsShown = fps;
+            _fpsValue.text = fps.ToString(CultureInfo.InvariantCulture);
+        }
+
+        // ---------- примитивы ----------
+
+        /// <summary>Пара штрихов в углу: горизонтальный и вертикальный.</summary>
         private void AddBracket(Transform parent, Vector2 anchor, float dirX, float dirY)
         {
             var color = WithAlpha(_accent, 0.85f);
@@ -466,160 +665,6 @@ namespace FrostSpace.Features.Hud
             vRect.anchoredPosition = new Vector2(dirX * 2f, dirY * 2f);
         }
 
-        /// <summary>Растягивает элемент по всей плашке.</summary>
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-        }
-
-
-
-        // ---------- обновление ----------
-
-        /// <summary>
-        /// Лента модулей: выбранная строка стоит на месте, остальные уезжают вниз.
-        /// Смещение сглаживается экспоненциально, поэтому прокрутка идёт плавно,
-        /// а выбор при этом ступенчатый — за кадр лента не проскакивает модуль.
-        /// </summary>
-        private void UpdateCarousel(bool visible)
-        {
-            if (_carousel == null)
-                return;
-
-            _carousel.SetActive(visible);
-            if (!visible || _rows == null)
-                return;
-
-            _selected = _modules != null ? (int)_modules.Current : 0;
-            _scrollOffset = ModuleCarousel.Approach(_scrollOffset, 0f, _scrollSmoothing, Time.unscaledDeltaTime);
-
-            for (var i = 0; i < _rows.Length; i++)
-            {
-                var offset = ModuleCarousel.Offset(i, _selected, _scrollOffset);
-                var emphasis = ModuleCarousel.Emphasis(offset);
-
-                _rows[i].anchoredPosition = new Vector2(0f, -offset * _rowSpacing);
-
-                var labelColor = Color.Lerp(_dim, _accent, emphasis);
-                labelColor.a = Mathf.Lerp(0.35f, 1f, emphasis);
-                _rowLabels[i].color = labelColor;
-
-                var markerColor = _accent;
-                markerColor.a = emphasis;
-                _rowMarkers[i].color = markerColor;
-            }
-        }
-
-        /// <summary>
-        /// Подпись объекта: выносная линия от объекта вверх-наискосок и плечо вбок,
-        /// на конце — категория, имя и дистанция. Гаснет вместе с контуром скана.
-        /// </summary>
-        private void UpdateScanLabel(bool visible)
-        {
-            if (_label == null)
-                return;
-
-            var show = visible && _scanner != null && _scanner.HasTarget && _scanner.IsVisible;
-            if (!show)
-            {
-                if (_label.activeSelf)
-                    _label.SetActive(false);
-                return;
-            }
-
-            var camera = ResolveCamera();
-            if (camera == null)
-                return;
-
-            var screen = camera.WorldToScreenPoint(_scanner.Current.Anchor);
-            if (screen.z <= 0f || !RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _canvasRect, screen, null, out var local))
-            {
-                _label.SetActive(false);
-                return;
-            }
-
-            if (!_label.activeSelf)
-                _label.SetActive(true);
-
-            _labelRect.anchoredPosition = local;
-
-            var strength = Mathf.Clamp01(_scanner.Strength);
-            var dx = _labelLift * 0.75f;
-            PlaceSegment(_labelDiagonal.rectTransform, Vector2.zero, new Vector2(dx, _labelLift));
-            PlaceSegment(_labelArmImage.rectTransform, new Vector2(dx, _labelLift),
-                new Vector2(dx + _labelArm, _labelLift));
-
-            var lineColor = new Color(_accent.r, _accent.g, _accent.b, 0.95f * strength);
-            _labelDiagonal.color = lineColor;
-            _labelArmImage.color = lineColor;
-
-            _labelCategory.text = _scanner.Current.Category;
-            _labelCategory.color = WithAlpha(Color.Lerp(_dim, _accent, 0.75f), strength);
-
-            _labelName.text = _scanner.Current.Name;
-            _labelName.color = WithAlpha(_text, strength);
-
-            // Строки и ширина плашки меняются редко: пересчёт каждый кадр — это
-            // аллокация строки и три дорогих GetPreferredValues.
-            if (!ReferenceEquals(_lastName, _scanner.Current.Name))
-            {
-                _lastName = _scanner.Current.Name;
-                _labelTextDirty = true;
-            }
-
-            if (!ReferenceEquals(_lastCategory, _scanner.Current.Category))
-            {
-                _lastCategory = _scanner.Current.Category;
-                _labelTextDirty = true;
-            }
-
-            var distance = _scanner.Current.Distance;
-            if (!Mathf.Approximately(distance, _lastDistance))
-            {
-                _lastDistance = distance;
-
-                // Инвариантная культура: на русской локали разделитель стал бы запятой
-                // и подпись выбивалась бы из латинского стиля HUD.
-                _labelDistance.text = distance.ToString("0.0", CultureInfo.InvariantCulture) + " M";
-                _labelTextDirty = true;
-            }
-
-            _labelDistance.color = WithAlpha(_accent, 0.9f * strength);
-            if (_plateRect != null && _plateGroup != null)
-            {
-                if (_labelTextDirty)
-                {
-                    _labelTextDirty = false;
-
-                    // Ширина подложки идёт за текстом: плашка не тянется в пустоту и не режет
-                    // длинные имена одним и тем же размером на всех объектах.
-                    var width = Mathf.Max(
-                        _labelName.GetPreferredValues(_scanner.Current.Name).x,
-                        _labelCategory.GetPreferredValues(_scanner.Current.Category).x);
-                    width = Mathf.Max(width, _labelDistance.GetPreferredValues(_labelDistance.text).x);
-                    _plateWidth = Mathf.Clamp(width + _platePadding * 2f, 180f, 520f);
-                }
-
-                _plateRect.sizeDelta = new Vector2(_plateWidth, _plateHeight);
-                _plateGroup.alpha = strength;
-            }
-        }
-
-        /// <summary>Ставит отрезок между двумя точками в локальных координатах подписи.</summary>
-        private void PlaceSegment(RectTransform rect, Vector2 from, Vector2 to)
-        {
-            var delta = to - from;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(delta.magnitude, _labelLineWidth);
-            rect.anchoredPosition = from + delta * 0.5f;
-            rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
-        }
-
         /// <summary>Тёмная обводка текста: единственный способ удержать читаемость на светлом фоне.</summary>
         private void AddOutline(TextMeshProUGUI text)
         {
@@ -629,8 +674,6 @@ namespace FrostSpace.Features.Hud
             text.outlineWidth = _labelOutline;
             text.outlineColor = _labelOutlineColor;
         }
-
-        // ---------- примитивы ----------
 
         private static Color WithAlpha(Color color, float alpha)
         {
@@ -671,15 +714,6 @@ namespace FrostSpace.Features.Hud
             var image = go.AddComponent<Image>();
             image.color = color;
             image.raycastTarget = false;
-            return image;
-        }
-
-        private static Image NewLine(Transform parent, string name, out RectTransform rect)
-        {
-            var image = NewImage(parent, name, new Color(0.302f, 0.902f, 1f, 0f));
-            rect = image.rectTransform;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(0f, 2f);
             return image;
         }
 

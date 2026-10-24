@@ -25,11 +25,17 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _CoreSize: 0.55
+    - _Aspect: 2
+    - _Bend: 0.22
+    - _CoreSize: 0.34
     - _PulseSpeed: 2.4
-    - _RingScale: 4.5
+    - _RingScale: 9
+    - _SourceSpread: 1
+    - _Speed: 0
+    - _Steer: 0
     - _Strength: 0.6
     m_Colors:
     - _Color: {r: 0.302, g: 0.902, b: 1, a: 1}
+    - _CoreColor: {r: 0.65, g: 0.98, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

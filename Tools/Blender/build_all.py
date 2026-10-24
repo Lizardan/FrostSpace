@@ -104,13 +104,15 @@ PIPELINE: dict[str, dict] = {
     "hoverbike": {
         "script": "build_hoverbike.py",
         "outputs": [MODELS + "/Level/Hoverbike.fbx"],
-        "previews": [],
+        "previews": [_step("render_ride_previews.py", "file",
+                           ["--out", PREVIEWS + "/Ride"])],
         "checks": [],
     },
     "motorcycle": {
         "script": "build_motorcycle.py",
         "outputs": [MODELS + "/Level/Motorcycle.fbx"],
-        "previews": [],
+        "previews": [_step("render_ride_previews.py", "file",
+                           ["--out", PREVIEWS + "/Ride"])],
         "checks": [],
     },
     "menu-drift": {

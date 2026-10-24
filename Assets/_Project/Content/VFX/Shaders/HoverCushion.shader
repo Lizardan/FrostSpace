@@ -1,21 +1,29 @@
-// Подушка ховербайка: аддитивные кольца и ядро под корпусом.
+// Подушка ховербайка: два источника и вытянутая капсула по днищу.
 //
 // Геометрия — плоский Quad под байком, поэтому шейдер работает в UV: центр 0.5,
-// край 0 или 1. Кольца бегут от центра к краю, ядро держит свечение у самой
-// плоскости. Материал аддитивный и без записи глубины: подушка светится поверх
-// снега, но не спорит с ним за пиксели.
+// край 0 или 1. Квад вытянут вдоль байка, и его локальная Y — длина; _Aspect
+// переводит UV в пропорции борта, чтобы кольца и источники не растягивались
+// в эллипс. Два ядра расходятся на скорости, капсула между ними держит
+// вытянутый след, а руль изгибает всю подушку в сторону поворота.
 //
-// Цвет приходит из HoverbikeGlow (циан цифрового слоя #4DE6FF), сила пульсирует
-// от оборотов байка: на месте едва тлеет, в движении горит ярче.
+// Материал аддитивный и без записи глубины: подушка светится поверх снега,
+// но не спорит с ним за пиксели. Цвет и сила приходят из HoverbikeGlow;
+// скорость и руль — тоже, через MaterialPropertyBlock.
 Shader "FrostSpace/VFX/HoverCushion"
 {
     Properties
     {
         [HDR] _Color("Color", Color) = (0.302, 0.902, 1, 1)
+        [HDR] _CoreColor("Core Color", Color) = (0.65, 0.98, 1, 1)
         _Strength("Strength", Range(0, 2)) = 0.6
-        _RingScale("Ring Scale", Float) = 4.5
+        _RingScale("Ring Scale", Float) = 9
         _PulseSpeed("Pulse Speed", Float) = 2.4
-        _CoreSize("Core Size", Range(0, 1)) = 0.55
+        _CoreSize("Source Radius", Range(0.05, 1)) = 0.34
+        _SourceSpread("Source Spread", Range(0, 1.5)) = 1.0
+        _Bend("Steer Bend", Range(0, 0.5)) = 0.22
+        _Aspect("Aspect (length / width)", Float) = 2
+        _Speed("Speed", Range(0, 1)) = 0
+        _Steer("Steer", Range(-1, 1)) = 0
     }
 
     SubShader
@@ -48,10 +56,16 @@ Shader "FrostSpace/VFX/HoverCushion"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _Color;
+                half4 _CoreColor;
                 half _Strength;
                 half _RingScale;
                 half _PulseSpeed;
                 half _CoreSize;
+                half _SourceSpread;
+                half _Bend;
+                half _Aspect;
+                half _Speed;
+                half _Steer;
             CBUFFER_END
 
             struct Attributes
@@ -86,21 +100,61 @@ Shader "FrostSpace/VFX/HoverCushion"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                // Эллипс подушки: Quad растянут по ходу байка, поэтому круг в UV
-                // читается как вытянутая подушка под корпусом.
-                float2 centered = input.uv * 2.0 - 1.0;
-                float radius = length(centered);
+                float t = _Time.y;
+                float speed = saturate(_Speed);
+                float steer = clamp(_Steer, -1.0, 1.0);
 
-                // Кольца идут наружу: фаза бежит по радиусу, а не по времени экрана,
-                // поэтому подушка «дышит» от центра.
-                half phase = (radius * _RingScale - _Time.y * _PulseSpeed) * 3.14159265h;
-                half rings = pow(saturate(sin(phase) * 0.5h + 0.5h), 4.0h);
+                // UV → координаты борта. По X единица равна половине ширины,
+                // по Y — половине длины; так расстояния и кольца круглые.
+                float2 uv = input.uv * 2.0 - 1.0;
+                float2 q = float2(uv.x, uv.y * max(_Aspect, 0.5));
 
-                half core = pow(saturate(1.0h - radius * (1.0h / max(_CoreSize, 0.05h)) * 0.5h), 2.0h);
-                half edge = smoothstep(1.0h, 0.72h, radius);
+                // Подушка дышит, покачивается и изгибается в сторону поворота.
+                q.x -= steer * _Bend * uv.y;
+                q.x += sin(t * 1.9 + uv.y * 3.0) * (0.015 + 0.03 * speed);
+                q.y *= 1.0 + 0.04 * sin(t * 2.3);
 
-                half glow = (rings * 0.65h + core * 0.9h) * edge;
-                return half4(_Color.rgb * glow * _Strength, glow * _Strength);
+                // Два источника: на скорости расходятся от центра и качаются
+                // в противофазе, поэтому подушка не выглядит застывшей точкой.
+                float spread = _SourceSpread * (0.8 + 0.35 * speed);
+                float sway = sin(t * 2.1) * 0.025 * (0.4 + speed);
+                float2 sourceA = float2(sway, -spread);
+                float2 sourceB = float2(-sway, spread);
+
+                // Капсула между источниками: длинный след по днищу.
+                float2 toPoint = q - sourceA;
+                float2 axis = sourceB - sourceA;
+                float along = saturate(dot(toPoint, axis) / max(dot(axis, axis), 1e-4));
+                float dist = length(toPoint - axis * along);
+
+                // Радиус сжимается на ходу: на стоянке подушка шире и мягче.
+                float radius = _CoreSize * (1.0 - 0.15 * speed) *
+                               (1.0 + 0.05 * sin(t * 3.1));
+                float body = saturate(1.0 - dist / max(radius, 0.02));
+                body = body * body * (3.0 - 2.0 * body);
+
+                // Кольца бегут от капсулы наружу, а не от центра экрана.
+                float phase = (dist * _RingScale - t * _PulseSpeed) * 6.2831853;
+                float rings = pow(saturate(sin(phase) * 0.5 + 0.5), 5.0) * body;
+
+                // Ядра у источников: два ярких пятна на концах капсулы.
+                float2 deltaA = q - sourceA;
+                float2 deltaB = q - sourceB;
+                float coreRadius = max(radius * radius * 0.10, 1e-4);
+                float coreA = exp(-dot(deltaA, deltaA) / coreRadius) *
+                              (1.0 + 0.12 * sin(t * 2.4));
+                float coreB = exp(-dot(deltaB, deltaB) / coreRadius) *
+                              (1.0 + 0.12 * sin(t * 2.4 + 3.14159265));
+                float core = saturate(coreA + coreB);
+
+                // Край квада гасится до нуля: прямоугольной границы не видно.
+                float edge = smoothstep(1.0, 0.78, max(abs(uv.x), abs(uv.y)));
+
+                float glow = (body * 0.45 + rings * 0.65 + core * 0.95) * edge;
+                glow *= 1.0 + 0.06 * sin(t * 2.7);
+
+                half3 color = lerp(_Color.rgb, _CoreColor.rgb, core);
+                return half4(color, saturate(glow * _Strength));
             }
             ENDHLSL
         }

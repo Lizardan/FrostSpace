@@ -62,6 +62,7 @@ namespace FrostSpace.Features.Menu
         private float _animatorSpeed = 1f;
         private Vector3 _crateBase;
         private bool _ready;
+        private bool _started;
 
         private void Awake()
         {
@@ -74,6 +75,13 @@ namespace FrostSpace.Features.Menu
 
         private void OnEnable()
         {
+            // Вид меню выключается целиком, поэтому OnEnable приходит на каждый
+            // возврат. Маршрут, скорость и фаза клипа продолжаются с того же места:
+            // сброс и Play(..., 0) здесь читались как «робота выбили из шага».
+            if (_started)
+                return;
+
+            _started = true;
             _ready = BuildRoute();
             _speed = 0f;
             _animatorSpeed = 1f;
@@ -88,6 +96,10 @@ namespace FrostSpace.Features.Menu
                 return;
             }
 
+            // Робот ходит по сцене меню и часто оказывается у края кадра: без этого
+            // анимация замирает, а при возврате взгляда прыгает в текущую позу.
+            FrostSpace.Features.Npc.AnimationCulling.Apply(_animator);
+
             if (_carry)
                 _animator.Play(CarryStateId, 0, 0f);
             else
@@ -96,12 +108,10 @@ namespace FrostSpace.Features.Menu
 
         private void OnDisable()
         {
+            // Moving не сбрасывается: Animator сохраняет состояние, и на возврате
+            // робот обязан продолжить шаг, а не мигнуть idle.
             if (_animator != null)
-            {
                 _animator.speed = 1f;
-                if (!_carry)
-                    _animator.SetBool(MovingId, false);
-            }
         }
 
         private bool BuildRoute()

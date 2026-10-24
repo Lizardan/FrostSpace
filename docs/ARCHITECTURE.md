@@ -24,19 +24,35 @@
   составного объекта, получающие вырез вместе),
   `Npc/NpcController.cs` — NPC по маршруту: точка → пауза 2–10 с → следующая;
   `Npc/AirPatrolController.cs` — воздушный NPC (орёл, пиранья) по маршруту с высотой,
-  поворот только по рысканью;
+  поворот только по рысканью; `Npc/AnimationCulling.cs` — `AlwaysAnimate` и честные
+  границы скинных мешей для всех актёров, которых двигает код (ADR 0021);
   `Ride/Hoverbike.cs` — ховербайк: посадка по E, WASD в экранных осях, вид сверху;
+  `Ride/HoverbikeGlow.cs` — покачивание `Visual`, свечение двигателя и параметры
+  подушки для `Content/VFX/Shaders/HoverCushion.shader`;
   `Ride/Motorcycle.cs` — мотоцикл: WASD в экранных осях, корпус доворачивается к движению;
   `Ride/MotorcycleRideVisual.cs` — вращение колёс по пройденному пути, крен, подвеска,
   фара, стоп-сигнал, снег из-под колеса;
   `Ride/RiderPose.cs` — процедурная поза наездника поверх клипа (общая для обоих байков);
+  `Ride/RiderCockpit.cs` — данные посадки с префаба байка (наклон, доля шеи, вынос
+  колена, точка таза), поэтому разница ховербайка и мотоцикла живёт в префабе;
   `Menu/MenuViewSwitch.cs` — пять видов главного меню в одной сцене (равнина, открытая
   площадка, ремонт, лаборатория, депо) с затемнением на переходе и авто-сменой по
   таймеру; `Menu/MenuCameraSweep.cs` — проезд камеры равнины, лаборатории и депо,
   `Menu/MenuCameraOrbit.cs` — облёт ремонта, `Menu/MenuRadarSweep.cs` — тарелка
   и луч мачты; `Menu/MenuRobotPose.cs` — процедурная поза робота меню (`Slump`,
   `Repair`, `Kneel`, `HoldLamp`, `Sit`) поверх клипа `Idle` с двухкостным IK к точке
-  хвата (ADR 0015).
+  хвата (ADR 0015);
+  `Menu/PauseMenuScreen.cs` — меню паузы игровой сцены: Esc замораживает время, отпускает
+  курсор и показывает `RESUME` / `SETTINGS` / `MAIN MENU`; настройки (музыка, детекция
+  ближайшего, детекция по прицелу) пишутся в `Core/GameSettings.cs`;
+  `Scan/ObjectScanner.cs` — сканирование: Q пускает одну волну (цели за её фронтом получают
+  контур, по земле расходится `Scan/ScanPulse.cs`), подписи держатся пару секунд и гаснут
+  сами; ближайшая цель и цель в области прицела подписываются автоматически (выбор
+  с гистерезисом — по близости попадания к перекрестию, а не по глубине); `Scan/ScanTarget.cs` — маркер и реестр целей
+  с измерением границ на кадр; `Scan/ScanMath.cs` — чистая математика (ближайшая цель,
+  сетка прицела, затухание); `Hud/PlayerHud.cs` — перекрестие, пул подписей со
+  закреплёнными слотами, две рамки (прицельная и ближайшая), `Q SCAN` / `SCANNING`,
+  счётчик FPS; `Hud/ScanLabelView.cs` — одна подпись из пула.
 - `FrostSpace.Editor` (`Assets/_Project/Editor/`): `RobotAssetPostprocessor` — импорт FBX
   роботов (имена клипов, loop, sRGB); `AnimalAssetPostprocessor` — импорт FBX животных
   (клипы `Idle`/`Move`, loop, sRGB); `LevelAssetPostprocessor` — импорт моделей уровня
@@ -47,8 +63,8 @@
   Источник геометрии — скрипты `Tools/Blender/level_*.py`; в сцене они расставлены
   вручную и далее правятся только в Unity (ADR 0005).
 - `FrostSpace.Tests.EditMode` (`Assets/_Project/Tests/EditMode/`) — проверки префабов и
-  клипов роботов и животных, математики выреза (`ScreenApertureTests`) и перехода
-  режимов камеры (`CameraModeTests`).
+  клипов роботов и животных, математики выреза (`ScreenApertureTests`), перехода
+  режимов камеры (`CameraModeTests`) и математики сканера (`ScanMathTests`).
 - **Префаб — визуал, логика — на сценовом актёре.** `R*_Model.prefab` — варианты
   FBX-модели с `Animator` и `R*.controller`, без `CharacterController` и ввода.
   `Player` (тег, CC, `RobotLocomotion`) и `NPC_R*` (кинематический CC, `NpcController`,
@@ -83,7 +99,7 @@
   `MenuTrainShed`, грузовой поезд `MenuFreightTrain` под `MenuTrainCycle`, платформа
   с ремонтниками) и проезд `MenuRide` (ледяная дорога: шесть полос
   `MenuRideSegment_A/B/C` под `MenuRideScroll` и фоновое поле `MenuRidePlain`,
-  гравимотик). Виды разнесены по Z шагом 300
+  гравимотик с наездником `R1_PolarMechanic` под `MenuRider`). Виды разнесены по Z шагом 300
   (`MenuOpen` 300, `MenuRepair` 600, `MenuStorage` 900, `MenuTrainDepot` 1200,
   `MenuRide` 1500), активен ровно один корень и одна камера; правую вертикальную
   карусель `01 STORAGE … 05 RIDE` строит `MenuViewCarousel` (её вызывает

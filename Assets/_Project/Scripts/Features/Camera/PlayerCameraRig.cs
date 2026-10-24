@@ -92,6 +92,7 @@ namespace FrostSpace.Features.View
         private Vector3 _aimPoint;
         private float _aimHitDistance;
         private bool _snapPose = true;
+        private bool _paused;
         private Transform _rideTarget;
 
         /// <summary>Текущий режим.</summary>
@@ -101,8 +102,31 @@ namespace FrostSpace.Features.View
         /// В третьем лице камера ведёт взгляд, а корпус идёт по WASD.</summary>
         public bool FacesCamera => Mode == CameraMode.FirstPerson;
 
+        /// <summary>Корень игрока: от него сканер считает дистанции.</summary>
+        public Transform Target => _target;
+
+        /// <summary>Игра на паузе: обзор и прицел заморожены, курсор свободен.</summary>
+        public bool IsPaused => _paused;
+
+        /// <summary>
+        /// Пауза замораживает камеру и отпускает курсор: в паузе игрок ходит по меню,
+        /// а не крутит обзор. Снятие паузы возвращает захват курсора — в игре перекрестие
+        /// всегда в центре экрана.
+        /// </summary>
+        public void SetPaused(bool paused)
+        {
+            if (_paused == paused)
+                return;
+
+            _paused = paused;
+            if (paused)
+                UnlockCursor();
+            else
+                LockCursor();
+        }
+
         /// <summary>Правая кнопка мыши удерживается: включаются эффекты выбранного модуля.</summary>
-        public bool IsAiming => Mode == CameraMode.ThirdPerson &&
+        public bool IsAiming => !_paused && Mode == CameraMode.ThirdPerson &&
                                 _aimAction != null && _aimAction.IsPressed();
 
         /// <summary>Рыскание камеры, градусы.</summary>
@@ -200,6 +224,11 @@ namespace FrostSpace.Features.View
         private void LateUpdate()
         {
             if (_target == null || _camera == null)
+                return;
+
+            // На паузе камера замирает в последней позе: время игры стоит, а обзор
+            // должен оставаться там, где игрок его оставил.
+            if (_paused)
                 return;
 
             UpdateLook();

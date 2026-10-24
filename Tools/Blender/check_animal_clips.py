@@ -60,8 +60,8 @@ SEAM_WARN = 0.30
 #: Подошва в контакте должна стоять ровно: наклон больше этого — брак.
 TILT_LIMIT = math.radians(5.0)
 
-#: Допуск на ход корня: путь за цикл против `clip_speed × длительность`.
-ROOT_TOLERANCE = 0.10
+#: Клипы животных in-place (ADR 0022): ход корня за цикл должен быть нулевым.
+IN_PLACE_TOLERANCE = 0.02
 
 #: Минимум жёстко привязанных (вес ≥ 0.99) вершин на кость стопы: броня стопы —
 #: коробка, у которой вершин заведомо больше.
@@ -370,15 +370,13 @@ def check(path: str, manifest: dict) -> bool:
             if travel is None:
                 print("WARN root motion: кости Root нет — клип in-place")
             else:
-                expected = source_speed * (end - start) / fps
-                ratio = travel / expected if expected > 1e-5 else 0.0
-                ok = abs(ratio - 1.0) <= ROOT_TOLERANCE
-                print("%s root motion: %.3f против %.3f (%.0f%%)" %
-                      ("OK  " if ok else "FAIL", travel, expected,
-                       ratio * 100.0))
+                # Клипы in-place: актёра двигает NpcController (ADR 0022).
+                ok = travel <= IN_PLACE_TOLERANCE
+                print("%s root motion: %.4f (in-place, порог %.3f)" %
+                      ("OK  " if ok else "FAIL", travel, IN_PLACE_TOLERANCE))
                 if not ok:
-                    failed.append("root motion %.3f против %.3f"
-                                  % (travel, expected))
+                    failed.append("root motion %.3f — клип должен быть in-place"
+                                  % travel)
 
     arm.animation_data.action = None
     if failed:

@@ -29,21 +29,27 @@ FrostSpace/
    │  │  ├─ Features/            # сборка FrostSpace.Features
    │  │  │  ├─ Boot/             # BootScreen — консоль загрузки сервисов на старте
    │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, CameraPose, InteriorZone, PlayerSilhouette,
-   │  │  │  │                    # PlayerLocalView, CameraOcclusionFader/Debris/Group, ScreenAperture,
-   │  │  │  │                    # ViewModule + ViewModuleSwitch (ПКМ-модули: первый/третий вид).
+   │  │  │  │                    # PlayerLocalView, CameraOcclusionFader/Debris/Group, ScreenAperture.
    │  │  │  │                    # Namespace папки — FrostSpace.Features.View (ADR 0010)
-   │  │  │  ├─ Hud/              # PlayerHud — карусель модулей, подписи, подсказки
+   │  │  │  ├─ Hud/              # PlayerHud (перекрестие, пул подписей, рамка цели, Q SCAN/SCANNING,
+   │  │  │  │                    # счётчик FPS), ScanLabelView (одна подпись из пула)
    │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
    │  │  │  ├─ Menu/             # MainMenuScreen, MenuViewSwitch (пять видов меню), MenuCameraOrbit,
    │  │  │  │                    # MenuCameraSweep (проезд равнины, лаборатории и депо), MenuRadarSweep,
-   │  │  │  │                    # MenuRobotPose (позы роботов меню), TechButtonFx, BeaconPulse
-   │  │  │  ├─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание)
+   │  │  │  │                    # MenuRobotPose (позы роботов меню), MenuRobotWalker (маршрут),
+   │  │  │  │                    # MenuRideScroll (прокрутка дороги RIDE), MenuRider (посадка наездника
+   │  │  │  │                    # в меню), PauseMenuScreen (Esc: пауза и настройки), TechButtonFx, BeaconPulse
+   │  │  │  ├─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание),
+   │  │  │  │                    # AnimationCulling (AlwaysAnimate и честные границы скинных мешей)
    │  │  │  ├─ Ride/             # Hoverbike, HoverbikeGlow, Motorcycle, MotorcycleRideVisual,
-   │  │  │  │                    # RiderPose (посадка верхом поверх клипа)
-   │  │  │  └─ Scan/             # ObjectScanner + ScanTarget (сканирование объектов)
+   │  │  │  │                    # RiderPose (посадка верхом поверх клипа), RiderCockpit
+   │  │  │  │                    # (данные посадки байка: наклон, шея, KneeOut, Seat Point)
+   │  │  │  └─ Scan/             # ObjectScanner (Q-сонар + ближайшая и прицельная детекция),
+   │  │  │                       # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
+   │  │  │                       # ScanMath (чистая математика)
    │  │  └─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │                          # перехода и единственный вызывающий SceneManager),
-   │  │                          # MusicManager (фоновая музыка); фазы и цвета — поля SceneController
+   │  │                          # MusicManager (фоновая музыка), GameSettings (музыка и каналы детекции)
    │  ├─ Editor/                 # сборка FrostSpace.Editor, только редактор
    │  │  ├─ RobotAssetPostprocessor.cs   # клипы, loop, sRGB при импорте FBX роботов
    │  │  ├─ AnimalAssetPostprocessor.cs  # клипы Idle/Move, loop, sRGB при импорте FBX животных
@@ -51,7 +57,7 @@ FrostSpace/
    │  │  ├─ BuildWebGL.cs                # сборка WebGL только из CLI (без меню — ADR 0005)
    │  │  └─ HoverbikeModelBuilder.cs     # сборка префаба Hoverbike_Model из FBX (ADR 0012)
    │  ├─ Tests/
-   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode: CameraModeTests, ModuleCarouselTests,
+   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode: CameraModeTests, ScanMathTests,
    │  │                          # RobotVisualPrefabTests, AnimalVisualPrefabTests, ScreenApertureTests
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller; RobotAnimals/<Species>/RA_<Species>.controller
@@ -127,8 +133,9 @@ FrostSpace/
 | Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `Game`): скорости, прыжок (буфер, coyote time, присед) |
 | Маршрут NPC и животных | вейпоинты в `NpcController` на `NPC_R*` и `AN_<Species>`; у `AN_Eagle`/`AN_Piranha` — `AirPatrolController` с высотой; точки — дочерние `WP_*` |
 | Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView` (ADR 0010, 0012) |
-| Модули камеры (ПКМ) | `ViewModuleSwitch` + `ViewModule` в `Features/Camera/`, карусель — `ModuleCarousel` в `ViewModule.cs`, показ — `PlayerHud` (`Features/Hud/`) |
-| Ховербайк | `Hoverbike` + `HoverbikeGlow` в `Features/Ride/`; префаб — `Content/Prefabs/Ride/Hoverbike_Model` (корень с `CharacterController`, дочерние `Visual`, `Seat`, `Cushion`, `ExitPoint`, `EngineGlow`); сборка — `Editor/HoverbikeModelBuilder.cs` (ADR 0012) |
+| Сканирование | `ObjectScanner` на `Main Camera` (Q-сонар, ближайшая и прицельная детекция) + `ScanTarget` на целях (реестр `ScanTarget.All`), кольцо — `ScanPulse`, математика — `ScanMath`, показ — `PlayerHud` + `ScanLabelView` (ADR 0020) |
+| Меню паузы и настройки | `PauseMenuScreen` на `GameFlow` (Esc): `RESUME` / `SETTINGS` / `MAIN MENU`; значения — `GameSettings` (`PlayerPrefs`: музыка, детекция ближайшего, детекция по прицелу) (ADR 0020) |
+| Ховербайк | `Hoverbike` + `HoverbikeGlow` + `RiderCockpit` в `Features/Ride/`; префаб — `Content/Prefabs/Ride/Hoverbike_Model` (корень с `CharacterController` и `RiderCockpit`, дочерние `Visual` с якорями `Seat`/`Seat Point`/`Grip L/R`/`Foot L/R`, `Cushion`, `ExitPoint`, `EngineGlow`); сборка — `Editor/HoverbikeModelBuilder.cs` (ADR 0012) |
 | Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
 | Виды главного меню | `MenuViewSwitch` на `MenuFlow` (массив видов: корень + камера + подпись), правая вертикальная карусель `01 STORAGE … 05 RIDE` — `MenuViewCarousel`, собирается `MainMenuScreen` (ADR 0018); открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013); склад, депо и проезд — `Tools/Blender/build_menu_storage.py` / `build_menu_train.py` / `build_menu_ride.py` через `build_all.py` (ADR 0017, 0018); цикл поезда — `MenuTrainCycle`, прокрутка местности — `MenuRideScroll`, ходьба роботов — `MenuRobotWalker` (носильщик R18 играет `CarryWalk`) |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |

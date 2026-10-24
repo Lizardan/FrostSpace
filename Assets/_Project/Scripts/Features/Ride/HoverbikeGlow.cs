@@ -13,12 +13,17 @@ namespace FrostSpace.Features.Ride
     ///
     /// Сила подушки задаётся через <see cref="MaterialPropertyBlock"/>: общий материал
     /// шейдера не мутируется, поэтому два байка в сцене пульсируют независимо.
+    /// Туда же уходят скорость и руль: два источника подушки расходятся на ходу,
+    /// а в повороте подушка изгибается вслед за корпусом.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(210)]
     public sealed class HoverbikeGlow : MonoBehaviour
     {
         private static readonly int StrengthId = Shader.PropertyToID("_Strength");
+        private static readonly int SpeedId = Shader.PropertyToID("_Speed");
+        private static readonly int SteerId = Shader.PropertyToID("_Steer");
+        private static readonly int AspectId = Shader.PropertyToID("_Aspect");
 
         [Header("Ссылки")]
         [Tooltip("Байк — источник скорости и поворота; пусто — компонент на этом же объекте")]
@@ -55,6 +60,7 @@ namespace FrostSpace.Features.Ride
 
         private MaterialPropertyBlock _block;
         private Vector3 _basePosition;
+        private float _cushionAspect = 2f;
         private float _roll;
         private float _pitch;
 
@@ -69,6 +75,15 @@ namespace FrostSpace.Features.Ride
                 var cushionTransform = transform.Find("Cushion");
                 if (cushionTransform != null)
                     _cushion = cushionTransform.GetComponent<Renderer>();
+            }
+
+            // Quad лежит в XY и повёрнут на 90° вокруг X: длина по днищу —
+            // локальная Y. Шейдеру нужен этот масштаб, чтобы кольца и два
+            // источника оставались вытянутыми вдоль байка, а не по кругу.
+            if (_cushion != null)
+            {
+                var scale = _cushion.transform.localScale;
+                _cushionAspect = Mathf.Max(0.1f, scale.y / Mathf.Max(0.01f, scale.x));
             }
 
             if (_visual != null)
@@ -107,6 +122,9 @@ namespace FrostSpace.Features.Ride
                 _block ??= new MaterialPropertyBlock();
                 _cushion.GetPropertyBlock(_block);
                 _block.SetFloat(StrengthId, strength);
+                _block.SetFloat(SpeedId, ride);
+                _block.SetFloat(SteerId, steer);
+                _block.SetFloat(AspectId, _cushionAspect);
                 _cushion.SetPropertyBlock(_block);
             }
 

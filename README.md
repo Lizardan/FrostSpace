@@ -1,8 +1,9 @@
 # FrostSpace
 
 Unity-проект на ранней стадии: есть играбельный вертикальный срез — снежный уровень
-`Game`, двадцать роботов и 13 робо-животных из Blender, локомоция игрока, главное меню
-с 3D-диорамой и sci-fi экран загрузки. Назначение игры, жанр и целевые
+`Game`, двадцать роботов и 13 робо-животных из Blender, локомоция игрока, сканирование
+на Q (сонар, подписи ближайшего объекта и цели в прицеле), пауза с настройками, главное
+меню с 3D-диорамой и sci-fi экран загрузки. Назначение игры, жанр и целевые
 платформы пока не зафиксированы — см. [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
 
 **Играбельная WebGL-сборка:** https://lizardan.github.io/FrostSpace/ — собирается и
@@ -16,7 +17,7 @@ Unity-проект на ранней стадии: есть играбельны
 | Сцены | `Boot` (build index 0) → `MainMenu` (1) → `Game` (2) |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model`, движение kinematic |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` |
-| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 41 EditMode-тест |
+| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 47 EditMode-тестов |
 
 ## С чего начать
 

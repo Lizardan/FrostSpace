@@ -11,6 +11,11 @@ namespace FrostSpace.Core
     /// Клип берётся из <c>Resources/Music/Music_FrostSpaceTheme</c>: путь, а не ссылка в
     /// сцене, из-за того, что объект создаётся кодом и не принадлежит ни одной сцене.
     /// Общая громкость по-прежнему задаётся <c>AudioListener.volume</c> в настройках меню.
+    ///
+    /// Выключение музыки — отдельный флаг <see cref="GameSettings.MusicEnabled"/>: он
+    /// глушит только этот источник (<c>AudioSource.mute</c>) и не трогает общую громкость,
+    /// поэтому эффекты и интерфейс остаются слышны. Менеджер подписан на изменения
+    /// настроек и применяет их сразу — без перезапуска сцены.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MusicManager : MonoBehaviour
@@ -75,6 +80,9 @@ namespace FrostSpace.Core
             _instance = this;
             DontDestroyOnLoad(gameObject);
 
+            // Подписка до первого звука: тумблер в меню паузы применяется сразу.
+            GameSettings.Changed += ApplySettings;
+
             // Сохранённая общая громкость применяется один раз и до старта трека. Если делать
             // это в меню, как раньше, музыка весь Boot играет на единице и «прыгает» вниз
             // ровно в момент, когда меню применит своё значение — это и слышно на переходе
@@ -96,8 +104,28 @@ namespace FrostSpace.Core
             _source.spatialBlend = 0f;
             _source.volume = _fadeInSeconds > 0f ? 0f : _volume;
             _fadeTime = _fadeInSeconds > 0f ? 0f : 1f;
+            ApplySettings();
             _source.Play();
         }
+
+        private void OnDestroy()
+        {
+            GameSettings.Changed -= ApplySettings;
+        }
+
+        /// <summary>
+        /// Глушит источник по сохранённой настройке. Отдельно от <see cref="Volume"/>:
+        /// mute не меняет громкость трека, поэтому выключение и включение музыки не
+        /// сбрасывает ползунок общей громкости.
+        /// </summary>
+        private void ApplySettings()
+        {
+            if (_source != null)
+                _source.mute = !GameSettings.MusicEnabled;
+        }
+
+        /// <summary>Музыка сейчас заглушена настройкой.</summary>
+        public bool Muted => _source != null ? _source.mute : !GameSettings.MusicEnabled;
 
         private void Update()
         {

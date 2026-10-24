@@ -154,6 +154,10 @@ namespace FrostSpace.Features.Locomotion
                 return;
             }
 
+            // Игрок в третьем лице часто уходит к краю кадра: без этого анимация
+            // замирает, а при возврате взгляда прыгает в текущую позу.
+            FrostSpace.Features.Npc.AnimationCulling.Apply(_animator);
+
             if (_camera == null && Camera.main != null)
                 _camera = Camera.main.transform;
 

@@ -100,8 +100,32 @@ namespace FrostSpace.Features.Menu
         private void Start()
         {
             _autoElapsed = 0f;
+            KeepAnimatorState();
             Apply(_variant);
             VariantChanged?.Invoke(_variant);
+        }
+
+        /// <summary>
+        /// Вид выключается целиком, а Animator по умолчанию сбрасывает клип на
+        /// включении: после возврата робот начинал idle с нуля и дёргался. Флаг
+        /// ставится один раз до первого переключения — дальше состояние клипа
+        /// и фаза движения переживают выключение вида.
+        /// </summary>
+        private void KeepAnimatorState()
+        {
+            if (_views == null)
+                return;
+
+            for (var i = 0; i < _views.Length; i++)
+            {
+                var root = _views[i] != null ? _views[i].Root : null;
+                if (root == null)
+                    continue;
+
+                var animators = root.GetComponentsInChildren<Animator>(true);
+                for (var j = 0; j < animators.Length; j++)
+                    animators[j].keepAnimatorStateOnDisable = true;
+            }
         }
 
         private void Update()

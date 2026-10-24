@@ -6,8 +6,10 @@
 //
 // Толщина контура задаётся в пикселях экрана, поэтому силуэт читается одинаково
 // и вблизи, и на дальней дистанции. Полоса скана идёт по мировому Y от нижней
-// границы объекта к верхней; границы и прогресс приходят глобальными параметрами
-// из ObjectScanner. Цвет — тот же циан, что у силуэта игрока и кромки выреза
+// границы объекта к верхней; границы и прогресс лежат в материале цели
+// (ObjectScanner держит по экземпляру материала на каждую цель), поэтому
+// несколько целей подсвечиваются одновременно без глобального состояния.
+// Цвет — тот же циан, что у силуэта игрока и кромки выреза
 // (STYLE.md, «цифровой слой»).
 Shader "FrostSpace/VFX/ScanHighlight"
 {
@@ -17,6 +19,8 @@ Shader "FrostSpace/VFX/ScanHighlight"
         _Strength("Strength", Range(0, 1)) = 0
         _RimPower("Rim Power", Range(1, 6)) = 2.0
         _OutlineWidth("Outline Width (px)", Float) = 2.6
+        // x — низ объекта по Y, y — верх, z — прогресс полосы 0..1.
+        _ScanBand("Scan Band", Vector) = (0, 1, 0, 0)
     }
 
     SubShader
@@ -54,6 +58,7 @@ Shader "FrostSpace/VFX/ScanHighlight"
                 half _Strength;
                 half _RimPower;
                 half _OutlineWidth;
+                float4 _ScanBand;
             CBUFFER_END
 
             struct Attributes
@@ -126,11 +131,11 @@ Shader "FrostSpace/VFX/ScanHighlight"
                 half _Strength;
                 half _RimPower;
                 half _OutlineWidth;
+                float4 _ScanBand;
             CBUFFER_END
 
-            // Глобальные параметры кадра (Shader.SetGlobalVector из ObjectScanner):
             // x — низ объекта по Y, y — верх, z — прогресс скана 0..1.
-            float4 _ScanBand;
+            // Параметры лежат в материале цели: у каждой цели своя полоса.
 
             struct Attributes
             {

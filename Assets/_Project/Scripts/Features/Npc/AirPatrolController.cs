@@ -51,6 +51,11 @@ namespace FrostSpace.Features.Npc
                 Debug.LogError("AirPatrolController: не назначен Animator визуальной модели", this);
                 enabled = false;
             }
+            else
+            {
+                // Без этого анимация замирает, когда актёр уходит за край кадра.
+                AnimationCulling.Apply(_animator);
+            }
 
             if (_waypoints != null && _waypoints.Length > 0)
             {

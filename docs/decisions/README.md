@@ -27,6 +27,10 @@
 | [0017](0017-single-asset-pipeline.md) | Единая точка входа пайплайна ассетов: `build_all.py` | Accepted |
 | [0018](0018-menu-showcase-carousel-and-ice-road.md) | Виды меню второго цикла: FBX-декорации STORAGE/DEPOT/RIDE, ледяная дорога, карусель справа, carry-клип | Accepted |
 | [0019](0019-symmetric-robot-hands.md) | Кисти роботов симметричны и одинаковы, предметов в руках нет; проверка `check_hand_symmetry.py` | Accepted |
+| [0020](0020-scan-ability-and-pause-menu.md) | Сканирование — способность на Q (сонар, реестр целей, пер-целевая подсветка), меню паузы с настройками | Accepted |
+| [0021](0021-actor-animation-culling.md) | Анимация актёров не отсекается: `AlwaysAnimate` и честные границы скинных мешей | Accepted |
+| [0022](0022-animal-clips-in-place.md) | Клипы животных in-place: актёра двигает контроллер, ход корня в клипе нулевой | Accepted |
+| [0023](0023-no-animal-root-motion.md) | Root motion у животных не включаем: ход на кости, а не на корне модели (`deltaPosition = 0`) | Accepted |
 
 ## Когда создавать ADR
 

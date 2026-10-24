@@ -52,6 +52,7 @@ namespace FrostSpace.Features.Menu
         private float _loopLength;
         private float _trailZ;
         private bool _ready;
+        private bool _capturedBike;
 
         private void OnEnable()
         {
@@ -59,10 +60,13 @@ namespace FrostSpace.Features.Menu
             if (!_ready)
                 return;
 
-            if (_bike != null)
+            // База байка снимается один раз: к моменту возврата на вид он уже
+            // покачивается, и повторный снимок сдвигал центр качания с каждым входом.
+            if (_bike != null && !_capturedBike)
             {
                 _bikeBase = _bike.localPosition;
                 _bikeRotation = _bike.localRotation;
+                _capturedBike = true;
             }
 
             Debug.Log(

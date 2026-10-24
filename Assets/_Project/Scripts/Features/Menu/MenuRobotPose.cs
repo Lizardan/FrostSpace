@@ -131,8 +131,11 @@ namespace FrostSpace.Features.Menu
             if (_modelRoot == null)
                 ResolveBones();
 
-            _captured = false;
-            _weight = 0f;
+            // Вид меню выключается целиком, и OnEnable приходит на каждый возврат.
+            // Снимок и вес позы сохраняются: иначе робот каждый раз заново входил
+            // в позу из клипа, и это читалось как рывок. Сброс — только в первый раз.
+            if (!_captured)
+                _weight = 0f;
         }
 
         /// <summary>

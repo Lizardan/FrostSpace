@@ -105,7 +105,12 @@ FBX-экспортёр конвертирует оси. Не «поправля�
   (кадры `Idle`/`Move`): Cow 149/40, Horse и Zebra 149/32, Llama и Sheep 149/26,
   Pig и Pug 149/35; Wolf 39/39, Cat 39/40, Dog 39/39, Eagle 39/29, Piranha 38/38,
   Spider 60/30 — как в источнике (Spider — 30 fps, остальные 24).
-- Клипы **несут root motion**: `move_loop` едет по −Y на `clip_speed × длительность`, `idle_loop` — на ноль. Ход запекается в кость `Root` (`animal_lib.bake_root_motion`) в мировых единицах, поэтому путь не зависит от масштаба арматуры. Замеры в чекере и скорость считаются **относительно `Root`**: с запечённым ходом стопа в мире стоит на месте. У `fly`/`swim` ход не печётся (Piranha, Eagle).
+- Клипы **in-place**: `bake_root_motion` создаёт кость `Root` и ключует её в нуле, поэтому
+  ход за цикл равен нулю, а актёра двигает `NpcController` (ADR 0022). Раньше ход
+  запекался в `Root` (`clip_speed × длительность`), но `applyRootMotion` в Unity выключен:
+  модель уезжала вперёд на длину шага и щёлкала назад на стыке цикла. Чекер
+  `check_animal_clips.py` проверяет именно in-place (ход ≤ 0.02 единицы файла), а скорость
+  стопы в манифесте — та, с которой клип играет на месте.
 - Масштаб нормируется по метрике манифеста: `height` (десять видов), `width` (Eagle —
   размах крыльев), `length` (Piranha — длина). `unity_scale` в манифесте — ориентир для
   Blender, а не масштаб префаба: фактический масштаб живёт на префабе и проверяется тестом.
@@ -154,11 +159,17 @@ FBX-экспортёр конвертирует оси. Не «поправля�
   PlayerHud и SceneController через TMP_Settings.defaultFontAsset. Шейдеры в
   этой папке — легаси TMP 3.x; в проекте используется только TMP_SDF-Mobile.shader,
   остальные удалены 2026-10-22 как неиспользуемые (TMP 5.x внутри com.unity.ugui 2.6.0).
-- Ховербайк — отдельный FBX того же пайплайна: `Tools/Blender/build_hoverbike.py` →
-  `Content/Models/Level/Hoverbike.fbx` (820 тр., габарит после импорта 1.04 × 3.01 × 0.73 м).
-  Префаб `Prefabs/Ride/Hoverbike_Model` (корпус, `Visual`, `Cushion`)
-  (обёртка над FBX) собираются меню `FrostSpace → Ride`; подушка и игровые
-  компоненты — на корне префаба, не в FBX (ADR 0012).
+- Ховербайк — отдельный FBX того же пайплайна: `Tools/Blender/build_hoverbike.py`
+  (дизайн — `hoverbike_parts.py`) → `Content/Models/Level/Hoverbike.fbx` (3 196 тр.,
+  габарит после импорта 1.12 × 2.47 × 0.83 м). Префаб `Prefabs/Ride/Hoverbike_Model`
+  (корпус, `Visual`, `Cushion`) собирается меню `FrostSpace → Ride`; подушка и игровые
+  компоненты — на корне префаба, не в FBX (ADR 0012). Якоря посадки `Seat`,
+  `Seat Point`, `Grip L/R`, `Foot L/R` — **под `Visual`**: модель качается, наездник
+  обязан качаться вместе с ней. Различия посадки задаёт `RiderCockpit` на корне
+  (наклон, шея, `KneeOut`, `Seat Point`), а не ветки по типу байка. Подушка — Quad
+  под днищем, шейдер `Content/VFX/Shaders/HoverCushion.shader`: два источника вдоль
+  днища, скорость их раздвигает, руль изгибает; `_Aspect` переводит UV в пропорции
+  вытянутого днища.
 - Мотоцикл — там же: `Tools/Blender/build_motorcycle.py` (дизайн
   `motorcycle_parts.py`) → `Content/Models/Level/Motorcycle.fbx` (2 624 тр., габарит
   0.76 × 1.13 × 2.55 м). В FBX три узла: `MotorcycleBody` и два колеса

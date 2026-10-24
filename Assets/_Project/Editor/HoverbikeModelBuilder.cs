@@ -26,7 +26,24 @@ namespace FrostSpace.Editor
         private const string CushionShaderName = "FrostSpace/VFX/HoverCushion";
 
         /// <summary>Высота посадки от корня модели, м: верх седла в Blender-модели.</summary>
-        private const float SeatHeight = 0.92f;
+        private const float SeatHeight = 0.88f;
+
+        /// <summary>Середина седла по продольной оси, м (Blender Y = 0.35 → Unity −0.35).</summary>
+        private const float SeatY = -0.35f;
+
+        /// <summary>Наклон корпуса наездника: на ховербайке он лежит на баке.</summary>
+        private const float RiderLean = 42f;
+
+        /// <summary>Доля наклона, которую забирает шея, чтобы взгляд остался на дороге.</summary>
+        private const float RiderNeck = 0.45f;
+
+        /// <summary>
+        /// Боковой вынос колена: на ховербайке колени поджаты к корпусу,
+        /// иначе ноги расходятся почти на ширину выносных поплавков.
+        /// При −0.15 колено всё ещё выходило наружу ступни (0.315 против 0.24),
+        /// при −0.30 оно встаёт на 0.218 — чуть внутрь подножки.
+        /// </summary>
+        private const float RiderKneeOut = -0.30f;
 
         [MenuItem("FrostSpace/Ride/Build Hoverbike Model")]
         public static void BuildFromFbx()
@@ -72,16 +89,34 @@ namespace FrostSpace.Editor
                 visual.localRotation = Quaternion.identity;
                 visual.localScale = Vector3.one;
 
+                // Плоскость подушки лежит в XY и повёрнута на 90° вокруг X:
+                // длина по днищу — это локальная Y, а не Z. Масштаб по Z
+                // растягивал пустоту, и подушка читалась круглой точкой.
                 var cushion = Part(root.transform, "Cushion", PrimitiveType.Quad,
-                    new Vector3(0f, 0.03f, 0f), new Vector3(1.25f, 1f, 2.15f),
+                    new Vector3(0f, 0.04f, 0f), new Vector3(1.15f, 2.30f, 1f),
                     new Vector3(90f, 0f, 0f), cushionMaterial);
                 cushion.GetComponent<MeshRenderer>().shadowCastingMode =
                     UnityEngine.Rendering.ShadowCastingMode.Off;
                 cushion.GetComponent<MeshRenderer>().receiveShadows = false;
 
+                // Якоря позы — внутри Visual, а не на корне: модель качается
+                // и кренится, и наездник обязан двигаться вместе с ней.
                 var seat = new GameObject("Seat").transform;
-                seat.SetParent(root.transform, false);
-                seat.localPosition = new Vector3(0f, SeatHeight, -0.30f);
+                seat.SetParent(visual, false);
+                seat.localPosition = new Vector3(0f, SeatHeight, SeatY);
+
+                // Таз наездника: чуть выше подушки и по её середине. Отдельный якорь,
+                // а не расчёт от сиденья, — чтобы посадку задавал префаб, а не код.
+                var seatPoint = new GameObject("Seat Point").transform;
+                seatPoint.SetParent(visual, false);
+                seatPoint.localPosition = new Vector3(0f, SeatHeight + 0.08f, SeatY);
+
+                // Точки хвата и подножек: Blender (x, y, z) → Unity (x, z, −y).
+                // Рукоятки на высоте 1.05, ступни — на задних подножках за седлом.
+                Anchor(visual, "Grip L", new Vector3(-0.33f, 1.05f, 0.47f));
+                Anchor(visual, "Grip R", new Vector3(0.33f, 1.05f, 0.47f));
+                Anchor(visual, "Foot L", new Vector3(-0.24f, 0.66f, -0.55f));
+                Anchor(visual, "Foot R", new Vector3(0.24f, 0.66f, -0.55f));
 
                 var exitPoint = new GameObject("ExitPoint").transform;
                 exitPoint.SetParent(root.transform, false);
@@ -99,6 +134,7 @@ namespace FrostSpace.Editor
                 var bike = root.AddComponent<Hoverbike>();
                 var glow = root.AddComponent<HoverbikeGlow>();
                 var scan = root.AddComponent<ScanTarget>();
+                var cockpit = root.AddComponent<RiderCockpit>();
 
                 SetReference(glow, "_bike", bike);
                 SetReference(glow, "_visual", visual);
@@ -106,6 +142,10 @@ namespace FrostSpace.Editor
                 SetReference(glow, "_engineLight", lamp);
                 SetReference(bike, "_seat", seat);
                 SetReference(bike, "_exit", exitPoint);
+                SetReference(cockpit, "_seatPoint", seatPoint);
+                SetFloat(cockpit, "_leanAngle", RiderLean);
+                SetFloat(cockpit, "_neckShare", RiderNeck);
+                SetFloat(cockpit, "_kneeOut", RiderKneeOut);
                 SetString(scan, "_displayName", "HOVERBIKE");
                 SetString(scan, "_category", "VEHICLE");
 
@@ -161,6 +201,29 @@ namespace FrostSpace.Editor
         {
             if (!AssetDatabase.IsValidFolder($"{parent}/{leaf}"))
                 AssetDatabase.CreateFolder(parent, leaf);
+        }
+
+        /// <summary>Пустой якорь в локальных координатах корня: точка позы наездника.</summary>
+        private static Transform Anchor(Transform parent, string name, Vector3 position)
+        {
+            var anchor = new GameObject(name).transform;
+            anchor.SetParent(parent, false);
+            anchor.localPosition = position;
+            return anchor;
+        }
+
+        private static void SetFloat(Object target, string field, float value)
+        {
+            var serialized = new SerializedObject(target);
+            var property = serialized.FindProperty(field);
+            if (property == null)
+            {
+                Debug.LogError($"HoverbikeModelBuilder: нет поля {field} у {target.name}");
+                return;
+            }
+
+            property.floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void SetReference(Object target, string field, Object value)

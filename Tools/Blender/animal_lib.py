@@ -398,6 +398,33 @@ def prepare_clips(arm, meta) -> dict:
     return clips
 
 
+def bake_mesh_transform(obj):
+    """Переносит трансформ меша в вершины перед экспортом.
+
+    Тело приходит из GLB со своим трансформом узла, броня строится в системе
+    арматуры. В Blender обе позы дают правильную картинку, но в Unity bind-матрицы
+    считаются от разных трансформов: две оболочки рисуются со сдвигом ~20 см, тело
+    вылезает из брони. После обнуления трансформа bind-позы обеих оболочек
+    считаются от одной системы координат.
+    """
+    if obj is None:
+        return
+
+    world = obj.matrix_world.copy()
+    if obj.parent is not None:
+        obj.parent = None
+        obj.matrix_world = world
+        bpy.context.view_layer.update()
+
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bpy.context.view_layer.update()
+    print("BAKE_TRANSFORM %s was=%s" % (
+        obj.name, tuple(round(v, 3) for v in world.translation)))
+
+
 def normalize_size(arm, obj, target: float, metric: str) -> float:
     """Приводит меш и скелет к целевому габариту и обнуляет их масштабы.
 
@@ -770,12 +797,16 @@ def _ensure_root_bone(arm):
     return arm.pose.bones["Root"]
 
 
-def bake_root_motion(arm, meta) -> float:
+def bake_root_motion(arm, meta, in_place: bool = False) -> float:
     """Печёт ход корня в `move_loop`: путь = clip_speed × длительность.
 
     После этого клип не in-place: стопа стоит на полу, а корень едет вперёд
-    (−Y — та же ось, по которой меряется скорость стопы). Unity снимает его
-    через root motion, поэтому шаг не проскальзывает. В `idle_loop` ход нулевой.
+    (−Y — та же ось, по которой меряется скорость стопы).
+
+    `in_place=True` оставляет клип на месте: корень ключуется в нуле. Так
+    собираются животные — их двигает `NpcController`, а `applyRootMotion`
+    в Unity выключен, поэтому запечённый ход никуда не снимался и модель
+    уезжала вперёд на длину шага и щёлкала назад на стыке цикла.
     """
     cfg = meta["cfg"]
     if cfg["mode"] in ("fly", "swim"):
@@ -807,7 +838,7 @@ def bake_root_motion(arm, meta) -> float:
         start = int(info.get("start", round(action.frame_range[0])))
         end = int(info.get("end", round(action.frame_range[1])))
         _use_action(arm, action)
-        distance = 0.0 if key == "idle" else speed * (end - start) / fps
+        distance = 0.0 if key == "idle" or in_place else speed * (end - start) / fps
         for frame, value in ((start, 0.0), (end, distance)):
             bpy.context.scene.frame_set(frame)
             target = Matrix.Translation(Vector((0.0, -value, 0.0))) @ base_world
