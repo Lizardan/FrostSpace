@@ -35,7 +35,7 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |
 | Play Mode | domain reload **выключен**, scene reload включён; Play тикает только при фокусе окна (`runInBackground` не заменяет) |
 | Сцены | Поток `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `Game` (2, игровой уровень); переходы — только через `Core/SceneController.cs` (ADR 0011) |
-| Код | `Core/` (3 файла), `Features/` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `Editor/` (5 файлов: 3 постпроцессора FBX + сборка WebGL + сборщик ховербайка), `Tests/EditMode/` (5 файлов, 47 тестов); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
+| Код | `Core/` (3 файла), `Features/` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `Editor/` (6 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка), `Tests/EditMode/` (6 файлов, 52 теста); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
 | Unity MCP | пакет `com.coplaydev.unity-mcp`, порт `127.0.0.1:6400` |
 | Blender | **5.2.3 LTS**, аддон `blender_mcp` (протокол 14), порт `9876` (только GUI) |
 | Исходники ассетов | `AssetSource/` — вне git, Unity их не видит |

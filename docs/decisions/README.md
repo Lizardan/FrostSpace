@@ -31,6 +31,7 @@
 | [0021](0021-actor-animation-culling.md) | Анимация актёров не отсекается: `AlwaysAnimate` и честные границы скинных мешей | Accepted |
 | [0022](0022-animal-clips-in-place.md) | Клипы животных in-place: актёра двигает контроллер, ход корня в клипе нулевой | Accepted |
 | [0023](0023-no-animal-root-motion.md) | Root motion у животных не включаем: ход на кости, а не на корне модели (`deltaPosition = 0`) | Accepted |
+| [0024](0024-mech-walkers.md) | Ездовые ходуны (4): наш корпус на риге пака, авторская походка `author_gait`, кабина в груди, сиденье за костью `Chest`, облёт камерой | Accepted |
 
 ## Когда создавать ADR
 

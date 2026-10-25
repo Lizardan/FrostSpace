@@ -1,4 +1,5 @@
 using System;
+using FrostSpace.Features.Ride;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,8 +15,11 @@ namespace FrostSpace.Features.View
     /// включает эффект выбранного модуля (просвет или сканер).</item>
     /// <item><b>FirstPerson</b> — внутри <see cref="InteriorZone"/>: камера встаёт в голову
     /// робота, WASD работает стрейфом.</item>
-    /// <item><b>Ride</b> — пока игрок за рулём транспорта (ховербайк или мотоцикл):
+    /// <item><b>Ride</b> — пока игрок за рулём байка (ховербайк или мотоцикл):
     /// камера сверху над корпусом, мышь обзор не крутит, курс вида фиксирован.</item>
+    /// <item><b>RideOrbit</b> — пока игрок за рулём ходуна: камера облетает корпус
+    /// мышью, как в третьем лице, но по радиусу и высоте из
+    /// <see cref="RideCameraProfile"/>.</item>
     /// </list>
     ///
     /// Поза считается аналитически каждый кадр, а смена режима запоминает текущую позу и
@@ -94,6 +98,7 @@ namespace FrostSpace.Features.View
         private bool _snapPose = true;
         private bool _paused;
         private Transform _rideTarget;
+        private RideCameraProfile _rideProfile;
 
         /// <summary>Текущий режим.</summary>
         public CameraMode Mode { get; private set; } = CameraMode.ThirdPerson;
@@ -152,6 +157,9 @@ namespace FrostSpace.Features.View
         /// <summary>Объект, вокруг которого строится вид сверху (ховербайк, мотоцикл).</summary>
         public Transform RideTarget => _rideTarget;
 
+        /// <summary>Профиль облёта: не пусто — транспорт смотрит режимом <see cref="CameraMode.RideOrbit"/>.</summary>
+        public RideCameraProfile RideProfile => _rideProfile;
+
         /// <summary>
         /// Курс, в котором смотрит вид сверху. По нему байк читает WASD: W — вверх
         /// по экрану, A — влево, S — вниз, D — вправо.
@@ -170,12 +178,24 @@ namespace FrostSpace.Features.View
         public void SetRideTarget(Transform rideTarget)
         {
             _rideTarget = rideTarget;
+            _rideProfile = null;
+        }
+
+        /// <summary>
+        /// Посадка на крупный транспорт: камера облетает его мышью по профилю.
+        /// Профиль необязателен — без него остаётся вид сверху.
+        /// </summary>
+        public void SetRideTarget(Transform rideTarget, RideCameraProfile profile)
+        {
+            _rideTarget = rideTarget;
+            _rideProfile = profile;
         }
 
         /// <summary>Сход с транспорта: камера возвращается в третий вид.</summary>
         public void ClearRideTarget()
         {
             _rideTarget = null;
+            _rideProfile = null;
         }
 
         private void Awake()
@@ -260,7 +280,10 @@ namespace FrostSpace.Features.View
             UpdateAim();
         }
 
-        /// <summary>Мышь ведёт обзор в третьем и первом лице; на транспорте обзор ведёт сам транспорт.</summary>
+        /// <summary>
+        /// Мышь ведёт обзор в третьем и первом лице и на облёте ходуна; в виде
+        /// сверху над байком обзор ведёт сам транспорт.
+        /// </summary>
         private void UpdateLook()
         {
             if (Mode == CameraMode.Ride || _lookAction == null)
@@ -272,7 +295,12 @@ namespace FrostSpace.Features.View
 
             // Дельта указателя приходит за кадр, поэтому множитель без deltaTime.
             _yaw += look.x * _sensitivity;
-            _pitch = Mathf.Clamp(_pitch - look.y * _sensitivity, _minPitch, _maxPitch);
+
+            // Пределы облёта задаёт профиль транспорта: у ходуна камера крупнее,
+            // и общие пределы третьего лица уводили бы её в землю.
+            var minPitch = _rideProfile != null ? _rideProfile.MinPitch : _minPitch;
+            var maxPitch = _rideProfile != null ? _rideProfile.MaxPitch : _maxPitch;
+            _pitch = Mathf.Clamp(_pitch - look.y * _sensitivity, minPitch, maxPitch);
         }
 
         private void UpdateMode()
@@ -286,7 +314,7 @@ namespace FrostSpace.Features.View
 
             CameraMode next;
             if (_rideTarget != null)
-                next = CameraMode.Ride;
+                next = _rideProfile != null ? CameraMode.RideOrbit : CameraMode.Ride;
             else if (inside)
                 next = CameraMode.FirstPerson;
             else
@@ -309,6 +337,14 @@ namespace FrostSpace.Features.View
                 _pitch = _startPitch;
             }
 
+            // Облёт начинается из-за спины транспорта: игрок садится и сразу видит,
+            // куда ходун стоит, а не случайный бок.
+            if (next == CameraMode.RideOrbit && _rideTarget != null)
+            {
+                _yaw = _rideTarget.eulerAngles.y;
+                _pitch = _rideProfile != null ? _rideProfile.StartPitch : _startPitch;
+            }
+
             LockCursor();
 
             Debug.Log($"[PlayerCameraRig] режим {previous} → {next}", this);
@@ -322,6 +358,8 @@ namespace FrostSpace.Features.View
                     return FirstPersonPose();
                 case CameraMode.Ride:
                     return RidePose();
+                case CameraMode.RideOrbit:
+                    return OrbitPose();
                 default:
                     return ThirdPersonPose();
             }
@@ -357,6 +395,24 @@ namespace FrostSpace.Features.View
             var offset = flat * new Vector3(0f, _rideHeight, -_rideDistance);
             var position = pivot + offset * Correction(offset, pivot);
             return new CameraPose(position, Quaternion.Euler(_ridePitch, _rideViewYaw, 0f));
+        }
+
+        /// <summary>
+        /// Облёт ходуна: камера висит на радиусе профиля от точки в корпусе и смотрит
+        /// в неё, а мышь ведёт рыскание и тангаж. Сферокаст не даёт камере заехать
+        /// в дерево или стену — на радиусе 9 м это случается у каждого второго дерева.
+        /// </summary>
+        private CameraPose OrbitPose()
+        {
+            var profile = _rideProfile;
+            var lookHeight = profile != null ? profile.LookHeight : 1.9f;
+            var distance = profile != null ? profile.Distance : 9f;
+
+            var pivot = _rideTarget.position + Vector3.up * lookHeight;
+            var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+            var offset = rotation * new Vector3(0f, 0f, -distance);
+            var position = pivot + offset * Correction(offset, pivot);
+            return new CameraPose(position, rotation);
         }
 
         /// <summary>

@@ -89,6 +89,14 @@ PIPELINE: dict[str, dict] = {
         # скорость стопы против animal_manifest.json.
         "checks": [_step("check_animal_clips.py", "file")],
     },
+    # Ездовые ходуны на ригах Ultimate Space Kit: корпус наш, риг и клипы пака.
+    "mechs": {
+        "script": "build_mechs.py",
+        "outputs": [MODELS + "/Mechs/ME_*.fbx"],
+        "previews": [_step("render_mech_previews.py", "file",
+                           ["--out", PREVIEWS + "/Mechs"])],
+        "checks": [_step("check_mech_clips.py", "file")],
+    },
     "level": {
         "script": "build_level.py",
         "outputs": [

@@ -259,7 +259,7 @@ namespace FrostSpace.Features.Ride
             }
 
             // Игрок уже за рулём другого транспорта: второй его не перехватывает.
-            if (s_mounted != null || Hoverbike.SeatTaken)
+            if (s_mounted != null || Hoverbike.SeatTaken || Mech.SeatTaken)
                 return;
 
             if (Vector3.Distance(_rider.position, transform.position) > _mountRadius)
@@ -287,8 +287,11 @@ namespace FrostSpace.Features.Ride
         /// <summary>Сажает игрока: ходьба выключается, камера уходит в вид сверху.</summary>
         public void Mount()
         {
-            if (_rider == null || _mounted || s_mounted != null || Hoverbike.SeatTaken)
+            if (_rider == null || _mounted || s_mounted != null ||
+                Hoverbike.SeatTaken || Mech.SeatTaken)
+            {
                 return;
+            }
 
             _mounted = true;
             s_mounted = this;

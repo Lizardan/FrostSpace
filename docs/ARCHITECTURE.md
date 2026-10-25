@@ -12,8 +12,8 @@
   `Locomotion/PlayerAimPose.cs` — поворот шеи и головы к прицелу (рука и корпус остаются
   за Animator; порядок выполнения 200),
   `Locomotion/LocomotionDiagnostics.cs` — стенд замера (`PROBE`) в Play Mode,
-  `Camera/PlayerCameraRig.cs` — единственный владелец `Main Camera`: три режима
-  (`ThirdPerson`/`FirstPerson`/`Ride`), блендинг поз, mouse-look, курсор, отвод от стен;
+  `Camera/PlayerCameraRig.cs` — единственный владелец `Main Camera`: четыре режима
+  (`ThirdPerson`/`FirstPerson`/`Ride`/`RideOrbit`), блендинг поз, mouse-look, курсор, отвод от стен;
   `Camera/CameraMode.cs` — `enum CameraMode`, `CameraPose` и чистая `ViewBlend`;
   `Camera/InteriorZone.cs` — объём интерьера на `BoxCollider`-триггере;
   `Camera/PlayerSilhouette.cs` — x-ray силуэт локального игрока (`ZTest Greater`);
@@ -35,6 +35,13 @@
   `Ride/RiderPose.cs` — процедурная поза наездника поверх клипа (общая для обоих байков);
   `Ride/RiderCockpit.cs` — данные посадки с префаба байка (наклон, доля шеи, вынос
   колена, точка таза), поэтому разница ховербайка и мотоцикла живёт в префабе;
+  `Ride/Mech.cs` — ездовой двуногий ходун: посадка по E в кабину в груди, WASD от курса
+  камеры, шаг и бег, скорость клипа по фактической (ADR 0024);
+  `Ride/MechSeat.cs` — посадочная точка, которая каждый кадр встаёт в точку кости
+  `Chest`/`Torso`: корпус ходуна качается на шаге, а кость как родитель дала бы
+  наезднику масштаб арматуры 100;
+  `Ride/RideCameraProfile.cs` — радиус, высота и пределы тангажа облёта; есть профиль —
+  транспорт смотрит `RideOrbit`, нет — вид сверху `Ride`;
   `Menu/MenuViewSwitch.cs` — пять видов главного меню в одной сцене (равнина, открытая
   площадка, ремонт, лаборатория, депо) с затемнением на переходе и авто-сменой по
   таймеру; `Menu/MenuCameraSweep.cs` — проезд камеры равнины, лаборатории и депо,
@@ -55,7 +62,8 @@
   счётчик FPS; `Hud/ScanLabelView.cs` — одна подпись из пула.
 - `FrostSpace.Editor` (`Assets/_Project/Editor/`): `RobotAssetPostprocessor` — импорт FBX
   роботов (имена клипов, loop, sRGB); `AnimalAssetPostprocessor` — импорт FBX животных
-  (клипы `Idle`/`Move`, loop, sRGB); `LevelAssetPostprocessor` — импорт моделей уровня
+  (клипы `Idle`/`Move`, loop, sRGB); `MechAssetPostprocessor` — импорт FBX ходунов
+  (клипы `Idle`/`Walk`/`Run`, loop, sRGB); `LevelAssetPostprocessor` — импорт моделей уровня
   (плоские нормали, sRGB→linear, палитра `Level_*`). Меню-сборки уровня и префабов удалены
   намеренно (ADR 0005): контент не пересобирается скриптом.
 - **Уровень — набор моделей Blender**: 19 статических FBX в `Content/Models/Level/`
@@ -63,7 +71,8 @@
   Источник геометрии — скрипты `Tools/Blender/level_*.py`; в сцене они расставлены
   вручную и далее правятся только в Unity (ADR 0005).
 - `FrostSpace.Tests.EditMode` (`Assets/_Project/Tests/EditMode/`) — проверки префабов и
-  клипов роботов и животных, математики выреза (`ScreenApertureTests`), перехода
+  клипов роботов, животных и ходунов (`MechVisualPrefabTests`: якоря кабины против
+  манифеста), математики выреза (`ScreenApertureTests`), перехода
   режимов камеры (`CameraModeTests`) и математики сканера (`ScanMathTests`).
 - **Префаб — визуал, логика — на сценовом актёре.** `R*_Model.prefab` — варианты
   FBX-модели с `Animator` и `R*.controller`, без `CharacterController` и ввода.

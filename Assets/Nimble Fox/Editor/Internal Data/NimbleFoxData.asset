@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1841138079, guid: 7861f916a74620a329608f7ad05286eb, type: 3}
+  m_Name: NimbleFoxData
+  m_EditorClassIdentifier: NimbleFox.dll::NimbleFox.Database.SerializedData
+  _credentialStorageVersion: 1
+  _openData:
+    FloatingTasks: []
+    LoadingActions: []
+    PendingModelDownloads:
+      list: []
+    ClientID: d5bdfb32-ac5e-4896-b1fa-de30f0765098
+    SessionID: 
+    LastAcknowledgedClientVersion: 1.0.1
+    Tickets: []
+    UIState:
+      ScrollPosition: 0
+      ChatMode: 0
+      ChatViewWidth: 100
+      NodeViewZoomLevel: 1
+    Settings:
+      ProjectDescription: 
+      AllowScriptAccess: 1
+      GenerateSprites: 1
+      SpritePerspective: 0
+      ConfirmUndoApply: 1
+      SettingsHaveBeenViewed: 0
+    ProjectSourceOfTruth:
+      ProjectNodeMap:
+        Nodes:
+          list: []
+  _ticketSceneStates: []
+  references:
+    version: 2
+    RefIds: []

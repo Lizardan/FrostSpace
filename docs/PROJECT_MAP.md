@@ -43,7 +43,9 @@ FrostSpace/
    │  │  │  │                    # AnimationCulling (AlwaysAnimate и честные границы скинных мешей)
    │  │  │  ├─ Ride/             # Hoverbike, HoverbikeGlow, Motorcycle, MotorcycleRideVisual,
    │  │  │  │                    # RiderPose (посадка верхом поверх клипа), RiderCockpit
-   │  │  │  │                    # (данные посадки байка: наклон, шея, KneeOut, Seat Point)
+   │  │  │  │                    # (данные посадки байка: наклон, шея, KneeOut, Seat Point),
+   │  │  │  │                    # Mech (ездовый ходун), MechSeat (сиденье едет за Chest),
+   │  │  │  │                    # RideCameraProfile (радиус и пределы облёта)
    │  │  │  └─ Scan/             # ObjectScanner (Q-сонар + ближайшая и прицельная детекция),
    │  │  │                       # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
    │  │  │                       # ScanMath (чистая математика)
@@ -53,22 +55,27 @@ FrostSpace/
    │  ├─ Editor/                 # сборка FrostSpace.Editor, только редактор
    │  │  ├─ RobotAssetPostprocessor.cs   # клипы, loop, sRGB при импорте FBX роботов
    │  │  ├─ AnimalAssetPostprocessor.cs  # клипы Idle/Move, loop, sRGB при импорте FBX животных
+   │  │  ├─ MechAssetPostprocessor.cs    # клипы Idle/Walk/Run, loop, sRGB при импорте ходунов
    │  │  ├─ LevelAssetPostprocessor.cs   # нормали, sRGB и палитра Level_* для уровня
    │  │  ├─ BuildWebGL.cs                # сборка WebGL только из CLI (без меню — ADR 0005)
    │  │  └─ HoverbikeModelBuilder.cs     # сборка префаба Hoverbike_Model из FBX (ADR 0012)
    │  ├─ Tests/
    │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode: CameraModeTests, ScanMathTests,
-   │  │                          # RobotVisualPrefabTests, AnimalVisualPrefabTests, ScreenApertureTests
+   │  │                          # RobotVisualPrefabTests, AnimalVisualPrefabTests,
+   │  │                          # MechVisualPrefabTests, ScreenApertureTests
    │  └─ Content/
-   │     ├─ Animation/Controllers/  # R*.controller; RobotAnimals/<Species>/RA_<Species>.controller
+   │     ├─ Animation/Controllers/  # R*.controller; ME_*.controller (ходуны);
+   │     │                          # RobotAnimals/<Species>/RA_<Species>.controller
    │     ├─ Models/Robots/          # R*.fbx (20)
    │     ├─ Models/RobotAnimals/    # <Species>/RA_<Species>.fbx + SOURCE.md (происхождение ригов)
+   │     ├─ Models/Mechs/           # ME_*Walker.fbx (4) — наш корпус на ригах Ultimate Space Kit
    │     ├─ Models/Level/           # FBX уровня: рельеф, дом, интерьер, деревья, пропы
    │     ├─ Models/Menu/            # ShipWreck_Mesh.asset — процедурный меш диорамы меню
    │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал (20)
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал (13)
    │     ├─ Prefabs/Ride/           # Hoverbike_Model (корпус, Visual, Cushion),
-   │     │                          # Motorcycle_Model (FBX + контроллер, эффекты, свет)
+   │     │                          # Motorcycle_Model (FBX + контроллер, эффекты, свет),
+   │     │                          # ME_*_Model (ходун целиком: модель, Mech, кабина)
    │     ├─ Materials/Level/        # материалы уровня Level_*
    │     ├─ Materials/Menu/         # материалы диорамы меню
    │     ├─ Materials/VFX/          # материалы эффектов
@@ -137,6 +144,7 @@ FrostSpace/
 | Меню паузы и настройки | `PauseMenuScreen` на `GameFlow` (Esc): `RESUME` / `SETTINGS` / `MAIN MENU`; значения — `GameSettings` (`PlayerPrefs`: музыка, детекция ближайшего, детекция по прицелу) (ADR 0020) |
 | Ховербайк | `Hoverbike` + `HoverbikeGlow` + `RiderCockpit` в `Features/Ride/`; префаб — `Content/Prefabs/Ride/Hoverbike_Model` (корень с `CharacterController` и `RiderCockpit`, дочерние `Visual` с якорями `Seat`/`Seat Point`/`Grip L/R`/`Foot L/R`, `Cushion`, `ExitPoint`, `EngineGlow`); сборка — `Editor/HoverbikeModelBuilder.cs` (ADR 0012) |
 | Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
+| Ездовые ходуны | `Mech` + `MechSeat` + `RideCameraProfile` в `Features/Ride/`; префабы — `Content/Prefabs/Ride/ME_*_Model` (корень — сразу транспорт: `Animator`, `CharacterController`, `Mech`, `ScanTarget` категории `WALKER`, `RiderCockpit`; дочерние `Seat` с якорями `Seat Point`/`Grip L/R`/`Foot L/R` и `ExitPoint`); клипы — `Content/Animation/Controllers/ME_*.controller`; сборка — `Tools/Blender/build_mechs.py`, регистр — `Tools/Blender/mech_manifest.json` (ADR 0024) |
 | Виды главного меню | `MenuViewSwitch` на `MenuFlow` (массив видов: корень + камера + подпись), правая вертикальная карусель `01 STORAGE … 05 RIDE` — `MenuViewCarousel`, собирается `MainMenuScreen` (ADR 0018); открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013); склад, депо и проезд — `Tools/Blender/build_menu_storage.py` / `build_menu_train.py` / `build_menu_ride.py` через `build_all.py` (ADR 0017, 0018); цикл поезда — `MenuTrainCycle`, прокрутка местности — `MenuRideScroll`, ходьба роботов — `MenuRobotWalker` (носильщик R18 играет `CarryWalk`) |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |

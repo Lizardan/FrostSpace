@@ -232,7 +232,7 @@ namespace FrostSpace.Features.Ride
             // Игрок уже сидит на другом байке: второй не перехватывает управление.
             if (s_mountedBike != null && s_mountedBike != this)
                 return;
-            if (Motorcycle.SeatTaken)
+            if (Motorcycle.SeatTaken || Mech.SeatTaken)
                 return;
 
             if (Vector3.Distance(_rider.position, transform.position) > _mountRadius)
@@ -269,7 +269,7 @@ namespace FrostSpace.Features.Ride
 
             if (s_mountedBike != null && s_mountedBike != this)
                 return;
-            if (Motorcycle.SeatTaken)
+            if (Motorcycle.SeatTaken || Mech.SeatTaken)
                 return;
 
             _mounted = true;

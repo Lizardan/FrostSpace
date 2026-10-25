@@ -17,7 +17,7 @@ Unity-проект на ранней стадии: есть играбельны
 | Сцены | `Boot` (build index 0) → `MainMenu` (1) → `Game` (2) |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model`, движение kinematic |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` |
-| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 47 EditMode-тестов |
+| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 52 EditMode-теста |
 
 ## С чего начать
 
