@@ -1,0 +1,31 @@
+Traceback (most recent call last):
+  File "F:\Unity Projects\FrostSpace\Tools\Blender\build_mechs.py", line 116, in main
+    results.append(build(unit))
+                   ~~~~~^^^^^^
+  File "F:\Unity Projects\FrostSpace\Tools\Blender\build_mechs.py", line 48, in build
+    mech_lib.author_gait(arm, meta)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "F:\Unity Projects\FrostSpace\Tools\Blender\mech_lib.py", line 869, in author_gait
+    raise RuntimeError(
+    ...<2 lines>...
+        "knee_bulge" % (meta["name"], key, clamps["stance"]))
+RuntimeError: FlamingoWalker run: IK зажал цель в стойке 3 кадров — подошва съедет относительно clip_speed; уменьши travel*stance или увеличь knee_bulge
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:37:16)
+Blender 5.2.3 LTS
+FBX version: 7400
+SCALE_LOCATIONS x0.7490 кривых=663
+STANCE RobotArmature x0.802 (half-width 0.748 -> 0.600)
+LOAD FlamingoWalker source=(2.699, 2.063, 3.551) scale=0.7490 rig=mech
+STANCE RobotArmature: ноги выпрямлены (колено 0.32 м), длина ноги 1.361/1.361, изменено 2
+CLIP FlamingoWalker idle frames=1..100 (3.300 c)
+CLIP FlamingoWalker walk frames=1..25 (0.800 c)
+CLIP FlamingoWalker run frames=1..25 (0.800 c)
+GAIT FlamingoWalker idle frames=0..100 (3.333 c) шаг 0.00 м, земля 0.00 м/с, кривых пака снято 98, зажимов IK стойка/замах 0/0
+GAIT FlamingoWalker walk frames=0..30 (1.000 c) шаг 1.60 м, земля 1.60 м/с, кривых пака снято 98, зажимов IK стойка/замах 0/0
+     CLAMP FlamingoWalker run f=0 фаза=0.00 нужно 1.329 предел 1.320 бедро z=1.242 y=0.144 стопа y=-0.482 z=0.080
+     CLAMP FlamingoWalker run f=10 фаза=0.00 нужно 1.329 предел 1.320 бедро z=1.242 y=0.144 стопа y=-0.482 z=0.080
+     CLAMP FlamingoWalker run f=20 фаза=0.00 нужно 1.329 предел 1.320 бедро z=1.242 y=0.144 стопа y=-0.482 z=0.080
+GAIT FlamingoWalker run frames=0..20 (0.667 c) шаг 2.70 м, земля 4.05 м/с, кривых пака снято 98, зажимов IK стойка/замах 3/0
+FAILED FlamingoWalker
+
+SUMMARY

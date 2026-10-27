@@ -1,0 +1,61 @@
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:37:16)
+FBX version: 7400
+SCALE_LOCATIONS x0.8488 кривых=663
+STANCE RobotArmature x0.610 (half-width 1.016 -> 0.620)
+LOAD FrogWalker source=(3.383, 1.986, 3.063) scale=0.8488 rig=mech
+STANCE RobotArmature: ноги выпрямлены (колено 0.40 м), длина ноги 1.578/1.578, изменено 2
+
+=== FrogWalker style=column bulge=0.40 reach=0.980
+L: бедро 0.789 голень 0.789 сумма 1.578 вылет 1.547 dy0 0.163
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 1.234, с запасом 1.135 → OK
+   walk: travel 2.20 stance 0.50 шаг 1.100, предел 1.333, с запасом 1.226 → OK
+   run : travel 3.30 stance 0.34 шаг 1.138, предел 1.317, с запасом 1.211 → OK
+R: бедро 0.789 голень 0.789 сумма 1.578 вылет 1.547 dy0 0.163
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 1.234, с запасом 1.135 → OK
+   walk: travel 2.20 stance 0.50 шаг 1.100, предел 1.333, с запасом 1.226 → OK
+   run : travel 3.30 stance 0.34 шаг 1.138, предел 1.317, с запасом 1.211 → OK
+FBX version: 7400
+SCALE_LOCATIONS x0.8678 кривых=663
+STANCE RobotArmature x0.716 (half-width 0.866 -> 0.620)
+LOAD BeeWalker source=(2.914, 2.055, 2.996) scale=0.8678 rig=mech
+STANCE RobotArmature: ноги выпрямлены (колено 0.50 м), длина ноги 1.707/1.707, изменено 2
+
+=== BeeWalker style=strut bulge=0.50 reach=0.960
+L: бедро 0.854 голень 0.854 сумма 1.707 вылет 1.639 dy0 0.082
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 1.646, с запасом 1.514 → OK
+   walk: travel 1.80 stance 0.50 шаг 0.900, предел 1.667, с запасом 1.534 → OK
+   run : travel 3.30 stance 0.34 шаг 1.138, предел 1.719, с запасом 1.582 → OK
+R: бедро 0.854 голень 0.854 сумма 1.707 вылет 1.639 dy0 0.082
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 1.646, с запасом 1.514 → OK
+   walk: travel 1.80 stance 0.50 шаг 0.900, предел 1.667, с запасом 1.534 → OK
+   run : travel 3.30 stance 0.34 шаг 1.138, предел 1.719, с запасом 1.582 → OK
+FBX version: 7400
+SCALE_LOCATIONS x0.8401 кривых=663
+STANCE RobotArmature x0.739 (half-width 0.839 -> 0.620)
+LOAD PandaWalker source=(2.699, 1.922, 3.095) scale=0.8401 rig=mech
+STANCE RobotArmature: ноги выпрямлены (колено 0.46 м), длина ноги 1.631/1.631, изменено 2
+
+=== PandaWalker style=waddle bulge=0.46 reach=0.980
+L: бедро 0.815 голень 0.815 сумма 1.631 вылет 1.598 dy0 0.161
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 1.474, с запасом 1.356 → OK
+   walk: travel 2.10 stance 0.52 шаг 1.092, предел 1.523, с запасом 1.402 → OK
+   run : travel 3.30 stance 0.34 шаг 1.138, предел 1.546, с запасом 1.422 → OK
+R: бедро 0.815 голень 0.815 сумма 1.631 вылет 1.598 dy0 0.161
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 1.474, с запасом 1.356 → OK
+   walk: travel 2.10 stance 0.52 шаг 1.092, предел 1.523, с запасом 1.402 → OK
+   run : travel 3.30 stance 0.34 шаг 1.138, предел 1.546, с запасом 1.422 → OK
+FBX version: 7400
+SCALE_LOCATIONS x0.7490 кривых=663
+STANCE RobotArmature x0.802 (half-width 0.748 -> 0.600)
+LOAD FlamingoWalker source=(2.699, 2.063, 3.551) scale=0.7490 rig=mech
+STANCE RobotArmature: ноги выпрямлены (колено 0.32 м), длина ноги 1.361/1.361, изменено 2
+
+=== FlamingoWalker style=stilt bulge=0.32 reach=0.985
+L: бедро 0.680 голень 0.680 сумма 1.361 вылет 1.340 dy0 0.144
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 0.994, с запасом 0.915 → OK
+   walk: travel 1.60 stance 0.50 шаг 0.800, предел 0.998, с запасом 0.918 → OK
+   run : travel 2.70 stance 0.36 шаг 0.972, предел 1.069, с запасом 0.983 → OK
+R: бедро 0.680 голень 0.680 сумма 1.361 вылет 1.340 dy0 0.144
+   idle: travel 0.00 stance 1.00 шаг 0.000, предел 0.994, с запасом 0.915 → OK
+   walk: travel 1.60 stance 0.50 шаг 0.800, предел 0.998, с запасом 0.918 → OK
+   run : travel 2.70 stance 0.36 шаг 0.972, предел 1.069, с запасом 0.983 → OK

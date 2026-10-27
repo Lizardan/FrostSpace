@@ -45,6 +45,7 @@ FrostSpace/
    │  │  │  │                    # RiderPose (посадка верхом поверх клипа), RiderCockpit
    │  │  │  │                    # (данные посадки байка: наклон, шея, KneeOut, Seat Point),
    │  │  │  │                    # Mech (ездовый ходун), MechSeat (сиденье едет за Chest),
+   │  │  │  │                    # MechSelection (общий адресат E: сканер, иначе ближайший),
    │  │  │  │                    # RideCameraProfile (радиус и пределы облёта)
    │  │  │  └─ Scan/             # ObjectScanner (Q-сонар + ближайшая и прицельная детекция),
    │  │  │                       # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),

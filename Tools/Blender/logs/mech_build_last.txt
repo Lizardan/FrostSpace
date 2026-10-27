@@ -1,0 +1,123 @@
+Blender: G:\Steam\steamapps\common\Blender\blender.exe
+Python:  C:\Python314\python.exe
+Ассеты:  mechs
+
+[mechs] сборка
+  -> сборка build_mechs.py
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\build_mechs.py"
+     | SUMMARY
+     | FrogWalker      verts=1782  tris=3076  height=2.39 clips={'idle': 100, 'walk': 38, 'run': 20} speed={'walk': 1.737, 'run': 4.842}
+     | BeeWalker       verts=1682  tris=2880  height=2.41 clips={'idle': 100, 'walk': 26, 'run': 20} speed={'walk': 2.077, 'run': 4.842}
+     | PandaWalker     verts=1814  tris=3132  height=2.36 clips={'idle': 100, 'walk': 34, 'run': 20} speed={'walk': 1.819, 'run': 4.842}
+     | FlamingoWalker  verts=1678  tris=2892  height=2.17 clips={'idle': 100, 'walk': 30, 'run': 20} speed={'walk': 1.6, 'run': 4.05}
+     | MANIFEST F:\Unity Projects\FrostSpace\Tools\Blender\mech_manifest.json
+     OK за 3.7 с
+  файлов на выходе: 4
+[mechs] превью: render_mech_previews.py
+  -> превью ME_BeeWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\render_mech_previews.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_BeeWalker.fbx" --out AssetSource/Previews/Mechs
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_BeeWalker_walk_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_BeeWalker_walk_03.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_BeeWalker_run_00.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_BeeWalker_run_01.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_BeeWalker_run_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_BeeWalker_run_03.png
+     OK за 2.4 с
+  -> превью ME_FlamingoWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\render_mech_previews.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FlamingoWalker.fbx" --out AssetSource/Previews/Mechs
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FlamingoWalker_walk_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FlamingoWalker_walk_03.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FlamingoWalker_run_00.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FlamingoWalker_run_01.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FlamingoWalker_run_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FlamingoWalker_run_03.png
+     OK за 2.3 с
+  -> превью ME_FrogWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\render_mech_previews.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FrogWalker.fbx" --out AssetSource/Previews/Mechs
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FrogWalker_walk_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FrogWalker_walk_03.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FrogWalker_run_00.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FrogWalker_run_01.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FrogWalker_run_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_FrogWalker_run_03.png
+     OK за 2.3 с
+  -> превью ME_PandaWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\render_mech_previews.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_PandaWalker.fbx" --out AssetSource/Previews/Mechs
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_PandaWalker_walk_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_PandaWalker_walk_03.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_PandaWalker_run_00.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_PandaWalker_run_01.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_PandaWalker_run_02.png
+     | RENDER F:\Unity Projects\FrostSpace\AssetSource\Previews\Mechs\ME_PandaWalker_run_03.png
+     OK за 2.2 с
+[mechs] проверка: check_mech_clips.py
+  -> проверка ME_BeeWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\check_mech_clips.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_BeeWalker.fbx"
+     | OK   idle: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   walk: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   run: ход корня 0.0000 (in-place, порог 0.020)
+     | PASS ME_BeeWalker
+     | ИТОГ: проверено 1, провал 0
+     | ПРОВЕРКА ХОДУНОВ PASS
+     OK за 1.4 с
+  -> проверка ME_FlamingoWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\check_mech_clips.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FlamingoWalker.fbx"
+     | OK   idle: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   walk: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   run: ход корня 0.0000 (in-place, порог 0.020)
+     | PASS ME_FlamingoWalker
+     | ИТОГ: проверено 1, провал 0
+     | ПРОВЕРКА ХОДУНОВ PASS
+     OK за 1.4 с
+  -> проверка ME_FrogWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\check_mech_clips.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FrogWalker.fbx"
+     | OK   idle: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   walk: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   run: ход корня 0.0000 (in-place, порог 0.020)
+     | PASS ME_FrogWalker
+     | ИТОГ: проверено 1, провал 0
+     | ПРОВЕРКА ХОДУНОВ PASS
+     OK за 1.2 с
+  -> проверка ME_PandaWalker.fbx
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\check_mech_clips.py" -- "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_PandaWalker.fbx"
+     | OK   idle: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   walk: ход корня 0.0000 (in-place, порог 0.020)
+     | OK   run: ход корня 0.0000 (in-place, порог 0.020)
+     | PASS ME_PandaWalker
+     | ИТОГ: проверено 1, провал 0
+     | ПРОВЕРКА ХОДУНОВ PASS
+     OK за 1.2 с
+
+[global] проверки пайплайна
+  -> selftest.py
+     G:\Steam\steamapps\common\Blender\blender.exe --background --factory-startup --python "F:\Unity Projects\FrostSpace\Tools\Blender\selftest.py"
+     | BUILT 0.3600 × 0.3600 × 0.9800
+     | FBX export starting... 'C:\\Users\\Lizardan\\AppData\\Local\\Temp\\frostspace_blender_selftest.fbx'
+     | export finished in 0.0045 sec.
+     | FBX version: 7400
+     | ROUNDTRIP 0.3600 × 0.3600 × 0.9800
+     | SELFTEST PASS  file=C:\Users\Lizardan\AppData\Local\Temp\frostspace_blender_selftest.fbx  drift=0.0000 м
+     OK за 1.1 с
+  -> fbx_units.py
+     C:\Python314\python.exe "F:\Unity Projects\FrostSpace\Tools\Blender\fbx_units.py" "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_BeeWalker.fbx" "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FlamingoWalker.fbx" "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FrogWalker.fbx" "F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_PandaWalker.fbx"
+     | F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_BeeWalker.fbx FBX v7400  UnitScaleFactor=1.0  OriginalUnitScaleFactor=1.0
+     |   F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FlamingoWalker.fbx FBX v7400  UnitScaleFactor=1.0  OriginalUnitScaleFactor=1.0
+     |   F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_FrogWalker.fbx FBX v7400  UnitScaleFactor=1.0  OriginalUnitScaleFactor=1.0
+     |   F:\Unity Projects\FrostSpace\Assets\_Project\Content\Models\Mechs\ME_PandaWalker.fbx FBX v7400  UnitScaleFactor=1.0  OriginalUnitScaleFactor=1.0
+     OK за 0.1 с
+
+ИТОГ
+  mechs:сборка                 OK     3.7 с
+  mechs:превью                 OK     2.4 с
+  mechs:превью                 OK     2.3 с
+  mechs:превью                 OK     2.3 с
+  mechs:превью                 OK     2.2 с
+  mechs:проверка               OK     1.4 с
+  mechs:проверка               OK     1.4 с
+  mechs:проверка               OK     1.2 с
+  mechs:проверка               OK     1.2 с
+  selftest.py                  OK     1.1 с
+  fbx_units.py                 OK     0.1 с
+
+Лог: Tools/Blender/logs/build_all_20261027_184220.log
+ПАЙПЛАЙН PASS

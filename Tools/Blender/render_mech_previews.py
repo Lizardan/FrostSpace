@@ -27,8 +27,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
-# Фазы походки берутся из того же `GAIT`, чем печётся клип: кадры превью
-# обязаны попадать в стойку и в середину замаха, а не «через равные шаги».
+# Фазы походки берутся из того же `GAIT_STYLES`, чем печётся клип: кадры
+# превью обязаны попадать в стойку и в середину замаха, а не в равные шаги.
+# Стиль у каждого юнита свой, поэтому он ищется по имени FBX в `MECHS`.
 import mech_lib  # noqa: E402
 
 CLIPS = ("Idle", "Walk", "Run")
@@ -190,8 +191,11 @@ def main() -> int:
     render_to(os.path.join(out, "%s_cockpit.png" % base), cockpit)
 
     # Кадры клипов: шаг и бег снимаются **сбоку** — спереди походку не проверить
-    # (шаг читается только по профилю). Точки взяты из фаз `mech_lib.GAIT`:
+    # (шаг читается только по профилю). Точки берутся из фаз стиля юнита:
     # первая и последняя кадры стойки, середина замаха и середина стойки.
+    unit = base[3:] if base.startswith("ME_") else base
+    style = mech_lib.GAIT_STYLES.get(
+        mech_lib.MECHS.get(unit, {}).get("gait", mech_lib.DEFAULT_GAIT), {})
     for clip in CLIPS:
         action = next((a for a in bpy.data.actions
                        if clip.lower() in a.name.lower()), None)
@@ -201,7 +205,7 @@ def main() -> int:
         start, end = (int(round(v)) for v in action.frame_range)
         span = max(1, end - start)
         key = clip.lower()
-        cfg = mech_lib.GAIT.get(key, {})
+        cfg = style.get(key, {})
         stance = float(cfg.get("stance", 1.0))
         if stance >= 1.0:
             # Стойка без шага: смотрим позу от начала до конца цикла.

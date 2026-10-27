@@ -1,7 +1,7 @@
 """Что внутри героев Ultimate Space Kit: кости, клипы, оси и масштаб.
 
 Запуск:
-    blender --background --factory-startup --python probe_space_kit.py -- Mech_FinnTheFrog Enemy_Large
+    blender --background --factory-startup --python probe_space_kit.py -- Mech_FinnTheFrog
 
 Печатает по каждому персонажу: трансформ арматуры, имена костей с rest-точками,
 список действий с диапазоном кадров, габарит меша до/после нормализации и ход
@@ -102,8 +102,8 @@ def probe(name: str) -> None:
         print("  %-18s %d..%d" % (action.name, int(round(start)), int(round(end))))
 
     # Ход корневой кости и вертикальный боб по клипам. Смотрим и формальный
-    # корень, и `Body`: у мехов это одна кость, у Enemy_Large движение живёт
-    # на `Body`, а `Root` стоит.
+    # корень, и `Body`: у мехов это одна кость, движение живёт на `Body`,
+    # а `Root` стоит.
     watched = [arm.data.bones[0].name]
     for name in ("Body", "Hips"):
         if name in arm.data.bones and name not in watched:
@@ -132,7 +132,7 @@ def main() -> int:
     configure_stdout()
     print("Blender", bpy.app.version_string)
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    names = args or ["Mech_FinnTheFrog", "Enemy_Large"]
+    names = args or ["Mech_FinnTheFrog"]
     for name in names:
         probe(name)
     return 0

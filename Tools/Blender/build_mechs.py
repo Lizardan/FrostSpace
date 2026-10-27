@@ -37,9 +37,11 @@ MANIFEST = os.path.join(HERE, "mech_manifest.json")
 
 def build(unit: str) -> dict:
     arm, meta = mech_lib.load(unit)
+    style = mech_lib.gait_style(meta)
     # Стойка выпрямляется в rest до клипов: дальше всё меряется по фактическим
     # длинам ноги, а idle пака остаётся валидным — клип это вращения костей.
-    mech_lib.straighten_stance(arm)
+    # Вынос колена — из профиля походки: у каждого юнита своя форма ноги.
+    mech_lib.straighten_stance(arm, style["knee_bulge"])
     mech_lib.prepare_clips(arm, meta)
     # Походка печётся заново и до замера скорости: скорость земли в клипе
     # считается по фактическому ходу стопы в стойке.
@@ -76,6 +78,12 @@ def build(unit: str) -> dict:
         "clip_seconds": {key: value["seconds"]
                          for key, value in meta["clips"].items()},
         "clip_speed": meta["clip_speed"],
+        "gait_style": meta["gait_style"],
+        "gait_note": style.get("note"),
+        "walk_frames": meta["clips"]["walk"]["frames"],
+        "walk_speed": meta["cfg"].get("walk_speed"),
+        "run_speed": meta["cfg"].get("run_speed"),
+        "knee_bulge": meta["gait"]["knee_bulge"],
         "root_drift": meta["root_drift"],
         "root": meta["roles"]["root"],
         "stance": meta["cfg"].get("stance"),

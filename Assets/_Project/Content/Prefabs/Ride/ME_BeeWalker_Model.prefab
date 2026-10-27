@@ -405,7 +405,7 @@ MonoBehaviour:
   _brake: 9
   _turnSpeed: 160
   _groundStick: 3
-  _walkClipSpeed: 2.2
+  _walkClipSpeed: 2.077
   _runClipSpeed: 4.842
   _minClipRate: 0.55
   _maxClipRate: 1.35

@@ -20,29 +20,35 @@
     ],
     "clips": {
       "idle": 100,
-      "walk": 30,
+      "walk": 38,
       "run": 20
     },
     "clip_seconds": {
       "idle": 3.333,
-      "walk": 1.0,
+      "walk": 1.267,
       "run": 0.667
     },
     "clip_speed": {
-      "walk": 2.2,
+      "walk": 1.737,
       "run": 4.842
     },
+    "gait_style": "column",
+    "gait_note": "колонный шаг: длинный цикл, тяжёлый боб, плоская стопа",
+    "walk_frames": 38,
+    "walk_speed": 1.9,
+    "run_speed": 5.0,
+    "knee_bulge": 0.4,
     "root_drift": {
       "idle": [
-        0.0,
+        0.008,
         0.0
       ],
       "walk": [
-        0.0,
+        0.0159,
         0.0
       ],
       "run": [
-        0.0,
+        0.016,
         0.0
       ]
     },
@@ -151,35 +157,41 @@
       2.996
     ],
     "size": [
-      1.621,
+      1.612,
       1.256,
       2.412
     ],
     "clips": {
       "idle": 100,
-      "walk": 30,
+      "walk": 26,
       "run": 20
     },
     "clip_seconds": {
       "idle": 3.333,
-      "walk": 1.0,
+      "walk": 0.867,
       "run": 0.667
     },
     "clip_speed": {
-      "walk": 2.2,
+      "walk": 2.077,
       "run": 4.842
     },
+    "gait_style": "strut",
+    "gait_note": "частый шаг с высоким коленом и приседом",
+    "walk_frames": 26,
+    "walk_speed": 2.2,
+    "run_speed": 5.0,
+    "knee_bulge": 0.5,
     "root_drift": {
       "idle": [
-        0.0,
+        0.008,
         0.0
       ],
       "walk": [
-        0.0,
+        0.0099,
         0.0
       ],
       "run": [
-        0.0,
+        0.016,
         0.0
       ]
     },
@@ -294,29 +306,35 @@
     ],
     "clips": {
       "idle": 100,
-      "walk": 30,
+      "walk": 34,
       "run": 20
     },
     "clip_seconds": {
       "idle": 3.333,
-      "walk": 1.0,
+      "walk": 1.133,
       "run": 0.667
     },
     "clip_speed": {
-      "walk": 2.2,
+      "walk": 1.819,
       "run": 4.842
     },
+    "gait_style": "waddle",
+    "gait_note": "валкий шаг: широкий боковой перенос веса",
+    "walk_frames": 34,
+    "walk_speed": 2.0,
+    "run_speed": 5.0,
+    "knee_bulge": 0.46,
     "root_drift": {
       "idle": [
-        0.0,
+        0.008,
         0.0
       ],
       "walk": [
-        0.0,
+        0.0159,
         0.0
       ],
       "run": [
-        0.0,
+        0.016,
         0.0
       ]
     },
@@ -425,7 +443,7 @@
       3.551
     ],
     "size": [
-      1.573,
+      1.588,
       1.326,
       2.175
     ],
@@ -440,20 +458,26 @@
       "run": 0.667
     },
     "clip_speed": {
-      "walk": 2.2,
-      "run": 4.842
+      "walk": 1.6,
+      "run": 4.05
     },
+    "gait_style": "stilt",
+    "gait_note": "журавлиный шаг: почти прямая нога, высокий носок",
+    "walk_frames": 30,
+    "walk_speed": 1.75,
+    "run_speed": 4.2,
+    "knee_bulge": 0.32,
     "root_drift": {
       "idle": [
-        0.0,
+        0.008,
         0.0
       ],
       "walk": [
-        0.0,
+        0.008,
         0.0
       ],
       "run": [
-        0.0,
+        0.012,
         0.0
       ]
     },

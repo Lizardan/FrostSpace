@@ -104,6 +104,12 @@ namespace FrostSpace.Features.Ride
         public float Speed => _speed;
 
         /// <summary>
+        /// Радиус посадки, м: по нему <see cref="MechSelection"/> отбирает кандидатов
+        /// на <c>E</c>, чтобы выбор не зависел от порядка подписки на действие.
+        /// </summary>
+        internal float MountRadius => _mountRadius;
+
+        /// <summary>
         /// Domain reload выключен: защёлка прошлой сессии иначе осталась бы
         /// занятой во втором запуске Play Mode.
         /// </summary>
@@ -143,6 +149,7 @@ namespace FrostSpace.Features.Ride
 
         private void OnEnable()
         {
+            MechSelection.Register(this);
             _moveAction?.Enable();
             _sprintAction?.Enable();
             _interactAction?.Enable();
@@ -152,6 +159,7 @@ namespace FrostSpace.Features.Ride
 
         private void OnDisable()
         {
+            MechSelection.Unregister(this);
             if (_interactAction != null)
                 _interactAction.performed -= OnInteract;
         }
@@ -296,9 +304,14 @@ namespace FrostSpace.Features.Ride
             if (s_mounted != null || Hoverbike.SeatTaken || Motorcycle.SeatTaken)
                 return;
 
-            if (Vector3.Distance(_rider.position, transform.position) > _mountRadius)
+            // Адресат E выбирается один на всю партию (MechSelection): выделенный
+            // сканером, иначе ближайший. Проверка только своей дистанции здесь не
+            // годится — при двух ходунах в радиусе побеждал порядок подписки.
+            var picked = MechSelection.Pick(_rider.position);
+            if (picked != this)
                 return;
 
+            Debug.Log("[Mech] E → " + name, this);
             Mount();
         }
 

@@ -399,14 +399,14 @@ MonoBehaviour:
   _seat: {fileID: 3981027825738762343}
   _exit: {fileID: 8946189112586183032}
   _animator: {fileID: 353217742781579754}
-  _walkSpeed: 2.2
-  _runSpeed: 5
+  _walkSpeed: 1.75
+  _runSpeed: 4.2
   _acceleration: 5
   _brake: 9
   _turnSpeed: 160
   _groundStick: 3
-  _walkClipSpeed: 2.2
-  _runClipSpeed: 4.842
+  _walkClipSpeed: 1.6
+  _runClipSpeed: 4.05
   _minClipRate: 0.55
   _maxClipRate: 1.35
   _mountRadius: 4.5

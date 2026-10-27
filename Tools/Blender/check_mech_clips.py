@@ -161,8 +161,8 @@ def speed(arm, feet, action, fps: float) -> tuple[float, int]:
         if current:
             runs.append(current)
         for run in runs:
-            # У бега стойка короткая (у `Enemy_Large` — два кадра): меньше
-            # этого замер состоит из шума.
+            # У бега стойка короткая (бывает два кадра): меньше этого замер
+            # состоит из шума.
             if len(run) < 2:
                 continue
             travel = points[run[-1]].y - points[run[0]].y
