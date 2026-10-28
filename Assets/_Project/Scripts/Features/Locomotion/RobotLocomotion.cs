@@ -75,6 +75,7 @@ namespace FrostSpace.Features.Locomotion
         private Vector2 _overrideMove;
         private bool _overrideSprint;
         private bool _rideOverride;
+        private bool _conversationLock;
         private float _loggedBasisYaw = float.NaN;
         private float _lastGroundedAt = -999f;
         private float _jumpBufferedAt = -999f;
@@ -141,6 +142,35 @@ namespace FrostSpace.Features.Locomotion
             Debug.Log(riding ? "[RobotLocomotion] посадка" : "[RobotLocomotion] сход", this);
         }
 
+        /// <summary>
+        /// На время диалога игрок стоит: план. скорость гасится, прыжок отменяется,
+        /// ввод не читается. Гравитация остаётся, чтобы персонаж не завис, если
+        /// разговор открыли в прыжке.
+        /// </summary>
+        public void SetConversationLock(bool locked)
+        {
+            if (_conversationLock == locked)
+                return;
+
+            _conversationLock = locked;
+            _planarVelocity = Vector3.zero;
+            _jumpPending = false;
+            _jumpBufferedAt = -999f;
+            _sprinting = false;
+
+            if (_animator != null)
+            {
+                _animator.SetBool(MovingId, false);
+                _animator.SetBool(SprintingId, false);
+            }
+
+            Debug.Log(
+                locked
+                    ? "[RobotLocomotion] диалог: игрок остановлен"
+                    : "[RobotLocomotion] диалог: управление возвращено",
+                this);
+        }
+
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();
@@ -188,6 +218,12 @@ namespace FrostSpace.Features.Locomotion
         {
             if (_rideOverride)
                 return;
+
+            if (_conversationLock)
+            {
+                RestWhileConversing();
+                return;
+            }
 
             var input = _inputOverridden
                 ? _overrideMove
@@ -259,6 +295,36 @@ namespace FrostSpace.Features.Locomotion
             }
 
             UpdateAnimator(wantsSprint);
+        }
+
+        /// <summary>
+        /// Кадр разговора: стоит на месте, но гравитация и приземление считаются
+        /// как в обычном Update — иначе персонаж, с которого начали разговор
+        /// в воздухе, повис бы.
+        /// </summary>
+        private void RestWhileConversing()
+        {
+            _planarVelocity = Vector3.zero;
+            _jumpPending = false;
+            _jumpBufferedAt = -999f;
+
+            if (_controller.isGrounded)
+            {
+                _lastGroundedAt = Time.time;
+                if (_verticalVelocity < 0f)
+                    _verticalVelocity = -2f;
+            }
+            _verticalVelocity += Physics.gravity.y * Time.deltaTime;
+
+            _controller.Move(new Vector3(0f, _verticalVelocity, 0f) * Time.deltaTime);
+
+            if (_airborne && _controller.isGrounded && _verticalVelocity <= 0f)
+            {
+                _airborne = false;
+                _animator.SetBool(AirborneId, false);
+            }
+
+            UpdateAnimator(false);
         }
 
         /// <summary>

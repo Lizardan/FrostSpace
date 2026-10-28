@@ -32,6 +32,10 @@ FrostSpace/
    │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, CameraPose, InteriorZone, PlayerSilhouette,
    │  │  │  │                    # PlayerLocalView, CameraOcclusionFader/Debris/Group, ScreenAperture.
    │  │  │  │                    # Namespace папки — FrostSpace.Features.View (ADR 0010)
+   │  │  │  ├─ Dialogue/         # DialogueAsset (граф реплик и вариантов), DialogueNode,
+   │  │  │  │                    # DialogueChoice, DialogueSession (чистая логика графа),
+   │  │  │  │                    # DialogueSpeaker (маркер на NPC), DialogueController (E и
+   │  │  │  │                    # блокировки ввода/камеры), DialogueScreen (панель диалога)
    │  │  │  ├─ Hud/              # PlayerHud (перекрестие, пул подписей, рамка цели, Q SCAN/SCANNING,
    │  │  │  │                    # счётчик FPS), ScanLabelView (одна подпись из пула)
    │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
@@ -60,11 +64,15 @@ FrostSpace/
    │  │  ├─ MechAssetPostprocessor.cs    # клипы Idle/Walk/Run, loop, sRGB при импорте ходунов
    │  │  ├─ LevelAssetPostprocessor.cs   # нормали, sRGB и палитра Level_* для уровня
    │  │  ├─ BuildWebGL.cs                # сборка WebGL только из CLI (без меню — ADR 0005)
+   │  │  ├─ DialogueAssetEditor.cs       # кастомный Inspector диалога: узлы, переходы, валидация
+   │  │  ├─ MechPrefabUpdater.cs         # идемпотентная раскладка чисел ходунов из mech_manifest.json
    │  │  └─ HoverbikeModelBuilder.cs     # сборка префаба Hoverbike_Model из FBX (ADR 0012)
    │  ├─ Tests/
    │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode: CameraModeTests, ScanMathTests,
    │  │                          # RobotVisualPrefabTests, AnimalVisualPrefabTests,
-   │  │                          # MechVisualPrefabTests, ScreenApertureTests
+   │  │                          # MechVisualPrefabTests, ScreenApertureTests,
+   │  │                          # DialogueSessionTests, DialogueAssetValidationTests,
+   │  │                          # DialogueContentTests, DialogueFontTests
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller; ME_*.controller (ходуны);
    │     │                          # RobotAnimals/<Species>/RA_<Species>.controller
@@ -83,7 +91,9 @@ FrostSpace/
    │     ├─ Materials/VFX/          # материалы эффектов
    │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
-   │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню
+   │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню;
+   │     │                          # Dialogues/*.asset — графы диалогов роботов (ADR 0025)
+   │     ├─ Fonts/                  # LiberationSans Cyrillic SDF.asset — TMP-шрифт диалогов
    │     └─ Settings/               # зарезервировано под игровые настройки
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
    ├─ Plugins/Roslyn/            # DLL для execute_code Unity MCP
@@ -111,7 +121,8 @@ FrostSpace/
    внутри — визуальный префаб `R1_PolarMechanic_Model`.
 5. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
    `NPC_R5_Ranger`: кинематический `CharacterController`, `NpcController` (маршрут из
-   вейпоинтов) и визуальный ребёнок; без ввода и без обычной физики.
+   вейпоинтов), `DialogueSpeaker` (диалог по E, ADR 0025) и визуальный ребёнок; без
+   ввода и без обычной физики.
 6. `NPC/Animals` — 13 актёров `AN_<Species>`: наземные с кинематическим
    `CharacterController` и `NpcController`, `AN_Eagle` и `AN_Piranha` — с
    `AirPatrolController` и маршрутом с высотой; визуальный ребёнок —
@@ -144,6 +155,7 @@ FrostSpace/
 | Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView` (ADR 0010, 0012) |
 | Сканирование | `ObjectScanner` на `Main Camera` (Q-сонар, ближайшая и прицельная детекция) + `ScanTarget` на целях (реестр `ScanTarget.All`), кольцо — `ScanPulse`, математика — `ScanMath`, показ — `PlayerHud` + `ScanLabelView` (ADR 0020) |
 | Меню паузы и настройки | `PauseMenuScreen` на `GameFlow` (Esc): `RESUME` / `SETTINGS` / `MAIN MENU`; значения — `GameSettings` (`PlayerPrefs`: музыка, детекция ближайшего, детекция по прицелу) (ADR 0020) |
+| Диалоги | данные — `Content/Data/Dialogues/*.asset` (`DialogueAsset`), авторство — `Editor/DialogueAssetEditor.cs`; на сцене — `DialogueSpeaker` на четырёх наземных `NPC_R*`, `DialogueController` + `DialogueScreen` на `GameFlow` (E — действие `Player/Interact`); шрифт кириллицы — `Content/Fonts/LiberationSans Cyrillic SDF.asset` (ADR 0025) |
 | Ховербайк | `Hoverbike` + `HoverbikeGlow` + `RiderCockpit` в `Features/Ride/`; префаб — `Content/Prefabs/Ride/Hoverbike_Model` (корень с `CharacterController` и `RiderCockpit`, дочерние `Visual` с якорями `Seat`/`Seat Point`/`Grip L/R`/`Foot L/R`, `Cushion`, `ExitPoint`, `EngineGlow`); сборка — `Editor/HoverbikeModelBuilder.cs` (ADR 0012) |
 | Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
 | Ездовые ходуны | `Mech` + `MechSeat` + `RideCameraProfile` в `Features/Ride/`; префабы — `Content/Prefabs/Ride/ME_*_Model` (корень — сразу транспорт: `Animator`, `CharacterController`, `Mech`, `ScanTarget` категории `WALKER`, `RiderCockpit`; дочерние `Seat` с якорями `Seat Point`/`Grip L/R`/`Foot L/R` и `ExitPoint`); клипы — `Content/Animation/Controllers/ME_*.controller`; сборка — `Tools/Blender/build_mechs.py`, регистр — `Tools/Blender/mech_manifest.json` (ADR 0024) |

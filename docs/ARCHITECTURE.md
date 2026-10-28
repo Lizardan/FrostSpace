@@ -59,12 +59,24 @@
   с измерением границ на кадр; `Scan/ScanMath.cs` — чистая математика (ближайшая цель,
   сетка прицела, затухание); `Hud/PlayerHud.cs` — перекрестие, пул подписей со
   закреплёнными слотами, две рамки (прицельная и ближайшая), `Q SCAN` / `SCANNING`,
-  счётчик FPS; `Hud/ScanLabelView.cs` — одна подпись из пула.
+  счётчик FPS; `Hud/ScanLabelView.cs` — одна подпись из пула;
+  `Dialogue/DialogueAsset.cs` — граф реплик в ScriptableObject: узлы со стабильными
+  id, до четырёх вариантов ответа, переходы строкой и полная валидация графа;
+  `Dialogue/DialogueSession.cs` — чистая runtime-логика (`Advance`/`Choose`/`IsFinished`)
+  без UI, поэтому граф тестируется без сцены; `Dialogue/DialogueSpeaker.cs` — маркер на
+  сценовом NPC: ассет диалога и остановка патруля; `Dialogue/DialogueController.cs` —
+  E по лучу из перекрестия (12 м, без слоя `Player`), радиус разговора 4 м, на время
+  разговора гасит карту ввода `Player`, локомоцию, камеру и сканер, а паузу выключает и
+  возвращает в `LateUpdate`; `Dialogue/DialogueScreen.cs` — панель на Canvas 40
+  (typewriter, варианты, подсказки, fade) со своим кириллическим TMP-шрифтом.
+  Причины решений — ADR 0025.
 - `FrostSpace.Editor` (`Assets/_Project/Editor/`): `RobotAssetPostprocessor` — импорт FBX
   роботов (имена клипов, loop, sRGB); `AnimalAssetPostprocessor` — импорт FBX животных
   (клипы `Idle`/`Move`, loop, sRGB); `MechAssetPostprocessor` — импорт FBX ходунов
   (клипы `Idle`/`Walk`/`Run`, loop, sRGB); `LevelAssetPostprocessor` — импорт моделей уровня
-  (плоские нормали, sRGB→linear, палитра `Level_*`). Меню-сборки уровня и префабов удалены
+  (плоские нормали, sRGB→linear, палитра `Level_*`); `DialogueAssetEditor` — инспектор
+  диалога (карточки узлов, стабильные id, выпадающие переходы, живая валидация) и меню
+  «FrostSpace/Диалоги/Проверить все» только на чтение. Меню-сборки уровня и префабов удалены
   намеренно (ADR 0005): контент не пересобирается скриптом.
 - **Уровень — набор моделей Blender**: 19 статических FBX в `Content/Models/Level/`
   (рельеф, дом с интерьером, деревья, забор, пропы), палитра — `Content/Materials/Level/`.
@@ -73,7 +85,9 @@
 - `FrostSpace.Tests.EditMode` (`Assets/_Project/Tests/EditMode/`) — проверки префабов и
   клипов роботов, животных и ходунов (`MechVisualPrefabTests`: якоря кабины против
   манифеста), математики выреза (`ScreenApertureTests`), перехода
-  режимов камеры (`CameraModeTests`) и математики сканера (`ScanMathTests`).
+  режимов камеры (`CameraModeTests`), математики сканера (`ScanMathTests`), графа
+  диалогов и сессии (`DialogueSessionTests`, `DialogueAssetValidationTests`), контента
+  диалогов и кириллического шрифта (`DialogueContentTests`, `DialogueFontTests`).
 - **Префаб — визуал, логика — на сценовом актёре.** `R*_Model.prefab` — варианты
   FBX-модели с `Animator` и `R*.controller`, без `CharacterController` и ввода.
   `Player` (тег, CC, `RobotLocomotion`) и `NPC_R*` (кинематический CC, `NpcController`,
@@ -131,7 +145,8 @@
 - Камера `Game` на старте сразу стоит в верхней позе: блендинг инициализируется
   завершённым, поэтому нет выезда из позиции по умолчанию.
 
-Ещё нет composition root, сохранений, сети и игровых ScriptableObject-конфигов;
+Ещё нет composition root, сохранений, сети и игрового баланса; единственный игровой
+ScriptableObject-конфиг — `DialogueAsset` (авторские реплики, а не состояние).
 Слой `Infrastructure/` не создан. Это **не** архитектурный долг: просто ещё
 не написано.
 

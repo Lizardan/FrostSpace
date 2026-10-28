@@ -32,6 +32,7 @@
 | [0022](0022-animal-clips-in-place.md) | Клипы животных in-place: актёра двигает контроллер, ход корня в клипе нулевой | Accepted |
 | [0023](0023-no-animal-root-motion.md) | Root motion у животных не включаем: ход на кости, а не на корне модели (`deltaPosition = 0`) | Accepted |
 | [0024](0024-mech-walkers.md) | Ездовые ходуны (4): наш корпус на риге пака, авторская походка `author_gait`, кабина в груди, сиденье за костью `Chest`, облёт камерой | Accepted |
+| [0025](0025-dialogue-system.md) | Диалоги: ScriptableObject-граф, кастомный Inspector, отдельный экран, кириллический TMP-шрифт | Accepted |
 
 ## Когда создавать ADR
 

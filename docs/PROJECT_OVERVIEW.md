@@ -28,12 +28,13 @@
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (6 файлов), `FrostSpace.Tests.EditMode` (53 теста) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (9 фич: Boot, Camera, Dialogue, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (91 тест) | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
 | Ездовые ходуны | 4 FBX (`ME_*Walker`) — наш корпус на ригах `Mech_*` пака, клипы печёт `author_gait`; префабы `ME_*_Model` — сразу транспорт с `Mech` и кабиной; сборка `Tools/Blender/build_mechs.py` | `Assets/_Project/Content/`, ADR 0024 |
 | Транспорт | байки (`Hoverbike`, `Motorcycle`) — вид сверху с фиксированным курсом; ходуны (`Mech`) — облёт мышью, WASD от камеры; защёлка посадки общая | `Assets/_Project/Scripts/Features/Ride/` |
-| Интерфейс | строится кодом: `BootScreen`, `MainMenuScreen` (меню и лента видов), `PlayerHud` (подписи сканера, FPS), `PauseMenuScreen` (пауза и настройки) | `Assets/_Project/Scripts/Features/` |
+| Интерфейс | строится кодом: `BootScreen`, `MainMenuScreen` (меню и лента видов), `PlayerHud` (подписи сканера, FPS), `PauseMenuScreen` (пауза и настройки), `DialogueScreen` (панель разговора) | `Assets/_Project/Scripts/Features/` |
+| Диалоги | граф реплик в `DialogueAsset` (`Content/Data/Dialogues/`), авторский инспектор, E у робота в радиусе 4 м; на время разговора NPC стоит и поворачивается, игрок и камера заморожены | `Assets/_Project/Scripts/Features/Dialogue/`, ADR 0025 |
 | Сканирование | Q — сонар (кольцо + контуры), ближайшая цель и цель в области прицела подписываются сами; тумблеры — в паузе | `Assets/_Project/Scripts/Features/Scan/`, ADR 0020 |
 | Аудио | `MusicManager` + `Music_FrostSpaceTheme.mp3` из `Content/Audio/Resources/Music/` | `Assets/_Project/Scripts/Core/MusicManager.cs` |
 | NPC | `NpcController` (ходьба по маршруту) и `AirPatrolController` (патруль) | `Assets/_Project/Scripts/Features/Npc/` |
@@ -41,16 +42,18 @@
 | Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-22 |
 | Blender | 5.2.3 LTS, аддон `blender_mcp` (протокол 14, сервер 2.2.2) установлен | `--version` и `install-addon` |
 | Пайплайн ассетов | единый вход `Tools/Blender/build_all.py`: сборка → проверки → превью (ADR 0017) | прогон 2026-10-22 |
-| Скиллы | 34 скилла Unity + проектный `plans`, мосты для всех агентов | `.Aura/Skills/`, `Tools/Agent/LinkAgentSkills.ps1` |
+| Скиллы | 34 скилла Unity + 2 проектных (`plans`, `frostspace-3d-assets`), мосты для всех агентов | `.Aura/Skills/`, `Tools/Agent/LinkAgentSkills.ps1` |
 
 ## Чего в проекте нет
 
 - Игрового цикла: целей, условий победы/поражения, прогрессии, экономики, сюжета.
 - Сохранений и сети. Ни серверной части, ни мультиплеера, ни облачных сервисов.
-- Собственных ScriptableObject-конфигов и баланса — дизайн-параметры живут в
-  `[SerializeField]` прямо на компонентах.
-- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 53 шт.).
-- Локализации: подписи интерфейса латинские, `com.unity.localization` не подключён.
+- Собственного баланса и игровых правил: дизайн-параметры живут в `[SerializeField]`
+  прямо на компонентах. Исключение — контент диалогов: он лежит в `DialogueAsset`
+  (ScriptableObject), потому что это авторские данные, а не состояние.
+- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 91 шт.).
+- Локализации: подписи меню и HUD намеренно латинские, `com.unity.localization`
+  не подключён; реплики диалогов — русские и лежат прямо в ассетах.
 - Импортированных сторонних моделей: каталога `Assets/ThirdParty/` нет, исходники —
   архивами в `AssetSource/`.
 

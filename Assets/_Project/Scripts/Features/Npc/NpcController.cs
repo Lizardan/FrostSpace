@@ -61,6 +61,41 @@ namespace FrostSpace.Features.Npc
         private float _stuckTimer;
         private float _previousDistance = float.MaxValue;
         private int _index;
+        private bool _conversing;
+        private Transform _conversationFocus;
+
+        /// <summary>NPC остановлен разговором и смотрит на собеседника.</summary>
+        public bool IsConversing => _conversing;
+
+        /// <summary>
+        /// Останавливает патруль и поворачивает корпус к собеседнику. Таймер паузы
+        /// на точке замораживается, поэтому после разговора маршрут продолжается
+        /// с того же места и с тем же остатком паузы.
+        /// </summary>
+        public void EnterConversation(Transform focus)
+        {
+            _conversationFocus = focus;
+            if (_conversing)
+                return;
+
+            _conversing = true;
+            _speed = 0f;
+            if (_animator != null)
+                _animator.SetBool(MovingId, false);
+        }
+
+        /// <summary>Возвращает NPC на маршрут; антизастревание начинается заново.</summary>
+        public void EndConversation()
+        {
+            if (!_conversing)
+                return;
+
+            _conversing = false;
+            _conversationFocus = null;
+            _speed = 0f;
+            _stuckTimer = 0f;
+            _previousDistance = float.MaxValue;
+        }
 
         private void Awake()
         {
@@ -95,8 +130,15 @@ namespace FrostSpace.Features.Npc
             var deltaTime = Time.deltaTime;
             var planar = Vector3.zero;
 
+            // Разговор важнее маршрута: скорость гасится сразу, чтобы NPC не
+            // проехал лишний метр, пока панель уже открыта. Гравитация остаётся.
+            if (_conversing)
+            {
+                _speed = 0f;
+                FaceConversationFocus(deltaTime);
+            }
             // Маршрута нет — стоит на месте; иначе идёт к текущей точке.
-            if (_targets != null && _targets.Length > 0)
+            else if (_targets != null && _targets.Length > 0)
             {
                 if (_idleTimer > 0f)
                 {
@@ -163,6 +205,22 @@ namespace FrostSpace.Features.Npc
             _index = (_index + 1) % _targets.Length;
             _previousDistance = float.MaxValue;
             _stuckTimer = 0f;
+        }
+
+        /// <summary>Доворот к собеседнику по горизонтали: наклон камеры не задирает корпус.</summary>
+        private void FaceConversationFocus(float deltaTime)
+        {
+            if (_conversationFocus == null)
+                return;
+
+            var offset = _conversationFocus.position - transform.position;
+            offset.y = 0f;
+            if (offset.sqrMagnitude < 0.0004f)
+                return;
+
+            var rotation = Quaternion.LookRotation(offset.normalized, Vector3.up);
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation, rotation, _turnSpeed * deltaTime);
         }
 
         private float Vertical(float deltaTime)

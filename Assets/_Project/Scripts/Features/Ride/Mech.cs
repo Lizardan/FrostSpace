@@ -294,6 +294,10 @@ namespace FrostSpace.Features.Ride
             if (_rider == null)
                 return;
 
+            // Пауза или диалог: E не должна сажать за руль сквозь открытый экран.
+            if (_rig != null && _rig.IsPaused)
+                return;
+
             if (_mounted)
             {
                 Dismount();

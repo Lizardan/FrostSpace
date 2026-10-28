@@ -162,6 +162,7 @@ GameObject:
   - component: {fileID: 11746800}
   - component: {fileID: 11746799}
   - component: {fileID: 11746801}
+  - component: {fileID: 11746802}
   m_Layer: 7
   m_Name: NPC_R2_Furnace
   m_TagString: Untagged
@@ -247,6 +248,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
   _displayName: R2 FURNACE
   _category: NPC
+--- !u!114 &11746802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 11746797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dade26ac8513db244a3ffb30068682ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
+  _npc: {fileID: 11746799}
+  _dialogue: {fileID: 11400000, guid: 2f80b5b80cf4e7b4187026c948d4ec2d, type: 2}
 --- !u!1 &13249030
 GameObject:
   m_ObjectHideFlags: 0
@@ -10184,6 +10199,7 @@ GameObject:
   - component: {fileID: 1310819458}
   - component: {fileID: 1310819457}
   - component: {fileID: 1310819459}
+  - component: {fileID: 1310819460}
   m_Layer: 7
   m_Name: NPC_R3_Scout
   m_TagString: Untagged
@@ -10277,6 +10293,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
   _displayName: R3 SCOUT
   _category: NPC
+--- !u!114 &1310819460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1310819455}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dade26ac8513db244a3ffb30068682ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
+  _npc: {fileID: 1310819457}
+  _dialogue: {fileID: 11400000, guid: 1e4722cc2de887d4196def3fa9911348, type: 2}
 --- !u!1001 &1311303197
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11407,6 +11437,7 @@ GameObject:
   - component: {fileID: 1491490878}
   - component: {fileID: 1491490877}
   - component: {fileID: 1491490879}
+  - component: {fileID: 1491490880}
   m_Layer: 7
   m_Name: NPC_R5_Ranger
   m_TagString: Untagged
@@ -11502,6 +11533,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
   _displayName: R5 RANGER
   _category: NPC
+--- !u!114 &1491490880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1491490875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dade26ac8513db244a3ffb30068682ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
+  _npc: {fileID: 1491490877}
+  _dialogue: {fileID: 11400000, guid: 28ea9c7539ae3db49a0816b8122702a6, type: 2}
 --- !u!1 &1497351644
 GameObject:
   m_ObjectHideFlags: 0
@@ -11512,6 +11557,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1497351646}
   - component: {fileID: 1497351647}
+  - component: {fileID: 1497351649}
+  - component: {fileID: 1497351648}
   m_Layer: 0
   m_Name: GameFlow
   m_TagString: Untagged
@@ -11556,6 +11603,51 @@ MonoBehaviour:
   _shadeColor: {r: 0.008, g: 0.016, b: 0.026, a: 0.78}
   _buttonIdle: {r: 0.055, g: 0.085, b: 0.105, a: 0.82}
   _buttonHover: {r: 0.1, g: 0.19, b: 0.24, a: 0.95}
+--- !u!114 &1497351648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497351644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4023147f8038d55449f3b698d8758751, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueController
+  _rig: {fileID: 1896362467}
+  _scanner: {fileID: 1896362469}
+  _pause: {fileID: 1497351647}
+  _screen: {fileID: 1497351649}
+  _locomotion: {fileID: 1786677826}
+  _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  _blockers:
+    serializedVersion: 2
+    m_Bits: 4294967231
+  _rayDistance: 12
+  _talkRadius: 4
+--- !u!114 &1497351649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497351644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c1a579a73bb777488c904583a387465, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueScreen
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
+  _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
+  _panelColor: {r: 0.016, g: 0.026, b: 0.038, a: 0.96}
+  _choiceIdle: {r: 0.055, g: 0.085, b: 0.105, a: 0.42}
+  _promptPlate: {r: 0.016, g: 0.026, b: 0.038, a: 0.78}
+  _charactersPerSecond: 50
+  _showSeconds: 0.18
+  _hideSeconds: 0.12
 --- !u!1 &1502673543
 GameObject:
   m_ObjectHideFlags: 0
@@ -18774,6 +18866,7 @@ GameObject:
   - component: {fileID: 2115495058}
   - component: {fileID: 2115495057}
   - component: {fileID: 2115495059}
+  - component: {fileID: 2115495060}
   m_Layer: 7
   m_Name: NPC_R4_Hauler
   m_TagString: Untagged
@@ -18867,6 +18960,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Scan.ScanTarget
   _displayName: R4 HAULER
   _category: NPC
+--- !u!114 &2115495060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2115495055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dade26ac8513db244a3ffb30068682ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
+  _npc: {fileID: 2115495057}
+  _dialogue: {fileID: 11400000, guid: 2c7c30b766b34ce45824dad4837f8a62, type: 2}
 --- !u!1 &2116555853
 GameObject:
   m_ObjectHideFlags: 0

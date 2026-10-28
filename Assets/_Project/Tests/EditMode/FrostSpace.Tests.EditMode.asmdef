@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "FrostSpace.Features",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
