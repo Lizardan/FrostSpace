@@ -40,20 +40,20 @@ namespace FrostSpace.Tests
             public float IdleSeconds;
             public float WalkSeconds;
             public float RunSeconds;
+            public float WalkSpeed;
+            public float RunSpeed;
         }
 
         private static Expectation[] Expectations()
         {
+            // Ходун один: владелец выбрал PandaWalker, остальных убрал, а шаг
+            // попросил сделать общим — он и живёт в `mech_lib.GAIT_STYLES`.
+            // Рост вырос вместе с ногами (ADR 0024): таз поднят, иначе на шаге
+            // не хватало вылета ноги и корпус садился в присед.
             return new[]
             {
-                Expect("FrogWalker", 2.389f, 1.219f, 1.309f, 0.24f, 1.549f, 0.50f,
-                    0.19f, 0.819f, 0.44f, 3.33f, 1.27f, 0.67f),
-                Expect("BeeWalker", 2.412f, 1.230f, 1.320f, 0.24f, 1.560f, 0.50f,
-                    0.19f, 0.830f, 0.44f, 3.33f, 0.87f, 0.67f),
-                Expect("PandaWalker", 2.356f, 1.191f, 1.281f, 0.24f, 1.521f, 0.50f,
-                    0.19f, 0.791f, 0.44f, 3.33f, 1.13f, 0.67f),
-                Expect("FlamingoWalker", 2.175f, 1.062f, 1.152f, 0.24f, 1.392f, 0.50f,
-                    0.19f, 0.662f, 0.44f, 3.33f, 1.00f, 0.67f),
+                Expect("PandaWalker", 2.616f, 1.451f, 1.541f, 0.24f, 1.781f, 0.50f,
+                    0.19f, 1.051f, 0.44f, 3.33f, 1.20f, 0.73f, 1.506f, 4.077f),
             };
         }
 
@@ -61,7 +61,8 @@ namespace FrostSpace.Tests
             string unit, float height,
             float seatY, float seatPointY, float gripX, float gripY, float gripZ,
             float footX, float footY, float footZ,
-            float idleSeconds, float walkSeconds, float runSeconds)
+            float idleSeconds, float walkSeconds, float runSeconds,
+            float walkSpeed, float runSpeed)
         {
             return new Expectation
             {
@@ -74,6 +75,8 @@ namespace FrostSpace.Tests
                 IdleSeconds = idleSeconds,
                 WalkSeconds = walkSeconds,
                 RunSeconds = runSeconds,
+                WalkSpeed = walkSpeed,
+                RunSpeed = runSpeed,
             };
         }
 
@@ -106,11 +109,13 @@ namespace FrostSpace.Tests
         }
 
         [Test]
-        public void MechFolder_HasFourWalkers()
+        public void MechFolder_HasThePandaWalker()
         {
             var mechs = Mechs();
             CollectionAssert.IsNotEmpty(mechs, "В папке префабов нет ни одного ходуна");
-            Assert.AreEqual(4, mechs.Length, "Ожидались четыре ходуна: " + string.Join(",", mechs));
+            // Партия — один ходун: остальных владелец убрал, а шаг сделал общим.
+            CollectionAssert.AreEquivalent(new[] { "PandaWalker" }, mechs,
+                "В партии остался не тот ходун: " + string.Join(",", mechs));
 
             foreach (var mech in mechs)
                 Assert.IsNotNull(For(mech), "Нет ожиданий для ходуна " + mech);
@@ -215,6 +220,44 @@ namespace FrostSpace.Tests
                 CollectionAssert.Contains(
                     new[] { "Chest", "Torso" }, seatComp.Chest.name,
                     path + ": MechSeat смотрит не на кость корпуса");
+            }
+        }
+
+        /// <summary>
+        /// Капсула и скорости едут за габаритом и замером клипа.
+        ///
+        /// Скорость контроллера обязана совпадать со скоростью земли в клипе:
+        /// <see cref="Mech"/> делит фактическую скорость на неё, и только при
+        /// совпадении `Animator.speed` держится около 1, а подошва не скользит по
+        /// снегу. Раньше эти числа жили в двух местах и расходились молча.
+        /// </summary>
+        [Test]
+        public void Prefab_CapsuleAndSpeedsMatchManifest()
+        {
+            foreach (var unit in Mechs())
+            {
+                var path = PrefabFolder + "/ME_" + unit + "_Model.prefab";
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                var expectation = For(unit);
+
+                var capsule = prefab.GetComponent<CharacterController>();
+                Assert.IsNotNull(capsule, path + ": нет капсулы");
+                Assert.AreEqual(expectation.Height * 0.9f, capsule.height, 0.02f,
+                    path + ": высота капсулы разошлась с ростом модели");
+
+                var serialized = new SerializedObject(prefab.GetComponent<Mech>());
+                Assert.AreEqual(expectation.WalkSpeed,
+                    serialized.FindProperty("_walkSpeed").floatValue, 0.01f,
+                    path + ": скорость шага");
+                Assert.AreEqual(expectation.RunSpeed,
+                    serialized.FindProperty("_runSpeed").floatValue, 0.01f,
+                    path + ": скорость бега");
+                Assert.AreEqual(expectation.WalkSpeed,
+                    serialized.FindProperty("_walkClipSpeed").floatValue, 0.01f,
+                    path + ": скорость земли в клипе шага");
+                Assert.AreEqual(expectation.RunSpeed,
+                    serialized.FindProperty("_runClipSpeed").floatValue, 0.01f,
+                    path + ": скорость земли в клипе бега");
             }
         }
 

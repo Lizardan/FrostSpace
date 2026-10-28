@@ -81,8 +81,11 @@ def build(unit: str) -> dict:
         "gait_style": meta["gait_style"],
         "gait_note": style.get("note"),
         "walk_frames": meta["clips"]["walk"]["frames"],
-        "walk_speed": meta["cfg"].get("walk_speed"),
-        "run_speed": meta["cfg"].get("run_speed"),
+        # Скорость контроллера — замер скорости земли в клипе, а не константа:
+        # `Mech` делит фактическую скорость на неё, и только при совпадении
+        # `Animator.speed` остаётся около 1, а подошва не скользит.
+        "walk_speed": meta["clip_speed"]["walk"],
+        "run_speed": meta["clip_speed"]["run"],
         "knee_bulge": meta["gait"]["knee_bulge"],
         "root_drift": meta["root_drift"],
         "root": meta["roles"]["root"],

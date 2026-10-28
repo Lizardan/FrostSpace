@@ -206,14 +206,16 @@ def main() -> int:
         span = max(1, end - start)
         key = clip.lower()
         cfg = style.get(key, {})
-        stance = float(cfg.get("stance", 1.0))
-        if stance >= 1.0:
+        # Доля стойки в цикле: по ней берутся фазы «касание», «середина стойки»,
+        # «отрыв» и «середина замаха» — иначе кадр попадает между фазами.
+        duty = float(cfg.get("duty", 1.0))
+        if duty >= 1.0:
             # Стойка без шага: смотрим позу от начала до конца цикла.
             phases = (0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0)
         else:
-            phases = (0.0, stance * 0.5, stance,
-                      stance + (1.0 - stance) * 0.5)
-        camera = cameras["front"] if stance >= 1.0 else cameras["side"]
+            phases = (0.0, duty * 0.5, duty,
+                      duty + (1.0 - duty) * 0.5)
+        camera = cameras["front"] if duty >= 1.0 else cameras["side"]
         for offset, phase in enumerate(phases):
             frame = min(int(round(start + phase * span)), end)
             if not set_pose(arm, clip, frame):

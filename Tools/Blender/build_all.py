@@ -93,8 +93,14 @@ PIPELINE: dict[str, dict] = {
     "mechs": {
         "script": "build_mechs.py",
         "outputs": [MODELS + "/Mechs/ME_*.fbx"],
+        # Превью — два шага: три вида и кабина (одна поза), плюс полоса кадров
+        # шага. По одному кадру походку не принять: перекат стопы и качание
+        # корпуса читаются только последовательностью.
         "previews": [_step("render_mech_previews.py", "file",
-                           ["--out", PREVIEWS + "/Mechs"])],
+                           ["--out", PREVIEWS + "/Mechs"]),
+                     _step("render_gait_strip.py", "file",
+                           ["--clip", "Walk", "--frames", "8",
+                            "--out", PREVIEWS + "/Gait"])],
         "checks": [_step("check_mech_clips.py", "file")],
     },
     "level": {

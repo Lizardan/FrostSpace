@@ -1,297 +1,11 @@
 [
   {
-    "unit": "FrogWalker",
-    "name": "ME_FrogWalker",
-    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\Mechs\\ME_FrogWalker.fbx",
-    "verts": 1782,
-    "tris": 3076,
-    "height": 2.389,
-    "rig": "mech",
-    "source": "Mech_FinnTheFrog",
-    "source_size": [
-      3.383,
-      1.986,
-      3.063
-    ],
-    "size": [
-      1.682,
-      1.347,
-      2.389
-    ],
-    "clips": {
-      "idle": 100,
-      "walk": 38,
-      "run": 20
-    },
-    "clip_seconds": {
-      "idle": 3.333,
-      "walk": 1.267,
-      "run": 0.667
-    },
-    "clip_speed": {
-      "walk": 1.737,
-      "run": 4.842
-    },
-    "gait_style": "column",
-    "gait_note": "колонный шаг: длинный цикл, тяжёлый боб, плоская стопа",
-    "walk_frames": 38,
-    "walk_speed": 1.9,
-    "run_speed": 5.0,
-    "knee_bulge": 0.4,
-    "root_drift": {
-      "idle": [
-        0.008,
-        0.0
-      ],
-      "walk": [
-        0.0159,
-        0.0
-      ],
-      "run": [
-        0.016,
-        0.0
-      ]
-    },
-    "root": "Body",
-    "stance": 0.62,
-    "cockpit": {
-      "seat": [
-        0.0,
-        0.02,
-        1.219
-      ],
-      "seat_point": [
-        0.0,
-        0.02,
-        1.309
-      ],
-      "grips": 0.24,
-      "grip": [
-        -0.5,
-        1.549
-      ],
-      "foot": [
-        -0.44,
-        0.819
-      ],
-      "foot_half": 0.19,
-      "cavity": [
-        -0.24,
-        0.24,
-        -0.32,
-        0.18,
-        1.299,
-        2.009
-      ]
-    },
-    "layout": {
-      "hip": [
-        0.62,
-        0.163,
-        1.448
-      ],
-      "knee": [
-        0.62,
-        -0.764,
-        1.082
-      ],
-      "ankle": [
-        0.62,
-        0.0,
-        0.097
-      ],
-      "toe": [
-        0.62,
-        -0.535,
-        0.097
-      ],
-      "body": [
-        0.0,
-        -0.721,
-        1.492
-      ],
-      "seat_frame": [
-        0.0,
-        -0.111,
-        1.219
-      ],
-      "chest": [
-        0.0,
-        0.105,
-        1.711
-      ],
-      "chest_tail": [
-        0.0,
-        -0.029,
-        2.192
-      ],
-      "neck": [
-        0.0,
-        -0.029,
-        2.192
-      ],
-      "head": [
-        0.0,
-        -0.176,
-        2.318
-      ],
-      "head_tail": [
-        0.0,
-        -0.587,
-        2.352
-      ]
-    }
-  },
-  {
-    "unit": "BeeWalker",
-    "name": "ME_BeeWalker",
-    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\Mechs\\ME_BeeWalker.fbx",
-    "verts": 1682,
-    "tris": 2880,
-    "height": 2.412,
-    "rig": "mech",
-    "source": "Mech_BarbaraTheBee",
-    "source_size": [
-      2.914,
-      2.055,
-      2.996
-    ],
-    "size": [
-      1.612,
-      1.256,
-      2.412
-    ],
-    "clips": {
-      "idle": 100,
-      "walk": 26,
-      "run": 20
-    },
-    "clip_seconds": {
-      "idle": 3.333,
-      "walk": 0.867,
-      "run": 0.667
-    },
-    "clip_speed": {
-      "walk": 2.077,
-      "run": 4.842
-    },
-    "gait_style": "strut",
-    "gait_note": "частый шаг с высоким коленом и приседом",
-    "walk_frames": 26,
-    "walk_speed": 2.2,
-    "run_speed": 5.0,
-    "knee_bulge": 0.5,
-    "root_drift": {
-      "idle": [
-        0.008,
-        0.0
-      ],
-      "walk": [
-        0.0099,
-        0.0
-      ],
-      "run": [
-        0.016,
-        0.0
-      ]
-    },
-    "root": "Body",
-    "stance": 0.62,
-    "cockpit": {
-      "seat": [
-        0.0,
-        0.02,
-        1.23
-      ],
-      "seat_point": [
-        0.0,
-        0.02,
-        1.32
-      ],
-      "grips": 0.24,
-      "grip": [
-        -0.5,
-        1.56
-      ],
-      "foot": [
-        -0.44,
-        0.83
-      ],
-      "foot_half": 0.19,
-      "cavity": [
-        -0.24,
-        0.24,
-        -0.32,
-        0.18,
-        1.31,
-        2.02
-      ]
-    },
-    "layout": {
-      "hip": [
-        0.62,
-        0.082,
-        1.465
-      ],
-      "knee": [
-        0.62,
-        -0.866,
-        1.091
-      ],
-      "ankle": [
-        0.62,
-        0.0,
-        0.083
-      ],
-      "toe": [
-        0.62,
-        -0.548,
-        0.083
-      ],
-      "body": [
-        0.0,
-        -0.822,
-        1.51
-      ],
-      "seat_frame": [
-        0.0,
-        -0.197,
-        1.23
-      ],
-      "chest": [
-        0.0,
-        0.023,
-        1.734
-      ],
-      "chest_tail": [
-        0.0,
-        0.091,
-        1.941
-      ],
-      "neck": [
-        0.0,
-        0.091,
-        1.941
-      ],
-      "head": [
-        0.0,
-        0.097,
-        2.123
-      ],
-      "head_tail": [
-        0.0,
-        0.08,
-        2.338
-      ]
-    }
-  },
-  {
     "unit": "PandaWalker",
     "name": "ME_PandaWalker",
     "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\Mechs\\ME_PandaWalker.fbx",
-    "verts": 1814,
-    "tris": 3132,
-    "height": 2.356,
+    "verts": 1990,
+    "tris": 3432,
+    "height": 2.616,
     "rig": "mech",
     "source": "Mech_RaeTheRedPanda",
     "source_size": [
@@ -300,41 +14,41 @@
       3.095
     ],
     "size": [
-      1.648,
-      1.337,
-      2.356
+      1.68,
+      1.423,
+      2.616
     ],
     "clips": {
       "idle": 100,
-      "walk": 34,
-      "run": 20
+      "walk": 36,
+      "run": 22
     },
     "clip_seconds": {
       "idle": 3.333,
-      "walk": 1.133,
-      "run": 0.667
+      "walk": 1.2,
+      "run": 0.733
     },
     "clip_speed": {
-      "walk": 1.819,
-      "run": 4.842
+      "walk": 1.506,
+      "run": 4.077
     },
     "gait_style": "waddle",
-    "gait_note": "валкий шаг: широкий боковой перенос веса",
-    "walk_frames": 34,
-    "walk_speed": 2.0,
-    "run_speed": 5.0,
-    "knee_bulge": 0.46,
+    "gait_note": "валкий шаг: широкий перенос веса креном, длинная двойная опора",
+    "walk_frames": 36,
+    "walk_speed": 1.506,
+    "run_speed": 4.077,
+    "knee_bulge": 0.4,
     "root_drift": {
       "idle": [
-        0.008,
+        0.0022,
         0.0
       ],
       "walk": [
-        0.0159,
-        0.0
+        0.033,
+        0.0001
       ],
       "run": [
-        0.016,
+        0.0103,
         0.0
       ]
     },
@@ -344,21 +58,21 @@
       "seat": [
         0.0,
         0.02,
-        1.191
+        1.451
       ],
       "seat_point": [
         0.0,
         0.02,
-        1.281
+        1.541
       ],
       "grips": 0.24,
       "grip": [
         -0.5,
-        1.521
+        1.781
       ],
       "foot": [
         -0.44,
-        0.791
+        1.051
       ],
       "foot_half": 0.19,
       "cavity": [
@@ -366,15 +80,15 @@
         0.24,
         -0.32,
         0.18,
-        1.271,
-        1.981
+        1.531,
+        2.241
       ]
     },
     "layout": {
       "hip": [
         0.62,
         0.161,
-        1.418
+        1.678
       ],
       "knee": [
         0.62,
@@ -388,7 +102,7 @@
       ],
       "toe": [
         0.62,
-        -0.53,
+        -0.42,
         0.081
       ],
       "body": [
@@ -399,12 +113,12 @@
       "seat_frame": [
         0.0,
         -0.11,
-        1.191
+        1.451
       ],
       "chest": [
         0.0,
         0.104,
-        1.678
+        1.938
       ],
       "chest_tail": [
         0.0,
@@ -425,149 +139,6 @@
         0.0,
         -0.333,
         2.198
-      ]
-    }
-  },
-  {
-    "unit": "FlamingoWalker",
-    "name": "ME_FlamingoWalker",
-    "path": "F:\\Unity Projects\\FrostSpace\\Assets\\_Project\\Content\\Models\\Mechs\\ME_FlamingoWalker.fbx",
-    "verts": 1678,
-    "tris": 2892,
-    "height": 2.175,
-    "rig": "mech",
-    "source": "Mech_FernandoTheFlamingo",
-    "source_size": [
-      2.699,
-      2.063,
-      3.551
-    ],
-    "size": [
-      1.588,
-      1.326,
-      2.175
-    ],
-    "clips": {
-      "idle": 100,
-      "walk": 30,
-      "run": 20
-    },
-    "clip_seconds": {
-      "idle": 3.333,
-      "walk": 1.0,
-      "run": 0.667
-    },
-    "clip_speed": {
-      "walk": 1.6,
-      "run": 4.05
-    },
-    "gait_style": "stilt",
-    "gait_note": "журавлиный шаг: почти прямая нога, высокий носок",
-    "walk_frames": 30,
-    "walk_speed": 1.75,
-    "run_speed": 4.2,
-    "knee_bulge": 0.32,
-    "root_drift": {
-      "idle": [
-        0.008,
-        0.0
-      ],
-      "walk": [
-        0.008,
-        0.0
-      ],
-      "run": [
-        0.012,
-        0.0
-      ]
-    },
-    "root": "Body",
-    "stance": 0.6,
-    "cockpit": {
-      "seat": [
-        0.0,
-        0.02,
-        1.062
-      ],
-      "seat_point": [
-        0.0,
-        0.02,
-        1.152
-      ],
-      "grips": 0.24,
-      "grip": [
-        -0.5,
-        1.392
-      ],
-      "foot": [
-        -0.44,
-        0.662
-      ],
-      "foot_half": 0.19,
-      "cavity": [
-        -0.24,
-        0.24,
-        -0.32,
-        0.18,
-        1.142,
-        1.852
-      ]
-    },
-    "layout": {
-      "hip": [
-        0.6,
-        0.144,
-        1.264
-      ],
-      "knee": [
-        0.6,
-        -0.674,
-        0.941
-      ],
-      "ankle": [
-        0.6,
-        0.0,
-        0.072
-      ],
-      "toe": [
-        0.6,
-        -0.473,
-        0.072
-      ],
-      "body": [
-        0.0,
-        -0.637,
-        1.303
-      ],
-      "seat_frame": [
-        0.0,
-        -0.098,
-        1.062
-      ],
-      "chest": [
-        0.0,
-        0.092,
-        1.496
-      ],
-      "chest_tail": [
-        0.0,
-        -0.004,
-        2.002
-      ],
-      "neck": [
-        0.0,
-        -0.004,
-        2.002
-      ],
-      "head": [
-        0.0,
-        -0.044,
-        2.534
-      ],
-      "head_tail": [
-        0.0,
-        -0.389,
-        2.393
       ]
     }
   }

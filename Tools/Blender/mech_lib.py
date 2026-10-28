@@ -52,26 +52,16 @@ MEMBER = "Ultimate Space Kit - March 2023/Characters/FBX/{source}.fbx"
 #: target — рост в метрах: ходун заметно выше игрового робота, но не гигант.
 #: stance — целевой полуразнос бёдер, м (см. `narrow_stance`).
 #: accent — роль палитры, которой юнит опознаётся (сама геометрия важнее цвета).
-#: gait — профиль шага из `GAIT_STYLES`: у каждого юнита своя каденция и
-#: пластика. walk_speed/run_speed — скорость контроллера в Unity: она
-#: согласована со скоростью земли в клипе, чтобы `Animator.speed` был около 1.
+#: gait — профиль шага из `GAIT_STYLES`. Профиль **один на всю партию**
+#: (`waddle`): владелец выбрал шаг PandaWalker и попросил сделать его общим, а
+#: остальных ходунов убрать. Скорость контроллера в Unity не задаётся здесь: она
+#: **меряется** по клипу (`measure_speed`) и уходит в манифест, иначе
+#: `Animator.speed` пришлось бы подкручивать вслепую и стопа поехала бы по снегу.
 MECHS = {
-    "FrogWalker": dict(
-        source="Mech_FinnTheFrog", rig="mech", target=2.60, stance=0.62,
-        idle="Idle", walk="Walk", run="Run", accent="patina",
-        gait="column", walk_speed=1.9, run_speed=5.0),
-    "BeeWalker": dict(
-        source="Mech_BarbaraTheBee", rig="mech", target=2.60, stance=0.62,
-        idle="Idle", walk="Walk", run="Run", accent="yellow",
-        gait="strut", walk_speed=2.2, run_speed=5.0),
     "PandaWalker": dict(
-        source="Mech_RaeTheRedPanda", rig="mech", target=2.60, stance=0.62,
+        source="Mech_RaeTheRedPanda", rig="mech", target=2.60, stance=0.62, leg_lift=0.26,
         idle="Idle", walk="Walk", run="Run", accent="accent",
-        gait="waddle", walk_speed=2.0, run_speed=5.0),
-    "FlamingoWalker": dict(
-        source="Mech_FernandoTheFlamingo", rig="mech", target=2.66, stance=0.60,
-        idle="Idle", walk="Walk", run="Run", accent="rose",
-        gait="stilt", walk_speed=1.75, run_speed=4.2),
+        gait="waddle"),
 }
 
 #: Клипы, которые едут в Unity. Порядок = порядок NLA-полос, он же порядок клипов
@@ -172,6 +162,41 @@ def narrow_stance(arm, target_half_width: float) -> float:
     return factor
 
 
+def raise_body(arm, delta: float) -> float:
+    """Поднимает таз и весь корпус на `delta`, оставляя ступни на полу.
+
+    Зачем: у пака таз стоит на 1.448 при ноге 1.36 от стопы — запаса вылета
+    почти нет, и на шаге корпус приходилось сажать на 10–15 см ниже rest, иначе
+    IK выпрямлял ногу в палку. Ходун в таком приседе читается крадущимся, а не
+    шагающим. Поднимаем таз: `straighten_stance` после этого строит колено по
+    новому расстоянию «бедро—голеностоп», и нога становится длиннее на ту же
+    величину. Корпус едет вверх вместе с тазом, поэтому кабина, кресло и броня
+    остаются на своих местах относительно бёдер — меняется только высота роста.
+    """
+    if delta <= 0.0:
+        return 0.0
+    bpy.context.view_layer.objects.active = arm
+    arm.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    edit = arm.data.edit_bones
+    for side in ("L", "R"):
+        bone = edit.get("UpperLeg." + side)
+        if bone is not None:
+            bone.head.z += delta
+    # Позвоночник — вместе с тазом: иначе кабина осталась бы на прежней высоте
+    # и повисла между ног. Двигается только `Torso`: его хвост совпадает с
+    # головой `Chest`, и цепочка `Chest → Neck → Head` едет за ним сама.
+    # (Если сдвинуть каждую кость отдельно, они уезжают дважды — проверено.)
+    torso = edit.get("Torso")
+    if torso is not None:
+        torso.head.z += delta
+        torso.tail.z += delta
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.context.view_layer.update()
+    print("LIFT %s таз и корпус +%.3f м" % (arm.name, delta))
+    return delta
+
+
 def load(name: str):
     """Импортирует риг пака, убирает его меш и приводит модель к метрам/+Z.
 
@@ -223,6 +248,11 @@ def load(name: str):
 
     stance_factor = (narrow_stance(arm, cfg["stance"])
                      if cfg.get("stance") else 1.0)
+    # Подошва короче паковой лапы: кость стопы укорачивается до носка до того,
+    # как по её точкам построятся броня и траектория переката.
+    shape_feet(arm)
+    # Таз поднимается до печки клипов: длина ноги считается уже по новой высоте.
+    raise_body(arm, cfg.get("leg_lift", 0.0))
 
     role_map = roles(arm)
     meta = {
@@ -394,20 +424,73 @@ def prepare_clips(arm, meta) -> dict:
 
 # --------------------------------------------------------------- походка
 
-#: Куда выгибается колено: у пака оно смотрит вперёд (обратноколенная стойка).
-KNEE_POLE = Vector((0.0, -1.0, 0.0))
+#: Куда выгибается колено: назад — птичья (обратноколенная) стойка шагохода.
+KNEE_POLE = Vector((0.0, 1.0, 0.0))
 
 #: Насколько колено вынесено вперёд от линии «бедро—голеностоп» в rest-позе, м.
 #:
 #: У пака колено уходит вперёд на 0.93 м при базе 1.36 м: нога складывается
-#: лягушачьим зигзагом, и на шаге это читается как присед с подскоком. 0.40 —
-#: нога становится колонной с живым суставом, но сохраняет запас вылета на шаг
-#: (бедро и голень по 0.79 м против базы 1.36 м).
-KNEE_BULGE = 0.40
+#: лягушачьим зигзагом, и на шаге это читается как присед с подскоком. Меньше
+#: вынос — прямее нога и меньше запас вылета, поэтому шаг короче: это главный
+#: размен формы и длины шага, и он у каждого профиля свой.
+KNEE_BULGE = 0.36
 
-#: Какая доля вылета ноги разрешена стопе. 0.98 — колено почти выпрямляется на
-#: краю шага; ровно на прямой ноге ходун выглядит как ходули, поэтому не 1.0.
-LEG_REACH = 0.98
+#: Какая доля вылета ноги разрешена стопе. Ровно 1.0 — колено выпрямляется в
+#: палку и нога «щёлкает» на краю шага, поэтому не 1.0. 0.99 при этом штатно
+#: разгибает ногу на касании и отрыве: так и ходят — прямая опора под весом.
+LEG_REACH = 0.99
+
+#: Подошва ступни от голеностопа, м: пятка назад, носок вперёд. Кость `Foot`
+#: укорачивается до носка (`shape_feet`), поэтому кость, броня и точки опоры в
+#: перекате — одни и те же числа. 0.56 м на ногу 1.54: ступня шагохода, а не лыжа
+#: (0.775 м читались именно лыжей — подошва была длиной с голень).
+FOOT_HEEL_BACK = 0.14
+FOOT_TOE_AHEAD = 0.42
+
+#: Запас под колено, м: таз не поднимается выше, чем нога может достать с
+#: согнутым коленом. Без него IK выпрямляет ногу на краю шага в палку, а
+#: зажатая цель — это уже съехавшая подошва, а не поза.
+KNEE_SLACK = 0.02
+
+
+def _sole_points(arm, side: str):
+    """Голеностоп, пятка и носок подошвы в rest-позе, мировые координаты.
+
+    Стопа в риге пака — кость без родителя: её голова это голеностоп, хвост —
+    носок. Подошва лежит на `z = 0`, поэтому точки опоры берутся на земле, а не
+    на высоте голеностопа: перекат вращает ступню **вокруг края подошвы**, иначе
+    пятка или носок уходят под пол.
+    """
+    ankle = arm.data.bones["Foot." + side].head_local.copy()
+    return (ankle,
+            Vector((ankle.x, ankle.y + FOOT_HEEL_BACK, 0.0)),
+            Vector((ankle.x, ankle.y - FOOT_TOE_AHEAD, 0.0)))
+
+
+def shape_feet(arm) -> None:
+    """Укорачивает кость `Foot` до носка подошвы.
+
+    У пака кость стопы длиной 0.535 м — это «лапа» под его собственный меш. Наша
+    подошва короче, и если оставить кость как есть, броня, точки опоры переката и
+    хвост кости разъезжаются тремя разными числами. Теперь хвост кости и есть
+    носок, а `FOOT_HEEL_BACK`/`FOOT_TOE_AHEAD` — единственный источник размеров.
+    """
+    bpy.context.view_layer.objects.active = arm
+    arm.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    for side in ("L", "R"):
+        bone = arm.data.edit_bones.get("Foot." + side)
+        if bone is None:
+            continue
+        bone.tail = Vector((bone.head.x, bone.head.y - FOOT_TOE_AHEAD,
+                            bone.head.z))
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.context.view_layer.update()
+
+
+def _tilt_matrix(tilt_deg: float) -> Matrix:
+    """Поворот подошвы вокруг оси X: `tilt > 0` поднимает носок."""
+    return Matrix.Rotation(math.radians(-tilt_deg), 3, "X")
 
 
 #: Профили походки: у каждого юнита своя пластика, а не общий шаг на всех.
@@ -418,73 +501,54 @@ LEG_REACH = 0.98
 #: вынос — глубже присед и больше запас хода; меньше — нога читается почти
 #: прямой, но запас вылета падает, поэтому шаг у такой ноги короче.
 #:
-#: `frames` — длина цикла, и это главное отличие: скорость земли =
-#: `travel / (frames / FPS)`. При `FPS = 30` шаг в 38 кадров даёт 1.74 м/с,
-#: а в 26 кадров — 2.08 м/с. `travel * stance` — длина шага, и она упирается
-#: в геометрию: бедро стоит позади стопы, а IK режет вынос за `leg_reach`
-#: длины ноги. За этим следит счётчик зажимов в `author_gait`.
+#: `frames` — длина цикла, `duty` — доля цикла, которую нога стоит на земле,
+#: `stride` — путь подошвы по земле за стойку, м. Скорость земли =
+#: `stride / (duty * frames / FPS)`, и она упирается в геометрию: вынос стопы
+#: не может быть больше вылета ноги. Зажимы считает `author_gait` и падает,
+#: если они попали в стойку.
 #:
-#: `bob` — вертикальная качка корпуса, `sway` — боковой сдвиг, `roll` — крен
-#: вокруг оси движения, `lean` — постоянный наклон вперёд, `yaw` — доворот,
-#: `chest` — контр-доворот груди (верх гасит качку корпуса),
-#: `toe` — подъём носка на замахе (в стойке подошва плоская всегда).
+#: `heel_strike` — насколько носок поднят в момент касания, `heel_off` — насколько
+#: пятка поднята в конце стойки, `toe_clear` — добавочный подъём носка на замахе.
+#: Перекат и есть то, что отличает шагоход от скользящей коробки: подошва
+#: катится с пятки через всю плиту на носок, а не едет плоско.
 #:
-#: `sway` не может быть большим: сдвиг корня по горизонтали ловит `flatten_root`
-#: и замер in-place (порог 0.02 м на весь размах, то есть `sway` ≤ 0.008).
-#: Поэтому перенос веса читается не сдвигом, а креном `roll` — он вращает корпус
-#: вокруг оси движения и уводит бёдра вбок без трансляции корня.
-_GAIT_IDLE = dict(frames=100, travel=0.0, lift=0.0, stance=1.0,
-                  bob=0.015, yaw=0.8, sway=0.004, roll=0.5, lean=1.5,
-                  toe=0.0, chest=0.4)
-_GAIT_RUN = dict(frames=20, travel=3.3, lift=0.30, stance=0.345,
-                 bob=0.040, yaw=2.5, sway=0.008, roll=1.2, lean=3.0,
-                 toe=8.0, chest=1.0)
+#: `heel_roll`/`toe_roll` — доли стойки на перекат через пятку и через носок.
+#: `lift` — клиренс стопы на замахе, `track` — насколько стопа заносится внутрь
+#: по дуге, `crouch` — насколько таз опущен против rest.
+#:
+#: `bob` — амплитуда высоты таза, `sway` — боковой сдвиг (≤0.008: размах ловит
+#: `flatten_root`), `roll` — крен корпуса, `lean` — наклон вперёд, `twist` —
+#: доворот таза, `shoulder` — контр-доворот груди (плечи против таза).
+_GAIT_IDLE = dict(frames=100, stride=0.0, duty=1.0, lift=0.0,
+                  heel_strike=0.0, heel_off=0.0, toe_clear=0.0,
+                  heel_roll=0.0, toe_roll=0.0, track=0.0, breath=2.0,
+                  crouch=0.012, bob=0.010, sway=0.003, roll=0.5, lean=1.5,
+                  twist=0.6, shoulder=0.4)
 
-#: Бег для почти прямой ноги: запас вылета меньше, поэтому шаг короче —
-#: на общем 3.3 м IK зажимал цель в стойке и подошва ехала по снегу.
-_GAIT_RUN_STILT = dict(frames=20, travel=2.7, lift=0.32, stance=0.36,
-                       bob=0.036, yaw=2.2, sway=0.006, roll=0.8, lean=1.0,
-                       toe=12.0, chest=0.8)
-
+#: Профиль походки. **Один на всю партию.** Владелец выбрал шаг PandaWalker
+#: (`waddle`) и попросил сделать его общим для шагоходов, а остальных ходунов
+#: убрать: общий шаг — это и есть «как у PandaWalker», и он не разъезжается при
+#: добавлении нового корпуса. Ключ в `MECHS` остался, чтобы второй профиль можно
+#: было завести данными, а не веткой кода.
 GAIT_STYLES = {
-    "column": dict(
-        note="колонный шаг: длинный цикл, тяжёлый боб, плоская стопа",
+    "waddle": dict(
+        note="валкий шаг: широкий перенос веса креном, длинная двойная опора",
         knee_bulge=0.40, leg_reach=0.98,
         idle=dict(_GAIT_IDLE),
-        walk=dict(frames=38, travel=2.2, lift=0.22, stance=0.50,
-                  bob=0.045, yaw=2.5, sway=0.008, roll=2.0, lean=3.0,
-                  toe=8.0, chest=1.3),
-        run=dict(_GAIT_RUN)),
-    "strut": dict(
-        note="частый шаг с высоким коленом и приседом",
-        knee_bulge=0.50, leg_reach=0.96,
-        idle=dict(_GAIT_IDLE),
-        walk=dict(frames=26, travel=1.8, lift=0.32, stance=0.50,
-                  bob=0.022, yaw=2.0, sway=0.005, roll=1.0, lean=1.5,
-                  toe=14.0, chest=1.0),
-        run=dict(_GAIT_RUN)),
-    "waddle": dict(
-        note="валкий шаг: широкий боковой перенос веса",
-        knee_bulge=0.46, leg_reach=0.98,
-        idle=dict(_GAIT_IDLE),
-        walk=dict(frames=34, travel=2.1, lift=0.20, stance=0.52,
-                  bob=0.032, yaw=3.0, sway=0.008, roll=4.0, lean=2.5,
-                  toe=6.0, chest=1.6),
-        run=dict(_GAIT_RUN)),
-    "stilt": dict(
-        note="журавлиный шаг: почти прямая нога, высокий носок",
-        # 0.985 вместо 0.97: у прямой ноги запас вылета меньше всех, а шаг в
-        # 0.97 упирался в предел и IK зажимал цель в стойке (ловится счётчиком).
-        knee_bulge=0.32, leg_reach=0.985,
-        idle=dict(_GAIT_IDLE),
-        walk=dict(frames=30, travel=1.6, lift=0.40, stance=0.50,
-                  bob=0.016, yaw=1.6, sway=0.004, roll=0.5, lean=0.5,
-                  toe=18.0, chest=0.6),
-        run=dict(_GAIT_RUN_STILT)),
+        walk=dict(frames=36, stride=1.25, duty=0.68, lift=0.15,
+                  heel_strike=3.0, heel_off=12.0, toe_clear=9.0,
+                  heel_roll=0.20, toe_roll=0.24, track=0.05,
+                  crouch=0.070, bob=0.062, sway=0.008, roll=6.5, lean=3.5,
+                  twist=2.0, shoulder=1.4),
+        run=dict(frames=22, stride=1.40, duty=0.46, lift=0.26,
+                 heel_strike=4.0, heel_off=16.0, toe_clear=12.0,
+                 heel_roll=0.14, toe_roll=0.26, track=0.04,
+                 crouch=0.085, bob=0.070, sway=0.008, roll=3.5, lean=5.0,
+                 twist=2.6, shoulder=2.0)),
 }
 
 #: Стиль по умолчанию для юнита без поля `gait` в `MECHS`.
-DEFAULT_GAIT = "column"
+DEFAULT_GAIT = "waddle"
 
 #: Сколько кадров стойки IK вправе зажать цель. Зажатая цель — подошва едет
 #: по снегу быстрее или медленнее `clip_speed`, поэтому это ошибка сборки,
@@ -500,6 +564,94 @@ def gait_style(meta) -> dict:
         raise RuntimeError("%s: неизвестный стиль походки %r (есть %s)" % (
             meta["name"], name, sorted(GAIT_STYLES)))
     return style
+
+
+# ------------------------------------------------------- траектория подошвы
+
+def _stance_foot(cfg: dict, u: float, ankle0, heel0, toe0):
+    """Голеностоп и наклон подошвы в стойке; `u ∈ [0, 1]` — доля стойки.
+
+    Подошва катится, а не едет плоско: сначала опускается с пятки на всю плиту,
+    потом стоит плоско, потом поднимается через носок. Вращение идёт **вокруг
+    края подошвы на земле**, поэтому опорная кромка остаётся на `z = 0` — ступня
+    не проваливается и не висит.
+
+    Точка опоры при этом едет назад линейно: клип in-place, земля уходит под
+    ходуном с постоянной скоростью, и опора обязана двигаться с ней синхронно —
+    иначе стопа скользит и `Animator.speed` в Unity подкручивать нечем.
+    """
+    slide = cfg["stride"] * (u - 0.5)
+    ankle_flat = Vector((ankle0.x, ankle0.y + slide, ankle0.z))
+    heel_roll = cfg.get("heel_roll", 0.0)
+    toe_roll = cfg.get("toe_roll", 0.0)
+    if heel_roll > 1e-6 and u < heel_roll:
+        tilt = cfg["heel_strike"] * (1.0 - u / heel_roll)
+        pivot = Vector((heel0.x, heel0.y + slide, 0.0))
+    elif toe_roll > 1e-6 and u > 1.0 - toe_roll:
+        tilt = -cfg["heel_off"] * ((u - (1.0 - toe_roll)) / toe_roll)
+        pivot = Vector((toe0.x, toe0.y + slide, 0.0))
+    else:
+        return ankle_flat, 0.0
+    return pivot + _tilt_matrix(tilt) @ (ankle_flat - pivot), tilt
+
+
+def _foot_pose(cfg: dict, phase: float, ankle0, heel0, toe0):
+    """Голеностоп и наклон подошвы на фазе цикла `phase ∈ [0, 1)`.
+
+    Замах — одна плавная дуга от отрыва до следующего касания: горизонталь по
+    `smoothstep` (стопа разгоняется и тормозит), вертикаль — колокол клиренса,
+    наклон плавно переходит от «пятка поднята» к «носок поднят». Стопа заносится
+    по дуге внутрь (`track`): иначе ноги идут параллельными рельсами, и силуэт
+    читается тележкой.
+    """
+    if cfg["stride"] <= 1e-6:
+        return Vector(ankle0), 0.0
+    duty = cfg["duty"]
+    if phase < duty:
+        return _stance_foot(cfg, phase / duty, ankle0, heel0, toe0)
+    s = (phase - duty) / max(1.0 - duty, 1e-6)
+    start, tilt_start = _stance_foot(cfg, 1.0, ankle0, heel0, toe0)
+    end, tilt_end = _stance_foot(cfg, 0.0, ankle0, heel0, toe0)
+    ease = s * s * (3.0 - 2.0 * s)
+    hump = math.sin(math.pi * s)
+    ankle = start.lerp(end, ease)
+    ankle.z += cfg["lift"] * hump ** 1.3
+    ankle.x -= math.copysign(1.0, ankle0.x) * cfg.get("track", 0.0) * hump
+    tilt = (tilt_start + (tilt_end - tilt_start) * ease
+            + cfg["toe_clear"] * hump ** 1.2)
+    return ankle, tilt
+
+
+def _height_wave(cfg: dict, t: float) -> float:
+    """Профиль высоты таза за цикл: 1 — верх, 0 — низ.
+
+    Шаг: максимум на середине стойки — корпус проходит над выпрямленной опорой,
+    минимум в двойной опоре, когда обе ноги разведены. Бег наоборот: просадка
+    на середине стойки (амортизация) и подъём в полёте, поэтому волна считается
+    от фазы стойки, а не от `sin`.
+    """
+    if cfg["stride"] <= 1e-6:
+        # Покой: ровное дыхание, два вдоха на цикл.
+        return 0.5 - 0.5 * math.cos(2.0 * math.pi * cfg.get("breath", 2.0) * t)
+    duty = cfg["duty"]
+    if duty < 0.5:
+        return 0.5 - 0.5 * math.cos(4.0 * math.pi * (t - duty * 0.5))
+    best = 0.0
+    for offset in (0.0, 0.5):
+        phase = (t + offset) % 1.0
+        if phase < duty:
+            best = max(best, math.sin(math.pi * phase / duty))
+    return best
+
+
+def _wave_bounds(cfg: dict) -> tuple:
+    """Минимум и максимум волны за цикл: шаг с длинной двойной опорой никогда
+    не доходит до нуля, и без нормировки боб оказался бы втрое меньше заданного."""
+    values = [_height_wave(cfg, index / 96.0) for index in range(96)]
+    low, high = min(values), max(values)
+    if high - low < 1e-6:
+        return 0.0, 1.0
+    return low, high
 
 
 def straighten_stance(arm, bulge: float = KNEE_BULGE) -> float:
@@ -608,11 +760,18 @@ def _bake(curve, start: int, end: int, value) -> None:
     Точки удаляются по одной с перечитыванием ссылки: после первого `remove`
     остальные ссылки из `list()` становятся невалидными, и Blender отвечает
     «Keyframe not in F-Curve».
+
+    Интерполяция — **линейная**: ключ стоит на каждом кадре, то есть кривая уже
+    содержит ровно те значения, что мы посчитали. Безье между такими ключами
+    добавляет перелёт на смене направления, и на быстром клипе это читается как
+    дрожь накладки на суставе.
     """
     while len(curve.keyframe_points) > 0:
         curve.keyframe_points.remove(curve.keyframe_points[0])
     for frame in range(start, end + 1):
         curve.keyframe_points.insert(frame, value(frame))
+    for point in curve.keyframe_points:
+        point.interpolation = "LINEAR"
     curve.update()
 
 
@@ -646,45 +805,31 @@ def _aim(pb, point) -> None:
     bpy.context.view_layer.update()
 
 
-def _ankle_target(base, cfg: dict, phase: float) -> Vector:
-    """Голеностоп на фазе цикла: стойка едет назад, замах идёт дугой вперёд.
-
-    Стойка и есть «земля»: стопа стоит на полу и уезжает назад ровно со
-    скоростью корпуса, поэтому проскальзывания нет и `Animator.speed` в Unity не
-    приходится подкручивать вслепую. Вперёд у ходуна −Y, поэтому назад — плюс Y.
-    """
-    span = cfg["travel"] * cfg["stance"]
-    if span <= 1e-6:
-        return Vector(base)
-    if phase < cfg["stance"]:
-        u = phase / cfg["stance"]
-        return Vector((base.x, base.y + span * (u - 0.5), base.z))
-    u = (phase - cfg["stance"]) / max(1.0 - cfg["stance"], 1e-6)
-    return Vector((base.x, base.y + span * (0.5 - u),
-                   base.z + cfg["lift"] * math.sin(math.pi * u)))
-
-
 def author_gait(arm, meta) -> dict:
     """Печёт все три клипа заново: механический шаг вместо походки пака.
 
     Пак анимирует ногу целиком из бедра: корпус на шаге ходит по высоте на
     0.68 м, а стопа выносится на метры — в игре это читается прыжком лягушки.
-    Здесь наоборот, **задаётся траектория стопы, а нога решается под неё**:
+    Здесь наоборот, **задаётся траектория подошвы, а нога решается под неё**:
 
-    - стойка: стопа стоит на полу и едет назад со скоростью корпуса, поэтому
-      проскальзывания нет;
-    - замах: стопа поднимается дугой и возвращается вперёд;
-    - подошва параллельна полу всё время: `Foot` — отдельная кость без родителя,
-      её нулевое вращение гасит наклон голени;
-    - корпус качается на 1.5–4 см и доворачивается на 2.5°: вес есть, подскока нет;
-    - бедро и голень считаются двухзвенной IK с коленом вперёд и ограничением
-      вылета `LEG_REACH`, чтобы нога не распрямлялась в палку.
+    - подошва катится с пятки на носок (`_foot_pose`), а не едет плоско: это
+      главное, что отличает шагоход от коробки на полозьях;
+    - точка опоры в стойке уходит назад ровно со скоростью земли, поэтому
+      проскальзывания нет и `Animator.speed` в Unity не подкручивается вслепую;
+    - высота таза считается от геометрии: таз опускается настолько, насколько
+      его держат опорные ноги (`hip_max`), плюс заданный профилем боб. Поэтому
+      колено всегда согнуто, а IK не зажимает цель;
+    - бедро и голень — двухзвенная IK с коленом вперёд, стопа ставится ровно в
+      конец голени (она в этом риге отдельная кость без родителя).
+
+    **Корпус вращается вокруг середины бёдер, а не вокруг головы кости `Body`.**
+    У рига пака `Body` начинается на 0.88 м впереди бёдер, и наклон в 5°
+    просаживал бы таз на 7.7 см, а доворот — сносил бы его вбок на 6 см. Поэтому
+    поворот компенсируется переносом, и высотой таза управляет только боб.
 
     `idle` печётся тоже: `straighten_stance` меняет rest-ориентацию голени, и
     клип пака ставит свою стопу уже не туда, где оказалась нога (замер — 0.17 м
-    отрыва). Всё, что эта функция не печёт (`Torso`, `Chest`, `Neck`, `Head`),
-    из клипа снимается — иначе остаточный присед пака спорит с новой походкой
-    (`_prune`).
+    отрыва). Всё, что эта функция не печёт, из клипа снимается (`_prune`).
     """
     if arm.animation_data is None:
         arm.animation_data_create()
@@ -695,12 +840,53 @@ def author_gait(arm, meta) -> dict:
     style = gait_style(meta)
     meta["gait_style"] = meta["cfg"].get("gait", DEFAULT_GAIT)
     reach_scale = float(style.get("leg_reach", LEG_REACH))
+
     body_name = meta["roles"]["root"]
-    body_rest = arm.data.bones[body_name].matrix_local.to_3x3()
-    body_inv = body_rest.inverted()
+    body_bone = arm.data.bones[body_name]
+    body_rest_rot = body_bone.matrix_local.to_3x3()
+    body_rest_q = body_rest_rot.to_quaternion()
+    body_inv_rot = body_rest_rot.inverted()
+    body_inv_q = body_rest_q.inverted()
+
+    torso_name = meta["roles"]["torso"]
+    torso_bone = arm.data.bones[torso_name]
+    torso_rest_q = torso_bone.matrix_local.to_3x3().to_quaternion()
+    torso_inv_q = torso_rest_q.inverted()
+
     chest_name = meta["roles"]["chest"]
-    chest_rest = arm.data.bones[chest_name].matrix_local.to_3x3()
-    chest_inv = chest_rest.inverted()
+    chest_bone = arm.data.bones[chest_name]
+    chest_rest_q = chest_bone.matrix_local.to_3x3().to_quaternion()
+    chest_inv_q = chest_rest_q.inverted()
+
+    legs = {}
+    for side in ("L", "R"):
+        upper_bone = arm.data.bones.get("UpperLeg." + side)
+        lower_bone = arm.data.bones.get("LowerLeg." + side)
+        foot_bone = arm.data.bones.get("Foot." + side)
+        if upper_bone is None or lower_bone is None or foot_bone is None:
+            raise RuntimeError("%s: в риге нет ноги %s" % (meta["name"], side))
+        ankle, heel, toe = _sole_points(arm, side)
+        foot_rot = foot_bone.matrix_local.to_3x3()
+        legs[side] = {
+            "upper": "UpperLeg." + side,
+            "lower": "LowerLeg." + side,
+            "foot": "Foot." + side,
+            "upper_len": _bone_length(upper_bone),
+            "lower_len": _bone_length(lower_bone),
+            "hip": upper_bone.head_local.copy(),
+            "ankle": ankle, "heel": heel, "toe": toe,
+            "foot_head": foot_bone.head_local.copy(),
+            "foot_rot": foot_rot,
+            "foot_inv": foot_rot.inverted(),
+            "foot_rest_q": foot_rot.to_quaternion(),
+        }
+    leg_length = (sum(legs[s]["upper_len"] + legs[s]["lower_len"]
+                      for s in legs) / 2.0)
+    reach = reach_scale * leg_length
+    # Точка вращения корпуса — середина бёдер в rest.
+    hip_center = (legs["L"]["hip"] + legs["R"]["hip"]) * 0.5
+    pivot_arm = hip_center - body_bone.head_local
+    rest_hip_z = hip_center.z
 
     for key in CLIP_KEYS:
         info = meta["clips"][key]
@@ -720,6 +906,7 @@ def author_gait(arm, meta) -> dict:
 
         keep = {'pose.bones["%s"].location' % body_name,
                 'pose.bones["%s"].rotation_quaternion' % body_name,
+                'pose.bones["%s"].rotation_quaternion' % torso_name,
                 'pose.bones["%s"].rotation_quaternion' % chest_name}
         for side in ("L", "R"):
             for bone in ("UpperLeg." + side, "LowerLeg." + side):
@@ -736,103 +923,164 @@ def author_gait(arm, meta) -> dict:
         if not bags:
             raise RuntimeError("%s %s: у клипа нет кривых" % (meta["name"], key))
 
-        # 1. Корпус: боб, боковой перенос веса, крен, наклон и доворот; грудь
-        # гасит доворот контр-доворотом. Всё считается в мировых осях и
-        # переводится в оси кости: `Body` смотрит вверх, поэтому её локальные
-        # X/Y — это «вперёд» и «вверх», а не «вперёд» и «вбок».
         body_loc = _curves(bags, 'pose.bones["%s"].location' % body_name, 3)
         body_rot = _curves(
             bags, 'pose.bones["%s"].rotation_quaternion' % body_name, 4)
+        torso_rot = _curves(
+            bags, 'pose.bones["%s"].rotation_quaternion' % torso_name, 4)
         chest_rot = _curves(
             bags, 'pose.bones["%s"].rotation_quaternion' % chest_name, 4)
-        bob, turn, chest_turn = {}, {}, {}
+
+        # --- 1. Повороты корпуса и горизонтальный перенос. Высота пока нулевая:
+        # её нельзя посчитать раньше, чем известна поза бёдер.
+        lean = Quaternion(Vector((1.0, 0.0, 0.0)), math.radians(cfg["lean"]))
+        body_turn, torso_turn, chest_turn, shift = {}, {}, {}, {}
         for frame in range(start, end + 1):
             t = (frame - start) / float(frames)
             phase = 2.0 * math.pi * t
-            # Два приседа на цикл: каждый шаг даёт свою просадку корпуса.
-            drop = cfg["bob"] * (0.5 + 0.5 * math.cos(2.0 * phase))
-            shift = cfg["sway"] * math.sin(phase)
-            bob[frame] = body_inv @ Vector((shift, 0.0, -drop))
-            yaw = Quaternion(Vector((0.0, 0.0, 1.0)),
-                             math.radians(cfg["yaw"]) * math.sin(phase))
             roll = Quaternion(Vector((0.0, 1.0, 0.0)),
                               math.radians(cfg["roll"]) * math.sin(phase))
-            lean = Quaternion(Vector((1.0, 0.0, 0.0)),
-                              math.radians(cfg["lean"]))
-            world = lean @ yaw @ roll
-            turn[frame] = (body_inv.to_quaternion() @ world
-                           @ body_rest.to_quaternion())
-            counter = Quaternion(
+            world = lean @ roll
+            # Компенсация поворота: точка вращения — середина бёдер.
+            turned = world @ pivot_arm
+            offset = pivot_arm - turned
+            offset.x += cfg["sway"] * math.sin(phase)
+            body_turn[frame] = (body_inv_q @ world @ body_rest_q)
+            shift[frame] = body_inv_rot @ offset
+            # Таз доворачивается в сторону вынесенной ноги, плечи — против.
+            torso_world = Quaternion(
                 Vector((0.0, 0.0, 1.0)),
-                -math.radians(cfg["chest"]) * math.sin(phase))
-            chest_turn[frame] = (chest_inv.to_quaternion() @ counter
-                                 @ chest_rest.to_quaternion())
-        for index, curve in enumerate(body_loc):
-            _bake(curve, start, end, lambda f, i=index: bob[f][i])
+                -math.radians(cfg["twist"]) * math.cos(phase))
+            torso_turn[frame] = torso_inv_q @ torso_world @ torso_rest_q
+            shoulder = Quaternion(
+                Vector((0.0, 0.0, 1.0)),
+                math.radians(cfg["shoulder"]) * math.cos(phase))
+            chest_turn[frame] = chest_inv_q @ shoulder @ chest_rest_q
+
         for index, curve in enumerate(body_rot):
-            _bake(curve, start, end, lambda f, i=index: turn[f][i])
+            _bake(curve, start, end, lambda f, i=index: body_turn[f][i])
+        for index, curve in enumerate(torso_rot):
+            _bake(curve, start, end, lambda f, i=index: torso_turn[f][i])
         for index, curve in enumerate(chest_rot):
             _bake(curve, start, end, lambda f, i=index: chest_turn[f][i])
+        for index, curve in enumerate(body_loc):
+            _bake(curve, start, end, lambda f, i=index: shift[f][i])
 
-        # 2. Стопы и IK ног по кадрам. Боб уже в кривых, поэтому бедро на каждом
-        # кадре стоит там, куда его опустил корпус, и IK считает ногу по факту.
-        thigh, shin, foot_loc = {"L": {}, "R": {}}, {"L": {}, "R": {}}, {
-            "L": {}, "R": {}}
-        foot_rot = {"L": {}, "R": {}}
-        clamps = {"stance": 0, "swing": 0}
+        # --- 2. Траектории подошв на весь цикл (не зависят от высоты таза).
+        paths = {side: {} for side in legs}
+        for frame in range(start, end + 1):
+            t = (frame - start) / float(frames)
+            for order, side in enumerate(("L", "R")):
+                leg = legs[side]
+                phase = (t + 0.5 * order) % 1.0
+                paths[side][frame] = _foot_pose(
+                    cfg, phase, leg["ankle"], leg["heel"], leg["toe"])
+
+        # --- 3. Высота таза. Сначала предел, который держат опорные ноги, потом
+        # боб поверх него. Предел считается по фактическим бёдрам после поворота
+        # корпуса: крен поднимает одно бедро и опускает другое, и высота таза
+        # задаётся общей — значит, ограничивает та нога, которой тянуться дальше.
+        hip_limit, hip_now, stance_legs = {}, {}, {}
         for frame in range(start, end + 1):
             bpy.context.scene.frame_set(frame)
             bpy.context.view_layer.update()
-            t = (frame - start) / float(frames)
-            for order, side in enumerate(("L", "R")):
-                upper = arm.pose.bones.get("UpperLeg." + side)
-                lower = arm.pose.bones.get("LowerLeg." + side)
-                foot = arm.data.bones.get("Foot." + side)
-                if upper is None or lower is None or foot is None:
-                    continue
-                phase = (t + 0.5 * order) % 1.0
-                ankle = _ankle_target(foot.head_local, cfg, phase)
+            drop_limit, current, count = 1e9, -1e9, 0
+            for side in ("L", "R"):
+                hip = arm.pose.bones[legs[side]["upper"]].head
+                ankle, _tilt = paths[side][frame]
+                current = max(current, hip.z)
+                horizontal = abs(hip.y - ankle.y)
+                allowed = ankle.z + math.sqrt(
+                    max(reach * reach - horizontal * horizontal, 0.0))
+                drop_limit = min(drop_limit, allowed - hip.z)
+                if cfg["stride"] > 1e-6:
+                    phase = ((frame - start) / float(frames)
+                             + 0.5 * (0 if side == "L" else 1)) % 1.0
+                    if phase < cfg["duty"]:
+                        count += 1
+            hip_limit[frame] = drop_limit
+            hip_now[frame] = current
+            stance_legs[frame] = count
+
+        low, high = _wave_bounds(cfg)
+        span = max(high - low, 1e-6)
+        wave = {frame: ((_height_wave(
+            cfg, (frame - start) / float(frames)) - low) / span)
+            for frame in range(start, end + 1)}
+        # База: ниже rest на `crouch`. Боб сдвигает её целиком, если в самой
+        # жёсткой фазе он выводит таз за предел ноги: сдвиг сохраняет форму
+        # волны, а обрезка по кадрам её ломала бы.
+        frames_range = range(start, end + 1)
+        base = min(rest_hip_z - cfg["crouch"],
+                   min(hip_now[f] + hip_limit[f] - KNEE_SLACK
+                       for f in frames_range))
+        over = max(0.0, max(base + cfg["bob"] * wave[f]
+                            - (hip_now[f] + hip_limit[f] - KNEE_SLACK)
+                            for f in frames_range))
+        base -= over
+        clamps = {"stance": 0, "swing": 0}
+        drop = {}
+        for frame in frames_range:
+            drop[frame] = base + cfg["bob"] * wave[frame] - hip_now[frame]
+        for index, curve in enumerate(body_loc):
+            _bake(curve, start, end,
+                  lambda f, i=index: shift[f][i] + (body_inv_rot
+                                                    @ Vector((0.0, 0.0, drop[f])))[i])
+
+        # --- 4. Стопы и IK ног по кадрам. Высота уже в кривых, поэтому бедро на
+        # каждом кадре стоит там, куда его опустил корпус, и IK считает по факту.
+        thigh = {"L": {}, "R": {}}
+        shin = {"L": {}, "R": {}}
+        foot_loc = {"L": {}, "R": {}}
+        foot_rot = {"L": {}, "R": {}}
+        extension = {side: [] for side in legs}
+        for frame in range(start, end + 1):
+            bpy.context.scene.frame_set(frame)
+            bpy.context.view_layer.update()
+            for side in ("L", "R"):
+                leg = legs[side]
+                upper = arm.pose.bones[leg["upper"]]
+                lower = arm.pose.bones[leg["lower"]]
+                ankle, tilt = paths[side][frame]
                 hip = upper.head.copy()
-                upper_length = _bone_length(
-                    arm.data.bones["UpperLeg." + side])
-                lower_length = _bone_length(
-                    arm.data.bones["LowerLeg." + side])
-                # Стопа не выносится дальше доли вылета ноги: иначе на замахе
-                # колено распрямляется в палку, и ходун «шагает» прямой ногой.
-                # Зажим в стойке — это уже не поза, а съехавшая подошва.
-                reach = reach_scale * (upper_length + lower_length)
                 offset = ankle - hip
-                if offset.length > reach:
+                distance = offset.length
+                extension[side].append(distance / leg_length)
+                if distance > reach:
                     ankle = hip + offset.normalized() * reach
-                    clamps["stance" if phase < cfg["stance"] else "swing"] += 1
+                    clamps["stance" if stance_legs[frame] else "swing"] += 1
                     if clamps["stance"] + clamps["swing"] <= 4:
-                        print("     CLAMP %s %s f=%d фаза=%.2f нужно %.3f предел "
-                              "%.3f бедро z=%.3f y=%.3f стопа y=%.3f z=%.3f"
-                              % (meta["name"], key, frame, phase,
-                                 offset.length, reach, hip.z, hip.y,
-                                 ankle.y, ankle.z))
-                knee = _solve_knee(
-                    hip, ankle, upper_length, lower_length, KNEE_POLE)
+                        print("     CLAMP %s %s f=%d нужно %.3f предел %.3f "
+                              "бедро z=%.3f y=%.3f стопа y=%.3f z=%.3f"
+                              % (meta["name"], key, frame, distance, reach,
+                                 hip.z, hip.y, ankle.y, ankle.z))
+                knee = _solve_knee(hip, ankle, leg["upper_len"],
+                                   leg["lower_len"], KNEE_POLE)
                 if knee is None:
                     continue
+                # Поза ноги обнуляется перед наведением: `_aim` крутит кость
+                # **дельтой** от текущего направления, и скрутка вокруг её оси
+                # наследуется от того, что стояло в кости до этого. До печки
+                # кривых там ещё лежит поворот пака, и он меняется от кадра к
+                # кадру — нога подрагивала, а в беге на первом переходе
+                # телепортировалась на полметра. С identity результат зависит
+                # только от цели.
+                upper.rotation_quaternion = Quaternion()
+                lower.rotation_quaternion = Quaternion()
+                bpy.context.view_layer.update()
                 _aim(upper, knee)
                 _aim(lower, ankle)
                 thigh[side][frame] = upper.rotation_quaternion.copy()
                 shin[side][frame] = lower.rotation_quaternion.copy()
-                rest = foot.matrix_local.to_3x3()
-                foot_loc[side][frame] = rest.inverted() @ (
-                    ankle - foot.head_local)
-                # Носок поднимается только на замахе: в стойке подошва плоская,
-                # иначе перекат втыкает носок в снег.
-                pitch = 0.0
-                if phase >= cfg["stance"]:
-                    u = (phase - cfg["stance"]) / max(1.0 - cfg["stance"], 1e-6)
-                    pitch = math.radians(cfg["toe"]) * math.sin(math.pi * u)
-                toe_up = Quaternion(Vector((1.0, 0.0, 0.0)), -pitch)
-                foot_rot[side][frame] = (rest.to_quaternion().inverted()
-                                         @ toe_up @ rest.to_quaternion())
+                foot_loc[side][frame] = leg["foot_inv"] @ (
+                    ankle - leg["foot_head"])
+                # Подошва поворачивается вокруг оси X: `tilt` уже посчитан от
+                # края подошвы на земле, поэтому перекат не режет пол.
+                foot_rot[side][frame] = (
+                    leg["foot_rest_q"].inverted() @ _tilt_matrix(tilt).to_quaternion()
+                    @ leg["foot_rest_q"])
 
-        # 3. Печём кривые ног; пропущенные кадры тянем с предыдущего.
+        # --- 5. Печём кривые ног; пропущенные кадры тянем с предыдущего.
         for side in ("L", "R"):
             for store in (thigh, shin, foot_loc, foot_rot):
                 _fill_gaps(store[side], start, end)
@@ -851,7 +1099,7 @@ def author_gait(arm, meta) -> dict:
                 _bake(curve, start, end,
                       lambda f, i=index, s=side: foot_rot[s][f][i])
 
-        # 4. Границы клипа и полос NLA: длина цикла изменилась, а экспортёр
+        # --- 6. Границы клипа и полос NLA: длина цикла изменилась, а экспортёр
         # берёт диапазон анимации из полосы.
         for track in tracks:
             for strip in track.strips:
@@ -863,17 +1111,21 @@ def author_gait(arm, meta) -> dict:
                 strip.frame_end = end
         info.update({"start": start, "end": end, "frames": end - start,
                      "seconds": round((end - start) / FPS, 3)})
-        speed = cfg["travel"] / max((end - start) / FPS, 1e-6)
-        print("GAIT %s %s frames=%d..%d (%.3f c) шаг %.2f м, земля %.2f м/с, "
-              "кривых пака снято %d, зажимов IK стойка/замах %d/%d"
+        seconds = max((end - start) / FPS, 1e-6)
+        speed = cfg["stride"] / max(cfg["duty"] * seconds, 1e-6)
+        stretch = max(max(v) for v in extension.values())
+        print("GAIT %s %-4s frames=%d..%d (%.3f c) шаг %.2f м, земля %.2f м/с, "
+              "таз %.3f (rest %.3f), вылет ноги %.0f%%, кривых пака снято %d, "
+              "зажимов стойка/замах %d/%d"
               % (meta["name"], key, start, end, info["seconds"],
-                 cfg["travel"], speed, removed,
-                 clamps["stance"], clamps["swing"]))
+                 cfg["stride"], speed, base, rest_hip_z, stretch * 100.0,
+                 removed, clamps["stance"], clamps["swing"]))
         if clamps["stance"] > STANCE_CLAMP_LIMIT:
             raise RuntimeError(
                 "%s %s: IK зажал цель в стойке %d кадров — подошва съедет "
-                "относительно clip_speed; уменьши travel*stance или увеличь "
+                "относительно clip_speed; уменьши stride или увеличь crouch/"
                 "knee_bulge" % (meta["name"], key, clamps["stance"]))
+        info["ground_speed"] = round(speed, 3)
 
     arm.animation_data.action = None
     for track in tracks:

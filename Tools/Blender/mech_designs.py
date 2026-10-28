@@ -22,6 +22,9 @@ from __future__ import annotations
 import math
 
 from robot_lib import PartMesh, make_materials, rig_points
+# Размеры подошвы берутся из ядра походки: по этим числам катится перекат, и
+# своя копия здесь развела бы геометрию ступни с точками опоры.
+from mech_lib import FOOT_HEEL_BACK, FOOT_TOE_AHEAD
 
 #: Точки посадки в локальных координатах ходуна, м.
 #: seat — середина подушки, seat_point — куда встаёт таз наездника,
@@ -141,6 +144,16 @@ def _cockpit(p, M, seat_bone, bulk=1.0):
     # Подножка: на неё встают ступни наездника.
     p.box((0, -0.44, 0.96), (0.50 * bulk, 0.30, 0.07), base, seat_bone,
           bevel=0.02)
+    # Стойки подножки. Без них площадка висит в воздухе перед корпусом: сиденье
+    # кончается на y −0.21, а подножка начинается на −0.29, и разрыв читался
+    # отдельной деталью, летящей рядом с ходуном.
+    for sx in (-1, 1):
+        p.beam((sx * 0.21, -0.20, 1.28), (sx * 0.21, -0.44, 1.00),
+               0.09, 0.11, 0.08, 0.10, panel, seat_bone)
+    # Пол кабины: закрывает разрыв между сиденьем и подножкой сплошной плитой.
+    # Тонкие стойки сами по себе читались просветом, а не связью.
+    p.box((0, -0.34, 1.26), (0.46 * bulk, 0.24, 0.07), panel, seat_bone,
+          bevel=0.02)
     for sx in (-1, 1):
         p.box((sx * 0.19, -0.48, 1.01), (0.16, 0.22, 0.05), dark,
               seat_bone, bevel=0.01)
@@ -177,16 +190,22 @@ def _hips(p, M, seat_bone, hip_point, bulk=1.0):
                     M["metal"], seat_bone, axis="X", count=6)
 
 
-def _legs(p, M, R, bulk=1.0, boot=1.0, brace=False):
-    """Ноги ходуна: бедро, голень и плоская механическая ступня.
+def _legs(p, M, R, bulk=1.0, boot=1.0, leg=1.0):
+    """Ноги ходуна: бедро, колено, голень и плоская механическая ступня.
 
-    После `straighten_stance` нога — колонна с коленом, вынесенным вперёд на
-    0.40 м: бедро идёт вниз-вперёд, голень — вниз-назад. Броня строится ровно
-    по этим костям (`rig_points`), поэтому новая стойка и походка держатся без
-    правки чисел здесь.
+    После `straighten_stance` нога — колонна с коленом, вынесенным вперёд: бедро
+    идёт вниз-вперёд, голень — вниз-назад. Броня строится ровно по этим костям
+    (`rig_points`), поэтому новая стойка и походка держатся без правки чисел.
+
+    **Сустав читается разницей толщин, а не деталью.** Прежняя нога была балкой
+    0.40 × 0.45 м на всю длину: бедро, колено и голень одной ширины, и на шаге
+    это читалось гнутой доской — сустава в силуэте не было. Теперь масса идёт по
+    убыванию: тазовый узел шире бедра, ось колена шире и бедра, и голени (она
+    торчит в обе стороны), голень уже всех, а на ступне видна опорная плита.
+    Поэтому шаг читается как работа механизма, а не как изгиб коробки.
     """
     base, panel, dark = M["base"], M["panel"], M["dark"]
-    metal, accent = M["metal"], M["highlight"]
+    metal = M["metal"]
 
     for side, out in (("L", 1.0), ("R", -1.0)):
         # Точки костей уже несут сторону −X/+X, поэтому боковое зеркало к ним
@@ -198,72 +217,96 @@ def _legs(p, M, R, bulk=1.0, boot=1.0, brace=False):
         hip, knee = R[upper][0], R[upper][1]
         knee_l, ankle = R[lower][0], R[lower][1]
         ankle_f, toe = R[foot][0], R[foot][1]
+        g = leg
 
-        # --- бедро: короб вдоль кости + щиток снаружи.
-        p.beam((sx * hip.x, hip.y - 0.04, hip.z),
-               (sx * knee.x, knee.y + 0.02, knee.z),
-               0.30 * bulk, 0.34 * bulk, 0.24 * bulk, 0.26 * bulk,
-               base, upper)
-        p.beam((hip.x + out * 0.14, hip.y - 0.12, hip.z - 0.02),
-               (knee.x + out * 0.10, knee.y + 0.06, knee.z + 0.02),
-               0.06, 0.24 * bulk, 0.05, 0.18 * bulk, panel, upper)
-        p.box((sx * hip.x, hip.y - 0.02, hip.z + 0.02),
-              (0.22, 0.26, 0.16), panel, upper, bevel=0.03, rot=(18, 0, 0))
+        # --- тазовый узел: привод бедра, шире самой ноги. Он же закрывает
+        # верх бедра, поэтому сустав начинается ниже силуэта корпуса.
+        p.box((hip.x, hip.y - 0.02, hip.z + 0.01),
+              (0.32 * g, 0.30, 0.26), panel, upper, bevel=0.03)
+        p.disc((hip.x + out * 0.16 * g, hip.y - 0.02, hip.z), 0.115, 0.06,
+               dark, upper, axis="X", n=10)
+        p.disc((hip.x + out * 0.19 * g, hip.y - 0.02, hip.z), 0.07, 0.03,
+               metal, upper, axis="X", n=8)
 
-        # --- колено: диск и накладка.
-        p.disc((sx * knee.x, knee.y + 0.02, knee.z), 0.15 * bulk, 0.14, dark,
-               lower, axis="X", n=8)
-        p.box((sx * knee.x, knee.y - 0.06, knee.z + 0.06),
-              (0.20, 0.14, 0.16), panel, lower, bevel=0.02)
+        # --- бедро: сужающаяся балка; наружная бронеплита не доходит до колена,
+        # иначе она сливает бедро с голенью в одну доску.
+        #
+        # Верх бедра уходит **внутрь** тазового узла (`hip.z + 0.02`, а не в
+        # стык с его нижней гранью): на стыке торец балки совпадал с гранью
+        # короба, и на повороте ноги совпадающие плоскости мерцали — та самая
+        # «дёргающаяся накладка» у соединения кабины и ноги.
+        p.beam((sx * hip.x, hip.y - 0.02, hip.z + 0.02),
+               (sx * knee.x, knee.y + 0.01, knee.z + 0.04),
+               0.24 * g, 0.26 * g, 0.19 * g, 0.21 * g, base, upper)
+        p.beam((hip.x + out * 0.14 * g, hip.y - 0.10, hip.z - 0.04),
+               (knee.x + out * 0.11 * g, knee.y - 0.05, knee.z + 0.12),
+               0.05, 0.19 * g, 0.045, 0.15 * g, panel, upper)
+        p.beam((hip.x, hip.y + 0.12, hip.z - 0.08),
+               (knee.x, knee.y + 0.09, knee.z + 0.02),
+               0.15 * g, 0.05, 0.12 * g, 0.05, dark, upper)
 
-        # --- голень: короб + гидравлика вдоль кости.
-        p.beam((sx * knee_l.x, knee_l.y + 0.02, knee_l.z),
-               (sx * ankle.x, ankle.y - 0.02, ankle.z + 0.10),
-               0.26 * bulk, 0.30 * bulk, 0.20 * bulk, 0.22 * bulk,
-               base, lower)
-        p.beam((knee_l.x + out * 0.10, knee_l.y - 0.02, knee_l.z - 0.04),
-               (ankle.x + out * 0.09, ankle.y + 0.02, ankle.z + 0.16),
-               0.05, 0.06, 0.05, 0.06, metal, lower)
-        p.tube([(knee_l.x + out * 0.10, knee_l.y - 0.02, knee_l.z - 0.04),
-                (ankle.x + out * 0.09, ankle.y + 0.02, ankle.z + 0.16)],
-               [(0.034, 0.034), (0.034, 0.034)], dark, lower, n=6)
-        p.box((knee_l.x + out * 0.02, knee_l.y + 0.12, (knee_l.z + ankle.z) * 0.5),
-              (0.22 * bulk, 0.10, 0.30), panel, lower, bevel=0.02)
+        # --- колено: ось поперёк, шире бедра и голени. Наколенник висит на
+        # бедре и накрывает сустав снаружи — у обратноколенной стойки выпуклая
+        # сторона сустава сзади, поэтому щиток стоит за осью, а не перед ней:
+        # спереди он входил бы в голень на сгибе.
+        p.disc((sx * knee.x, knee.y + 0.01, knee.z), 0.13, 0.30 * g, dark,
+               lower, axis="X", n=10)
+        p.disc((knee.x + out * 0.155 * g, knee.y + 0.01, knee.z), 0.075, 0.04,
+               metal, lower, axis="X", n=8)
+        # Наколенник вынесен за радиус оси: накладка на бедре и ось на голени
+        # двигаются друг относительно друга, и щиток, врезанный в ось, «прорезал»
+        # бы её на каждом сгибе. Зазор 1.5 см читается как отдельная деталь.
+        p.box((sx * knee.x, knee.y + 0.22, knee.z + 0.10),
+              (0.19 * g, 0.07, 0.22), panel, upper, bevel=0.03, rot=(24, 0, 0))
 
-        if brace:
-            # Тонконогий фламинго: дополнительная распорка голени.
-            p.beam((sx * knee_l.x, knee_l.y - 0.02, knee_l.z + 0.02),
-                   (sx * ankle.x, ankle.y - 0.04, ankle.z + 0.34),
-                   0.07, 0.07, 0.06, 0.06, accent, lower)
+        # --- голень: уже колена; гидроцилиндр сзади, щиток спереди.
+        p.beam((sx * knee_l.x, knee_l.y + 0.01, knee_l.z - 0.04),
+               (sx * ankle.x, ankle.y - 0.01, ankle.z + 0.13),
+               0.19 * g, 0.21 * g, 0.15 * g, 0.17 * g, base, lower)
+        p.tube([(knee_l.x, knee_l.y + 0.13, knee_l.z - 0.06),
+                (ankle.x, ankle.y + 0.10, ankle.z + 0.22)],
+               [(0.05, 0.05), (0.045, 0.045)], metal, lower, n=6)
+        p.tube([(knee_l.x, knee_l.y + 0.13, knee_l.z - 0.06),
+                (knee_l.x, knee_l.y + 0.145, knee_l.z + 0.06)],
+               [(0.062, 0.062), (0.062, 0.062)], dark, lower, n=6)
+        p.beam((knee_l.x, knee_l.y - 0.11, knee_l.z - 0.08),
+               (ankle.x, ankle.y - 0.09, ankle.z + 0.26),
+               0.15 * g, 0.05, 0.12 * g, 0.05, panel, lower)
 
         # --- ступня: узкий башмак с плоской опорной плитой и пяткой.
         # Высоты здесь фиксированные, а не × boot: ширина/длина растут с
         # размером юнита, а подошва обязана остаться на z=0 — иначе ступня
         # проваливается в пол (ловит check_mech_clips).
         #
-        # Пальцев-когтей нет: подошва в походке параллельна полу весь шаг, и
-        # клинья первые втыкались бы в снег на перекате, а ступня читалась бы
-        # лапой, а не опорой механизма.
-        heel = ankle_f.y + 0.20
-        tip = toe.y - 0.04
+        # Длина подошвы — из `mech_lib.FOOT_HEEL_BACK`/`FOOT_TOE_AHEAD`: по этим
+        # же числам катится перекат в походке. Своё число здесь развело бы
+        # геометрию и точки опоры, и ступня «висела» бы на перекате.
+        #
+        # Пальцев-когтей нет: подошва катится с пятки на носок, и клинья первые
+        # втыкались бы в снег на перекате, а ступня читалась бы лапой, а не
+        # опорой механизма.
+        heel = ankle_f.y + FOOT_HEEL_BACK
+        tip = ankle_f.y - FOOT_TOE_AHEAD
         sole_len = heel - tip
         sole_y = (heel + tip) * 0.5
-        p.box((sx * (ankle_f.x + toe.x) * 0.5, sole_y, 0.055),
+        p.box((sx * ankle_f.x, sole_y, 0.055),
               (0.30 * boot, sole_len, 0.09), base, foot, bevel=0.015)
-        p.box((sx * (ankle_f.x + toe.x) * 0.5, sole_y, 0.01),
-              (0.26 * boot, sole_len - 0.04, 0.02), dark, foot, bevel=0.004)
+        p.box((sx * ankle_f.x, sole_y, 0.01),
+              (0.26 * boot, sole_len - 0.05, 0.02), dark, foot, bevel=0.004)
         # Пятка: упор сзади, чтобы ступня не читалась одним носком.
-        p.box((sx * ankle_f.x, heel - 0.09, 0.145),
-              (0.26 * boot, 0.18, 0.16), dark, foot, bevel=0.02)
+        p.box((sx * ankle_f.x, heel - 0.07, 0.15),
+              (0.26 * boot, 0.14, 0.17), dark, foot, bevel=0.02)
         # Носок: короткая накладка на плите.
-        p.box((sx * toe.x, tip + 0.10, 0.13),
-              (0.24 * boot, 0.20, 0.10), panel, foot, bevel=0.02)
-        # Привод голеностопа — короб, а не диск: у человеческого рига кость
-        # стопы всего на 0.036, и диск радиусом 0.10 уходил под пол.
+        p.box((sx * ankle_f.x, tip + 0.09, 0.13),
+              (0.24 * boot, 0.18, 0.10), panel, foot, bevel=0.02)
+        # Привод голеностопа — короб, а не диск: у рига кость стопы короткая,
+        # и диск радиусом 0.10 уходил под пол.
         p.box((sx * ankle_f.x, ankle_f.y, max(ankle_f.z, 0.12) + 0.07),
-              (0.22, 0.24, 0.20), metal, foot, bevel=0.02)
+              (0.20 * g, 0.22, 0.20), metal, foot, bevel=0.02)
+        p.disc((ankle_f.x + out * 0.10 * g, ankle_f.y, max(ankle_f.z, 0.12) + 0.07),
+               0.06, 0.04, dark, foot, axis="X", n=8)
         p.beam((sx * ankle_f.x, ankle_f.y - 0.02, 0.16),
-               (sx * toe.x, toe.y + 0.06, 0.11),
+               (sx * ankle_f.x, tip + 0.06, 0.11),
                0.07, 0.07, 0.06, 0.06, dark, foot)
 
 
@@ -320,48 +363,6 @@ def _shoulders(p, M, chest_bone, chest_point, pods=2, bulk=1.0, stacks=False):
 
 # ------------------------------------------------------------------ дизайны
 
-def _frog(p, M, R, roles, meta):
-    """Лягушачий ходун: грязевые щитки над коленями, катушки и стропы."""
-    accent = M["highlight"]
-    for out, side in ((1.0, "L"), (-1.0, "R")):
-        knee = R["LowerLeg." + side][0]
-        # Крыло-грязевик над коленом.
-        p.box((knee.x, knee.y - 0.10, knee.z + 0.20),
-              (0.30, 0.34, 0.07), M["panel"], "LowerLeg." + side,
-              bevel=0.02, rot=(14, 0, out * 8))
-        p.box((knee.x, knee.y - 0.22, knee.z + 0.24),
-              (0.24, 0.08, 0.05), accent, "LowerLeg." + side, bevel=0.0)
-        hip = R["UpperLeg." + side][0]
-        # Буксировочная петля на бедре.
-        p.tube([(hip.x + out * 0.16, hip.y + 0.06, hip.z - 0.02),
-                (hip.x + out * 0.20, hip.y - 0.10, hip.z - 0.10),
-                (hip.x + out * 0.16, hip.y - 0.24, hip.z - 0.16)],
-               [(0.03, 0.03)] * 3, M["rope"], "UpperLeg." + side, n=4)
-    # Катушка со стропой на спине.
-    p.disc((0.0, R["Chest"][0].y + 0.44, R["Chest"][0].z - 0.10), 0.16, 0.12,
-           M["rope"], "Chest", axis="X", n=8)
-    p.box((0.0, R["Chest"][0].y + 0.44, R["Chest"][0].z + 0.06),
-          (0.06, 0.10, 0.18), accent, "Chest", bevel=0.01)
-
-
-def _bee(p, M, R, roles, meta):
-    """Пчелиный ходун: жалюзи-крылья и предупреждающие полосы."""
-    accent = M["highlight"]
-    chest = R["Chest"][0]
-    for sx in (-1, 1):
-        # Жалюзи-«крыло» на спине.
-        for i in range(3):
-            p.box((sx * (0.30 + i * 0.06), chest.y + 0.34,
-                   chest.z + 0.26 + i * 0.04),
-                  (0.16, 0.26, 0.04), M["panel"], "Chest",
-                  bevel=0.0, rot=(0, 0, sx * (18 + i * 6)))
-        p.box((sx * 0.34, chest.y + 0.34, chest.z + 0.12),
-              (0.10, 0.28, 0.05), M["dark"], "Chest", bevel=0.0)
-    # Полосы — на груди под кабиной: в самом проёме их быть не может.
-    _hazard(p, (0.0, chest.y - 0.16, chest.z - 0.55), (0.06, 0.03, 0.16),
-            accent, "Chest", count=3, gap=0.13)
-
-
 def _panda(p, M, R, roles, meta):
     """Медвежий ходун: тяжёлые наплечники, выхлопные стойки, широкие ступни."""
     accent = M["highlight"]
@@ -372,47 +373,27 @@ def _panda(p, M, R, roles, meta):
               rot=(0, sx * 10, 0))
         p.box((sx * 0.55, chest.y - 0.12, chest.z + 0.06),
               (0.10, 0.12, 0.20), accent, "Chest", bevel=0.0)
-        # Широкая накладка на ступне.
+        # Широкая накладка на ступне. X берётся у самой ступни, а не как доля
+        # от носка: доля ставила плиту между ног, в воздухе.
         side = "L" if sx > 0 else "R"
+        ankle = R["Foot." + side][0]
         toe = R["Foot." + side][1]
-        p.box((toe.x * 0.6, toe.y + 0.16, 0.12), (0.34, 0.22, 0.06),
+        p.box((ankle.x, toe.y + 0.16, 0.12), (0.34, 0.22, 0.06),
               M["panel"], "Foot." + side, bevel=0.02)
 
 
-def _flamingo(p, M, R, roles, meta):
-    """Ходуля-фламинго: поручни по бортам и кольца на голени."""
-    accent = M["highlight"]
-    for sx in (-1, 1):
-        # Поручень вдоль подлокотника.
-        p.tube([(sx * 0.40, -0.36, 1.52), (sx * 0.40, 0.06, 1.56),
-                (sx * 0.38, 0.22, 1.62)],
-               [(0.035, 0.035)] * 3, M["metal"], "Torso", n=6)
-    # Кольцо на голени: опознавательная деталь.
-    for side in ("L", "R"):
-        knee = R["LowerLeg." + side][0]
-        ankle = R["LowerLeg." + side][1]
-        middle = ((knee.y + ankle.y) * 0.5, (knee.z + ankle.z) * 0.5)
-        p.disc(((knee.x + ankle.x) * 0.5, middle[0], middle[1]), 0.17,
-               0.09, accent, "LowerLeg." + side, axis="Y", n=8)
-
-
+#: Дизайн ходуна. Остался один: владелец выбрал PandaWalker, остальных убрал, а
+#: походку попросил сделать общей — она живёт в `mech_lib.GAIT_STYLES` и от
+#: корпуса не зависит, поэтому новый ходун получает тот же шаг без правок здесь.
 DESIGNS = {
-    "FrogWalker": dict(
-        kit=_frog, pods=2, bulk=1.34, boot=1.16,
-        colors={"base": "#2F4A42", "panel": "#456B5C", "dark": "#101A18"}),
-    "BeeWalker": dict(
-        kit=_bee, pods=1, bulk=1.24, boot=1.06,
-        colors={"base": "#4A3D22", "panel": "#7A6431", "dark": "#181510"}),
     "PandaWalker": dict(
-        kit=_panda, pods=2, bulk=1.36, boot=1.20, stacks=True,
+        kit=_panda, pods=2, bulk=1.36, boot=1.20, stacks=True, leg=1.08,
         colors={"base": "#3B2A2E", "panel": "#5E4046", "dark": "#140F10"}),
-    "FlamingoWalker": dict(
-        kit=_flamingo, pods=1, bulk=1.18, boot=1.02, brace=True,
-        colors={"base": "#4A3340", "panel": "#6E4C5A", "dark": "#171114"}),
 }
 
 #: Порядок сборки — как в `MECHS`.
-UNITS = ("FrogWalker", "BeeWalker", "PandaWalker", "FlamingoWalker")
+UNITS = ("PandaWalker",)
+
 
 #: Координаты, под которые настроена кабина: голова кости Torso у рига `mech`.
 COCKPIT_ANCHOR = (-0.123, 1.357)
@@ -456,7 +437,7 @@ def build(unit: str, arm, meta):
 
     _hips(p, M, seat_bone, R["UpperLeg.L"][0], bulk=design["bulk"])
     _legs(p, M, R, bulk=design["bulk"], boot=design["boot"],
-          brace=design.get("brace", False))
+          leg=design.get("leg", 1.0))
     offset = cockpit_offset(R, roles)
     _cockpit(_Shift(p, offset), M, seat_bone, bulk=design["bulk"])
     dz = offset[2]
