@@ -28,7 +28,7 @@
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (6 файлов), `FrostSpace.Tests.EditMode` (52 теста) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (8 фич: Boot, Camera, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (6 файлов), `FrostSpace.Tests.EditMode` (53 теста) | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
 | Ездовые ходуны | 4 FBX (`ME_*Walker`) — наш корпус на ригах `Mech_*` пака, клипы печёт `author_gait`; префабы `ME_*_Model` — сразу транспорт с `Mech` и кабиной; сборка `Tools/Blender/build_mechs.py` | `Assets/_Project/Content/`, ADR 0024 |
@@ -49,7 +49,7 @@
 - Сохранений и сети. Ни серверной части, ни мультиплеера, ни облачных сервисов.
 - Собственных ScriptableObject-конфигов и баланса — дизайн-параметры живут в
   `[SerializeField]` прямо на компонентах.
-- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 52 шт.).
+- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 53 шт.).
 - Локализации: подписи интерфейса латинские, `com.unity.localization` не подключён.
 - Импортированных сторонних моделей: каталога `Assets/ThirdParty/` нет, исходники —
   архивами в `AssetSource/`.

@@ -183,6 +183,78 @@ if ($Global) {
     }
 }
 
+# Проверка мостов: сверяем цель junction'а, а не только наличие каталога.
+Write-Host "`nМосты к скиллам:" -ForegroundColor Cyan
+$bridgeProblems = @()
+
+function Test-SkillBridge {
+    param(
+        [string]$Link,
+        [string]$Target,
+        [string]$Label
+    )
+
+    $existing = Test-Junction -Path $Link
+    if ($existing) {
+        if ((Resolve-Target $existing) -eq (Resolve-Target $Target)) {
+            Write-Host "  ок        $Label" -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host "  чужая цель $Label -> $existing" -ForegroundColor Red
+            $script:bridgeProblems += "$Label -> $existing (ожидалось $Target)"
+        }
+        return
+    }
+    if (Test-Path $Link) {
+        Write-Host "  не junction $Label" -ForegroundColor Red
+        $script:bridgeProblems += "$Label — обычный каталог, а не ссылка"
+        return
+    }
+    Write-Host "  нет       $Label" -ForegroundColor Yellow
+    $script:bridgeProblems += "$Label — отсутствует"
+}
+
+Test-SkillBridge -Link (Join-Path $repoRoot '.agents\skills') -Target $skillsRoot -Label '.agents\skills'
+
+if ($Claude -or (Test-Path (Join-Path $repoRoot '.claude\skills'))) {
+    Test-SkillBridge -Link (Join-Path $repoRoot '.claude\skills') -Target $skillsRoot -Label '.claude\skills'
+}
+
+$globalRoot = Join-Path $DataDir 'skills'
+if ($Global -or (Test-Path $globalRoot)) {
+    $badGlobal = @()
+    $missingGlobal = @()
+    foreach ($skill in $skillDirs) {
+        $link = Join-Path $globalRoot $skill.Name
+        $existing = Test-Junction -Path $link
+        if ($existing) {
+            if ((Resolve-Target $existing) -ne (Resolve-Target $skill.FullName)) {
+                $badGlobal += "$($skill.Name) -> $existing"
+            }
+        }
+        else {
+            $missingGlobal += $skill.Name
+        }
+    }
+    if ($badGlobal.Count -eq 0 -and $missingGlobal.Count -eq 0) {
+        Write-Host ("  ок        MiniMax: {0}/{0} скиллов" -f $skillDirs.Count) -ForegroundColor DarkGray
+    }
+    else {
+        if ($missingGlobal.Count -gt 0) {
+            Write-Host ("  нет       MiniMax: {0} скиллов, включая {1}" -f $missingGlobal.Count, ($missingGlobal -join ', ')) -ForegroundColor Yellow
+            if ($Global -or $Check) {
+                $bridgeProblems += "MiniMax: отсутствуют $($missingGlobal -join ', ')"
+            }
+        }
+        if ($badGlobal.Count -gt 0) {
+            Write-Host "  чужая цель MiniMax: $($badGlobal -join '; ')" -ForegroundColor Red
+            if ($Global -or $Check) {
+                $bridgeProblems += "MiniMax: чужие цели $($badGlobal -join '; ')"
+            }
+        }
+    }
+}
+
 # Проверка состава: у каждого SKILL.md должны быть name и description.
 Write-Host "`nСостав скиллов:" -ForegroundColor Cyan
 $broken = @()
@@ -209,6 +281,12 @@ if ($broken.Count -gt 0) {
     Write-Host "Проблемы с frontmatter:" -ForegroundColor Red
     $broken | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
     exit 2
+}
+
+if ($bridgeProblems.Count -gt 0) {
+    Write-Host "Проблемы с мостами:" -ForegroundColor Red
+    $bridgeProblems | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    exit 3
 }
 
 $vendor = (Get-Content (Join-Path $skillsRoot '.aura-unity-skills.json') -Raw | ConvertFrom-Json).skills

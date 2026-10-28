@@ -42,7 +42,7 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 52 теста:
+Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 53 теста:
 проверки префабов и клипов роботов, животных и ходунов (включая carry-контракт R18), `ViewBlend`,
 экранный вырез, математика сканера). Флаг `-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
 не существует. `total: 0` в отчёте означает, что тесты не найдены, а не что «всё прошло».

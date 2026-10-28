@@ -9,9 +9,10 @@
 FrostSpace/
 ├─ AGENTS.md                     # обязательные правила для агентов
 ├─ README.md                     # краткий статус и вход
-├─ .Aura/Skills/                 # ЕДИНСТВЕННЫЙ источник скиллов (34 Unity + проектный `plans`)
+├─ .Aura/Skills/                 # ЕДИНСТВЕННЫЙ источник скиллов (34 Unity + 2 проектных)
 ├─ .agents/skills/               # junction на .Aura/Skills — стандарт Agent Skills
 ├─ opencode.json                 # skills.paths -> .Aura/Skills (opencode видит канон напрямую)
+├─ .qoder/repowiki/wiki_plan.yaml # правила генерации Repo Wiki Qoder; остальное в .qoder/ — локальное
 ├─ docs/                         # документация (этот файл — карта)
 ├─ Tools/
 │  ├─ Agent/                     # LinkAgentSkills.ps1 — мосты к скиллам для всех агентов
@@ -151,6 +152,7 @@ FrostSpace/
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |
 | Скиллы | `.Aura/Skills/` — единственный источник; opencode — `opencode.json` (`skills.paths`), остальные рантаймы — мост `.agents/skills/` |
+| Вики Qoder | правила генерации — `.qoder/repowiki/wiki_plan.yaml`; сгенерированные страницы локальны, не документация и не источник истины |
 | Планы работ | `Assets/.Aura/plans/` — единственное место; Aura пишет туда нативно (правила — `Assets/.Aura/plans/README.md`) |
 | Blender-тулинг | `Tools/Blender/`, документация — `BLENDER.md` |
 | Пайплайн ассетов | `Tools/Blender/build_all.py` — единый вход: сборка → проверки → превью; реестр `PIPELINE` внутри файла, логи — `Tools/Blender/logs/` (ADR 0017) |

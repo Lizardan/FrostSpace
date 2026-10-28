@@ -1,0 +1,158 @@
+version: 1
+
+repowiki:
+  notes:
+    - text: "AGENTS.md, docs/, .Aura/Skills и фактический код важнее этой вики. При расхождении описывай код и правила проекта, а не догадки."
+      author: FrostSpace
+    - text: "Не описывай жанр, целевые платформы, монетизацию и мультиплеер как факты: они намеренно не зафиксированы. Единственная сборка — WebGL на GitHub Pages."
+      author: FrostSpace
+    - text: "Стек проекта: Unity 6000.6.7f1, URP 17.6.0, Linear, ввод только Input System, интерфейс на uGUI + TextMeshPro. Версии сверяй с ProjectSettings/ и Packages/manifest.json."
+      author: FrostSpace
+    - text: "Сцены идут Boot → MainMenu → Game, переходы только через Core/SceneController (ADR 0011). Не предлагай прямые SceneManager.LoadScene из фич."
+      author: FrostSpace
+    - text: "Domain reload выключен. Статическое состояние обязано сбрасываться через RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)."
+      author: FrostSpace
+    - text: "Визуальный префаб содержит только модель и Animator; CharacterController, ввод и логика живут на сценовом актёре (ADR 0004)."
+      author: FrostSpace
+    - text: "Не предлагай Editor-меню и скрипты, которые пересобирают уровень, префабы или контроллеры (ADR 0005). Исключение — HoverbikeModelBuilder (ADR 0012)."
+      author: FrostSpace
+    - text: "Единственный вход производства ассетов — Tools/Blender/build_all.py с реестром PIPELINE; проверка — --check, превью — --preview (ADR 0017)."
+      author: FrostSpace
+    - text: "Планы многошаговых работ лежат только в Assets/.Aura/plans/; не предлагай другие каталоги для планов."
+      author: FrostSpace
+    - text: "Никогда не предлагай править .unity, .prefab, .mat, .asset как YAML-текст и не удалять .meta: только Unity Editor или Unity MCP."
+      author: FrostSpace
+    - text: "Пространство имён Features/Camera — FrostSpace.Features.View (ADR 0010). Не переименовывай его в тексте."
+      author: FrostSpace
+    - text: "PlayerLocalView и SetLocalPlayer — задел под сетевых игроков, а не реализованный мультиплеер. Описывай их как локальное скрытие головы и крючок для сети."
+      author: FrostSpace
+    - text: "Не фиксируй числовые счётчики (тесты, файлы, страницы) без сверки с репозиторием: документация и вики устаревают. Источник — Tests/EditMode и фактическое дерево."
+      author: FrostSpace
+    - text: "Ссылки на файлы давай от корня репозитория и только на существующие пути вида Assets/_Project/Scripts/Features/<Feature>/. Не добавляй лишний сегмент пути."
+      author: FrostSpace
+    - text: "Одна страница — один модуль или система. Не создавай вторую ветку страниц для той же темы и не дублируй категории на верхнем уровне и внутри architecture."
+      author: FrostSpace
+    - text: "Решения и их причины — docs/decisions/0*.md. Ссылайся на ADR по номеру, но не пересказывай их целиком."
+      author: FrostSpace
+    - text: "Скиллы в .Aura/Skills — инструкции по работе; вики их не заменяет и не должна переписывать их правила."
+      author: FrostSpace
+    - text: "Документация проекта на русском, код и идентификаторы на английском. Страницы вики пиши по-английски только потому что это язык генератора, факты бери из русских docs/."
+      author: FrostSpace
+
+  documents:
+    - title: "Обзор проекта"
+      goal: "Что такое FrostSpace сейчас: играбельный вертикальный срез, три сцены, стек и то, что намеренно не зафиксировано."
+      parent: ""
+      hints: "Опирайся на docs/PROJECT_OVERVIEW.md и README.md. Не выдумывай жанр, платформы и монетизацию."
+
+    - title: "Архитектура и правила"
+      goal: "Слои Core, Features, Editor, Tests; asmdef; порядок источников истины и границы изменений."
+      parent: ""
+      hints: "Ссылайся на docs/ARCHITECTURE.md и ADR. Правка контента — только вручную (ADR 0005)."
+
+    - title: "Поток сцен и загрузка"
+      goal: "Boot → MainMenu → Game, загрузка сервисов, переходы и ответственность SceneController."
+      parent: "Архитектура и правила"
+      hints: "ADR 0011. Не описывай прямые загрузки сцен из фич."
+
+    - title: "Источники истины и границы"
+      goal: "Чем управляют AGENTS.md, docs/, ADR, скиллы, код и вики; как разрешать расхождения."
+      parent: "Архитектура и правила"
+      hints: "Главнее AGENTS.md, docs/, .Aura/Skills и код. Вики — вторичное описание."
+
+    - title: "Геймплей"
+      goal: "Системы вертикального среза: локомоция, камера, сканер, HUD, NPC и транспорт."
+      parent: ""
+      hints: "Одна дочерняя страница на систему; обзор не дублирует детали."
+
+    - title: "Локомоция игрока"
+      goal: "CharacterController, скорости, прыжок с буфером и coyote time, присед и поза прицела."
+      parent: "Геймплей"
+      hints: "Компонент RobotLocomotion на сценовом актёре Player, не на визуальном префабе."
+
+    - title: "Камера и локальный вид"
+      goal: "Режимы камеры, переходы, интерьерные зоны, затухание перекрытий и скрытие головы локального игрока."
+      parent: "Геймплей"
+      hints: "PlayerCameraRig, CameraMode, InteriorZone, PlayerLocalView. Namespace FrostSpace.Features.View (ADR 0010)."
+
+    - title: "Сканер и HUD"
+      goal: "Сонар, выбор цели, подсветка, метки и элементы HUD."
+      parent: "Геймплей"
+      hints: "ObjectScanner, ScanTarget, ScanMath, ScanPulse, PlayerHud, ScanLabelView (ADR 0020)."
+
+    - title: "NPC и животные"
+      goal: "Патрулирование по вейпоинтам, воздушные маршруты и отсечение анимации."
+      parent: "Геймплей"
+      hints: "NpcController и AirPatrolController; точки WP_* — дочерние объекты сценового актёра."
+
+    - title: "Транспорт"
+      goal: "Ховербайк, мотоцикл и ездовые ходуны: управление, посадка, камеры и префабы."
+      parent: "Геймплей"
+      hints: "Hoverbike, Motorcycle, Mech, RiderCockpit. ADR 0012, 0013, 0024; сборка — build_all.py."
+
+    - title: "Меню и загрузка"
+      goal: "Экран загрузки и главное меню с 3D-диорамой, видами и камерой."
+      parent: ""
+      hints: "BootScreen, MenuFlow, MenuViewSwitch, MenuCameraSweep. Переходы — SceneController."
+
+    - title: "Главное меню и диорама"
+      goal: "Пять видов меню, карусель, диорама, анимации и открытие видов."
+      parent: "Меню и загрузка"
+      hints: "ADR 0018; сборка сцен меню — build_menu_storage.py, build_menu_train.py, build_menu_ride.py через build_all.py."
+
+    - title: "Контент и ассеты"
+      goal: "Как модели, материалы и префабы попадают в проект и где они лежат."
+      parent: ""
+      hints: "Единственный вход — Tools/Blender/build_all.py (ADR 0017). Палитра Level_* — docs/STYLE.md."
+
+    - title: "Blender-пайплайн"
+      goal: "Реестр PIPELINE, сборка, проверки --check и превью, единицы и логи."
+      parent: "Контент и ассеты"
+      hints: "Не предлагай разовые правки в GUI-Blender как результат: они возвращаются в скрипт."
+
+    - title: "FBX-постпроцессоры"
+      goal: "Импорт FBX в Unity: масштаб, материалы, анимации и настройки моделей."
+      parent: "Контент и ассеты"
+      hints: "Postprocessors в Assets/_Project/Editor/. Не дублируй правила Blender-пайплайна."
+
+    - title: "Префабы и сцены"
+      goal: "Разделение визуального префаба и сценового актёра, ссылки и сборка сцен."
+      parent: "Контент и ассеты"
+      hints: "ADR 0004, 0005. Не предлагай пересборку контента Editor-скриптом."
+
+    - title: "Сборка и публикация"
+      goal: "WebGL-сборка, CI и публикация на GitHub Pages."
+      parent: ""
+      hints: "docs/DEPLOY.md. Не описывай другие платформы как поддерживаемые."
+
+    - title: "WebGL и деплой"
+      goal: "Скрипт сборки, GitHub Actions и шаблон WebGL FrostSpace."
+      parent: "Сборка и публикация"
+      hints: "Assets/WebGLTemplates/FrostSpace, Tools/Unity, .github/workflows."
+
+    - title: "Проверка и тесты"
+      goal: "EditMode-тесты, проверки Unity и Blender, критерии готовности изменения."
+      parent: ""
+      hints: "Число тестов сверяй с Assets/_Project/Tests/EditMode, а не с документацией."
+
+    - title: "Инструменты агентов"
+      goal: "Скиллы, планы, MCP и автоматизация вне Assets."
+      parent: ""
+      hints: ".Aura/Skills, Assets/.Aura/plans, Tools/Agent, Tools/Unity, Tools/Blender."
+
+knowledgecard:
+  notes:
+    - text: "Модули строй по слоям и фичам: Core, Features/<Feature>, Editor, Tests. Не объединяй разные фичи в один модуль."
+      author: FrostSpace
+    - text: "Features зависят от Core; Editor и Tests — отдельные сборки. Не показывай циклических зависимостей и менеджеров-богов."
+      author: FrostSpace
+    - text: "Папка Features/Camera использует namespace FrostSpace.Features.View — это зафиксировано в ADR 0010."
+      author: FrostSpace
+    - text: "Карточки вторичны: при расхождении с AGENTS.md, docs/ и кодом верны они."
+      author: FrostSpace
+    - text: "Не выдумывай жанр, платформы, монетизацию и мультиплеер: они не зафиксированы, единственная сборка — WebGL."
+      author: FrostSpace
+    - text: "Правила изменений: контент не пересобирается Editor-скриптами (ADR 0005), ассеты — только через build_all.py (ADR 0017), планы — только Assets/.Aura/plans."
+      author: FrostSpace
+    - text: "Claude Code в проекте не используется: каталога .claude нет. Мосты скиллов — .agents/skills и глобальные junction MiniMax; .claude/skills создаётся только флагом -Claude."
+      author: FrostSpace
