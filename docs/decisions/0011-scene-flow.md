@@ -1,9 +1,16 @@
 # 0011. Поток сцен: Boot → MainMenu → Game через белый переход
 
-- Статус: Accepted (пересмотрен 2026-10-21: переход ведёт персистентный `SceneController`)
+- Статус: Accepted (пересмотрен 2026-10-21: переход ведёт персистентный `SceneController`;
+  поток сцен заменён [0026](0026-story-scene-flow.md))
 - Дата: 2026-10-20
 - Связано: [0005](0005-no-content-rebuild-menus.md) (сцены правятся в Unity, не YAML),
   [0010](0010-camera-modes.md) (`PlayerCameraRig` захватывает курсор)
+
+> **Что заменил ADR 0026 (2026-10-29).** Сцен стало пять:
+> `Boot → MainMenu → CharacterSetup → Train → Frontier`. `Game` выведена из потока.
+> Всё остальное в этом ADR остаётся в силе: `SceneController` — единственный
+> вызывающий `SceneManager`, белая накладка в `DontDestroyOnLoad`, фазы перехода по
+> реальному времени, запуск не с `Boot` поднимает контроллер сам.
 
 ## Контекст
 

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9f632abc3182bf419c9e5e6a420b395, type: 3}
+  m_Name: R15_Courier
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Character.RobotProfile
+  _id: R15_Courier
+  _displayName: COURIER
+  _role: LIGHT COURIER
+  _description: Fast and agile. Arms are built for parcels, not for hauling.
+  _visualPrefab: {fileID: 6389186582201502242, guid: e814637e0844ff243b0918c29d04148a, type: 3}
+  _walkMultiplier: 1.15
+  _sprintMultiplier: 1.1
+  _carryMultiplier: 0.95
+  _jumpMultiplier: 0.95

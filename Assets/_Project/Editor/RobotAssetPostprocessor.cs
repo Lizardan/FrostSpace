@@ -37,8 +37,8 @@ namespace FrostSpace.Editor
         };
 
         /// <summary>
-        /// Прыжок есть только у модели игрока: NPC не прыгают, а лишние клипы в
-        /// каждом FBX раздували бы импорт. Клипы того же ActionForge-пака.
+        /// Прыжок есть у трёх выбираемых корпусов игрока (ADR 0028). NPC не прыгают,
+        /// а лишние клипы в каждом FBX раздували бы импорт. Клипы ActionForge-пака.
         /// </summary>
         private static readonly ModelImporterClipAnimation[] JumpClips =
         {
@@ -60,8 +60,9 @@ namespace FrostSpace.Editor
         };
 
         /// <summary>
-        /// Переноска ящика есть только у складского носильщика: клип добавлен в
-        /// FBX сборкой `build_robots.py --carry`, остальным роботам он не нужен.
+        /// Переноска есть у трёх выбираемых корпусов игрока и у складского
+        /// носильщика R18 (ADR 0028). Клип добавлен сборкой
+        /// `build_robots.py --carry`, остальным роботам он не нужен.
         /// </summary>
         private static readonly ModelImporterClipAnimation[] CarryClips =
         {
@@ -72,7 +73,25 @@ namespace FrostSpace.Editor
             },
         };
 
-        private const string PlayerRobot = "R1_PolarMechanic";
+        /// <summary>
+        /// Стойка с грузом. Клипа нет в паке ActionForge — его собирает
+        /// `robot_lib._make_carry_idle` из позы переноски (30 кадров, петля).
+        /// Нужен трём выбираемым корпусам; R18 остаётся только с CarryWalk.
+        /// </summary>
+        private static readonly ModelImporterClipAnimation[] CarryIdleClips =
+        {
+            new ModelImporterClipAnimation
+            {
+                name = "CarryIdle", takeName = "carry_idle",
+                firstFrame = 0, lastFrame = 30, loopTime = true,
+            },
+        };
+
+        private static readonly HashSet<string> PlayerRobots = new()
+        {
+            "R1_PolarMechanic", "R10_Pipewright", "R15_Courier",
+        };
+
         private const string CarrierRobot = "R18_Forge";
 
         private void OnPreprocessModel()
@@ -90,10 +109,16 @@ namespace FrostSpace.Editor
 
             var name = Path.GetFileNameWithoutExtension(assetPath);
             var clips = new List<ModelImporterClipAnimation>(Clips);
-            if (name == PlayerRobot)
+            if (PlayerRobots.Contains(name))
+            {
                 clips.AddRange(JumpClips);
-            if (name == CarrierRobot)
                 clips.AddRange(CarryClips);
+                clips.AddRange(CarryIdleClips);
+            }
+            else if (name == CarrierRobot)
+            {
+                clips.AddRange(CarryClips);
+            }
 
             importer.clipAnimations = CloneClips(clips);
         }

@@ -53,6 +53,18 @@ namespace FrostSpace.Features.View
             }
         }
 
+        /// <summary>
+        /// Смена визуала игрока: головой становится кость новой модели.
+        /// Старая голова возвращается к своему масштабу, чтобы не остаться
+        /// схлопнутой в удаляемом префабе.
+        /// </summary>
+        public void RebindHead(Transform headBone)
+        {
+            ShowHead();
+            _headBone = headBone;
+            _saved = false;
+        }
+
         private void Awake()
         {
             if (_rig == null)

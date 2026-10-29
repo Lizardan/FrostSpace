@@ -44,6 +44,18 @@ namespace FrostSpace.Features.Locomotion
         private float _pitchApplied;
         private bool _logged;
 
+        /// <summary>
+        /// Смена визуала игрока: шея и голова берутся из новой модели, накопленный
+        /// доворот сбрасывается — иначе он применился бы к чужой кости.
+        /// </summary>
+        public void Rebind(Transform neck, Transform head)
+        {
+            _neck = neck;
+            _head = head;
+            _yawApplied = 0f;
+            _pitchApplied = 0f;
+        }
+
         private void Awake()
         {
             if (_rig == null)

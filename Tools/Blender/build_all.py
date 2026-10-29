@@ -16,6 +16,7 @@
     python Tools/Blender/build_all.py --asset hoverbike
     python Tools/Blender/build_all.py --asset robots --ids R1 R2
     python Tools/Blender/build_all.py --asset robots --ids R1 --jump
+    python Tools/Blender/build_all.py --asset robots --ids R1 R10 R15 --carry --carry-idle
     python Tools/Blender/build_all.py --asset level --ids terrain house --check
     python Tools/Blender/build_all.py --all --check
     python Tools/Blender/build_all.py --asset robots --preview
@@ -114,6 +115,19 @@ PIPELINE: dict[str, dict] = {
         "previews": [_step("render_level_previews.py", "none",
                            ["--out", PREVIEWS + "/Level"])],
         "checks": [],
+    },
+    "train": {
+        "script": "build_train.py",
+        "outputs": [
+            MODELS + "/Train/TrainInterior.fbx",
+            MODELS + "/Train/Prop_Battery.fbx",
+            MODELS + "/Train/Prop_GravCart.fbx",
+        ],
+        # Вагон снимается изнутри: снаружи видна только коробка. Пропы —
+        # обычные четыре вида, как у транспорта.
+        "previews": [_step("render_train_previews.py", "file",
+                           ["--out", PREVIEWS + "/Train"])],
+        "checks": [_step("check_train.py", "file")],
     },
     "hoverbike": {
         "script": "build_hoverbike.py",
@@ -372,6 +386,8 @@ def main() -> int:
                         help="прокинуть --jump в build_robots.py (клипы прыжка)")
     parser.add_argument("--carry", action="store_true",
                         help="прокинуть --carry в build_robots.py (переноска ящика)")
+    parser.add_argument("--carry-idle", action="store_true",
+                        help="прокинуть --carry-idle в build_robots.py (стойка с грузом)")
     parser.add_argument("--preview", action="store_true", help="рендерить превью")
     parser.add_argument("--check", action="store_true",
                         help="проверки: selftest.py, fbx_units.py, профильные шаги")
@@ -398,6 +414,8 @@ def main() -> int:
         print("предупреждение: --jump относится только к robots, для остальных игнорируется")
     if args.carry and any(name != "robots" for name in selected):
         print("предупреждение: --carry относится только к robots, для остальных игнорируется")
+    if args.carry_idle and any(name != "robots" for name in selected):
+        print("предупреждение: --carry-idle относится только к robots, для остальных игнорируется")
 
     python = sys.executable
     blender = "-" if args.dry_run else find_blender(args.blender)
@@ -426,6 +444,8 @@ def main() -> int:
                 extra.insert(0, "--jump")
             if args.carry and name == "robots":
                 extra.insert(0, "--carry")
+            if args.carry_idle and name == "robots":
+                extra.insert(0, "--carry-idle")
 
             print("[%s] сборка" % name)
             cmd = _command(blender, {"script": asset["script"], "runner": "blender"},

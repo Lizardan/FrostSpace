@@ -4,8 +4,14 @@ Unity-проект на ранней стадии: есть играбельны
 `Game`, двадцать роботов и 13 робо-животных из Blender, локомоция игрока, сканирование
 на Q (сонар, подписи ближайшего объекта и цели в прицеле), диалоги с роботами на E
 (ветки ответов, остановка патруля), пауза с настройками, главное меню с 3D-диорамой
-и sci-fi экран загрузки. Назначение игры, жанр и целевые
-платформы пока не зафиксированы — см. [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md).
+и sci-fi экран загрузки.
+
+Сюжет зафиксирован как замысел: робот-курьер аккумуляторов едет в поезде, берёт квест
+у напарника и прибывает в депо — [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md); мир,
+холод и Тишина — [docs/WORLD.md](docs/WORLD.md). Поток сцен —
+`Boot → MainMenu → CharacterSetup → Train → Frontier`. Выбор корпуса реализован
+(`CharacterSetup`, три пресета), сцена `Train` пока — заглушка вагона; квестов
+и переноски в коде ещё нет.
 
 **Играбельная WebGL-сборка:** https://lizardan.github.io/FrostSpace/ — собирается и
 публикуется автоматически после пуша в `main` (см. `docs/DEPLOY.md`).
@@ -15,10 +21,10 @@ Unity-проект на ранней стадии: есть играбельны
 | Unity | 6000.6.7f1 |
 | Render pipeline | URP 17.6.0 |
 | Ввод | Input System |
-| Сцены | `Boot` (build index 0) → `MainMenu` (1) → `Game` (2) |
+| Сцены | Факт: `Boot` (0) → `MainMenu` (1) → `CharacterSetup` (2) → `Train` (3, заглушка) → `Game` (4, вне потока); целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`, `Game` — последним индексом |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model`, движение kinematic |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` |
-| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 91 EditMode-тест |
+| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 107 EditMode-тестов |
 
 ## С чего начать
 

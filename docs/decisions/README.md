@@ -18,14 +18,14 @@
 | [0008](0008-camera-occlusion-aperture.md) | Круговой экранный вырез перекрытий с кубическим растворением | Accepted |
 | [0009](0009-robot-animals.md) | Робо-животные на ригах Quaternius: гибрид с бронёй, срез стоячего хвоста | Accepted |
 | [0010](0010-camera-modes.md) | Режимы камеры: 1-е лицо в интерьере, x-ray силуэт, вырез только в прицеле | Superseded by 0012 |
-| [0011](0011-scene-flow.md) | Поток сцен Boot → MainMenu → Game через белый переход; персистентный `SceneController` (пересмотрено 2026-10-21) | Accepted |
+| [0011](0011-scene-flow.md) | Поток сцен Boot → MainMenu → Game через белый переход; персистентный `SceneController` (пересмотрено 2026-10-21) | Accepted; поток сцен заменён 0026 |
 | [0012](0012-third-person-modules-and-hoverbike.md) | Модули восприятия вместо режима прицела; ховербайк с видом сверху | Accepted |
-| [0013](0013-jump-menu-views-motorcycle.md) | Прыжок игрока, второй вид меню и снежный мотоцикл с видом сверху | Accepted |
+| [0013](0013-jump-menu-views-motorcycle.md) | Прыжок игрока, второй вид меню и снежный мотоцикл с видом сверху | Accepted; эксклюзивность прыжка у R1 заменена 0028 |
 | [0014](0014-five-menu-views.md) | Пять видов главного меню: список видов вместо двух пар ссылок, авто-смена, два unlit-шейдера | Accepted |
 | [0015](0015-five-menu-scenes.md) | Пять сюжетных сцен меню: процедурные позы вместо клипов, интерьер из примитивов, разорванный робот | Accepted |
 | [0016](0016-unified-graphics-preset.md) | Единый пресет графики: один уровень качества и один URP-ассет | Accepted |
 | [0017](0017-single-asset-pipeline.md) | Единая точка входа пайплайна ассетов: `build_all.py` | Accepted |
-| [0018](0018-menu-showcase-carousel-and-ice-road.md) | Виды меню второго цикла: FBX-декорации STORAGE/DEPOT/RIDE, ледяная дорога, карусель справа, carry-клип | Accepted |
+| [0018](0018-menu-showcase-carousel-and-ice-road.md) | Виды меню второго цикла: FBX-декорации STORAGE/DEPOT/RIDE, ледяная дорога, карусель справа, carry-клип | Accepted; эксклюзивность carry у R18 заменена 0028 |
 | [0019](0019-symmetric-robot-hands.md) | Кисти роботов симметричны и одинаковы, предметов в руках нет; проверка `check_hand_symmetry.py` | Accepted |
 | [0020](0020-scan-ability-and-pause-menu.md) | Сканирование — способность на Q (сонар, реестр целей, пер-целевая подсветка), меню паузы с настройками | Accepted |
 | [0021](0021-actor-animation-culling.md) | Анимация актёров не отсекается: `AlwaysAnimate` и честные границы скинных мешей | Accepted |
@@ -33,6 +33,12 @@
 | [0023](0023-no-animal-root-motion.md) | Root motion у животных не включаем: ход на кости, а не на корне модели (`deltaPosition = 0`) | Accepted |
 | [0024](0024-mech-walkers.md) | Ездовые ходуны (4): наш корпус на риге пака, авторская походка `author_gait`, кабина в груди, сиденье за костью `Chest`, облёт камерой | Accepted |
 | [0025](0025-dialogue-system.md) | Диалоги: ScriptableObject-граф, кастомный Inspector, отдельный экран, кириллический TMP-шрифт | Accepted |
+| [0026](0026-story-scene-flow.md) | Сюжетный поток сцен: Boot → MainMenu → CharacterSetup → Train → Frontier; титул — оверлей сцены поезда | Accepted |
+| [0027](0027-quest-system.md) | Квесты: ScriptableObject-данные, `QuestLog` без Unity, сценовый `QuestDirector`, действия в узлах диалога | Accepted |
+| [0028](0028-chassis-presets.md) | Три выбираемых корпуса; carry и jump у всех трёх; модульная сборка отложена | Accepted |
+| [0029](0029-frontier-scene.md) | `Frontier` — одна открытая сцена без стриминга; бюджет WebGL и LOD | Accepted |
+| [0030](0030-frontier-map.md) | Карта `Frontier`: 2.4×2.4 км, четыре узла, свободное исследование после финала | Accepted |
+| [0031](0031-save-progress.md) | Сохранение прогресса демо: один ключ `PlayerPrefs`, «Продолжить» в меню | Accepted |
 
 ## Когда создавать ADR
 

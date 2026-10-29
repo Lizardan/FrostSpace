@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff05dbb8911d1cc41a1b780c80a59fcf, type: 3}
+  m_Name: CharacterCatalog
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Character.CharacterCatalog
+  _default: {fileID: 11400000, guid: d64fc07031eb05743b5a6dbeef8e3c67, type: 2}
+  _profiles:
+  - {fileID: 11400000, guid: d64fc07031eb05743b5a6dbeef8e3c67, type: 2}
+  - {fileID: 11400000, guid: 4e74a3a5d878f5b4f86e86152609b37c, type: 2}
+  - {fileID: 11400000, guid: 3f23edc88de87de4b8d4750c5ec1d844, type: 2}

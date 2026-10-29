@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9f632abc3182bf419c9e5e6a420b395, type: 3}
+  m_Name: R1_PolarMechanic
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Character.RobotProfile
+  _id: R1_PolarMechanic
+  _displayName: POLAR MECHANIC
+  _role: UNIVERSAL
+  _description: Balanced service frame. No weak spot, no extra reach.
+  _visualPrefab: {fileID: 687843981644673691, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
+  _walkMultiplier: 1
+  _sprintMultiplier: 1
+  _carryMultiplier: 1
+  _jumpMultiplier: 1

@@ -23,6 +23,7 @@ namespace FrostSpace.Features.Locomotion
         private static readonly int SprintingId = Animator.StringToHash("Sprinting");
         private static readonly int JumpId = Animator.StringToHash("Jump");
         private static readonly int AirborneId = Animator.StringToHash("Airborne");
+        private static readonly int CarryingId = Animator.StringToHash("Carrying");
 
         [Header("Ссылки")]
         [SerializeField] private InputActionAsset _actions;
@@ -62,6 +63,7 @@ namespace FrostSpace.Features.Locomotion
         // Вручную не правятся.
         [SerializeField, HideInInspector] private float _walkClipSpeed = 0.93f;
         [SerializeField, HideInInspector] private float _sprintClipSpeed = 8.9f;
+        [SerializeField, HideInInspector] private float _carryClipSpeed = 0.591f;
 
         private CharacterController _controller;
         private InputAction _moveAction;
@@ -71,6 +73,7 @@ namespace FrostSpace.Features.Locomotion
         private float _verticalVelocity;
         private float _animatorSpeed = 1f;
         private bool _sprinting;
+        private bool _carrying;
         private bool _inputOverridden;
         private Vector2 _overrideMove;
         private bool _overrideSprint;
@@ -83,9 +86,17 @@ namespace FrostSpace.Features.Locomotion
         private bool _jumpPending;
         private bool _airborne;
 
+        // Базовые значения сцены: профиль корпуса умножает их, а не заменяет,
+        // поэтому повторное применение профиля не накапливает множители.
+        private float _baseWalkSpeed;
+        private float _baseSprintSpeed;
+        private float _baseJumpHeight;
+        private float _carrySpeedMultiplier = 1f;
+
         public float PlanarSpeed => _planarVelocity.magnitude;
         public float AnimatorSpeed => _animatorSpeed;
         public bool IsAirborne => _airborne;
+        public bool IsCarrying => _carrying;
 
         /// <summary>
         /// Поставить прыжок в очередь так же, как это делает Space. Нужен
@@ -93,6 +104,9 @@ namespace FrostSpace.Features.Locomotion
         /// </summary>
         public void RequestJump()
         {
+            if (_carrying)
+                return;
+
             _jumpBufferedAt = Time.time;
         }
 
@@ -129,6 +143,7 @@ namespace FrostSpace.Features.Locomotion
             _jumpPending = false;
             _airborne = false;
             _jumpBufferedAt = -999f;
+            _carrying = false;
             _controller.enabled = !riding;
 
             if (_animator != null)
@@ -136,10 +151,71 @@ namespace FrostSpace.Features.Locomotion
                 _animator.SetBool(MovingId, false);
                 _animator.SetBool(SprintingId, false);
                 _animator.SetBool(AirborneId, false);
+                _animator.SetBool(CarryingId, false);
                 _animator.speed = 1f;
             }
 
             Debug.Log(riding ? "[RobotLocomotion] посадка" : "[RobotLocomotion] сход", this);
+        }
+
+        /// <summary>
+        /// Груз в руках: спринт и прыжок недоступны, шаг идёт клипом переноски.
+        /// Скорость — ходьба, умноженная на профиль корпуса, поэтому тяжёлый
+        /// корпус теряет меньше, а лёгкий — больше.
+        /// </summary>
+        public void SetCarrying(bool carrying)
+        {
+            if (_carrying == carrying)
+                return;
+
+            _carrying = carrying;
+            if (carrying)
+            {
+                _sprinting = false;
+                _jumpPending = false;
+                _jumpBufferedAt = -999f;
+            }
+
+            if (_animator != null)
+            {
+                _animator.SetBool(CarryingId, carrying);
+                _animator.SetBool(SprintingId, false);
+            }
+        }
+
+        /// <summary>
+        /// Множители корпуса из <c>RobotProfile</c>. Значения больше нуля;
+        /// повторный вызов пересчитывает от базовых полей сцены.
+        /// </summary>
+        public void ApplyProfile(float walk, float sprint, float carry, float jump)
+        {
+            if (_baseWalkSpeed <= 0f)
+            {
+                _baseWalkSpeed = _walkSpeed;
+                _baseSprintSpeed = _sprintSpeed;
+                _baseJumpHeight = _jumpHeight;
+            }
+
+            _walkSpeed = _baseWalkSpeed * Mathf.Max(0.01f, walk);
+            _sprintSpeed = _baseSprintSpeed * Mathf.Max(0.01f, sprint);
+            _jumpHeight = _baseJumpHeight * Mathf.Max(0.01f, jump);
+            _carrySpeedMultiplier = Mathf.Max(0.01f, carry);
+        }
+
+        /// <summary>
+        /// Новый визуальный префаб: локомоция больше не держит старый Animator.
+        /// </summary>
+        public void RebindAnimator(Animator animator)
+        {
+            if (animator == null)
+                return;
+
+            _animator = animator;
+            _animator.SetBool(MovingId, _planarVelocity.sqrMagnitude > 0.0025f);
+            _animator.SetBool(SprintingId, false);
+            _animator.SetBool(AirborneId, _airborne);
+            _animator.SetBool(CarryingId, _carrying);
+            _sprinting = false;
         }
 
         /// <summary>
@@ -231,15 +307,19 @@ namespace FrostSpace.Features.Locomotion
             var wantsSprint = _inputOverridden
                 ? _overrideSprint
                 : (_sprintAction != null && _sprintAction.IsPressed());
+            if (_carrying)
+                wantsSprint = false;
             var direction = CameraRelative(input);
-            UpdateJump();
+            if (!_carrying)
+                UpdateJump();
 
             // Скорость и направление разведены: разгон/торможение меняют длину
             // вектора, steering — только его направление. Это убирает «занос»
             // при резкой смене курса на бегу.
             var currentSpeed = _planarVelocity.magnitude;
+            var walkSpeed = _carrying ? _walkSpeed * _carrySpeedMultiplier : _walkSpeed;
             var targetSpeed = direction.sqrMagnitude > 0.001f
-                ? (wantsSprint ? _sprintSpeed : _walkSpeed)
+                ? (wantsSprint ? _sprintSpeed : walkSpeed)
                 : 0f;
             var control = _airborne ? _airControl : 1f;
             var rate = (targetSpeed > currentSpeed ? _acceleration : _brake) * control;
@@ -389,7 +469,7 @@ namespace FrostSpace.Features.Locomotion
 
             // Гистерезис по фактической скорости: Sprint включается, когда робот
             // уже разогнался, и выключается с запасом, чтобы состояния не дребезжали.
-            if (moving)
+            if (moving && !_carrying)
             {
                 if (wantsSprint && speed > _sprintSpeed * 0.5f)
                     _sprinting = true;
@@ -403,13 +483,16 @@ namespace FrostSpace.Features.Locomotion
 
             _animator.SetBool(MovingId, moving);
             _animator.SetBool(SprintingId, _sprinting);
+            _animator.SetBool(CarryingId, _carrying);
 
             // Animator.speed = фактическая скорость / базовая скорость клипа.
             // Сглаживание убирает рывок в момент кроссфейда.
             var target = 1f;
             if (moving)
             {
-                var clipSpeed = _sprinting ? _sprintClipSpeed : _walkClipSpeed;
+                var clipSpeed = _carrying
+                    ? _carryClipSpeed
+                    : (_sprinting ? _sprintClipSpeed : _walkClipSpeed);
                 if (clipSpeed > 0.01f)
                     target = Mathf.Clamp(speed / clipSpeed, 0.2f, 4f);
             }

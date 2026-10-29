@@ -84,6 +84,41 @@ namespace FrostSpace.Features.View
                 Disable();
         }
 
+        /// <summary>
+        /// Смена визуала игрока: силуэт пересобирается по мешу новой модели.
+        /// Старый призрак и материал удаляются; если компонент ещё не проснулся,
+        /// пересборку сделает его <c>Awake</c>.
+        /// </summary>
+        public void RebindSource(SkinnedMeshRenderer source)
+        {
+            var wasBuilt = _material != null || _ghost != null;
+            TearDownGhost();
+            _source = source;
+
+            if (wasBuilt && _isLocalPlayer && isActiveAndEnabled)
+                BuildGhost();
+        }
+
+        private void TearDownGhost()
+        {
+            if (_ghost != null)
+            {
+                _ghost.enabled = false;
+                Destroy(_ghost.gameObject);
+                _ghost = null;
+            }
+
+            if (_material != null)
+            {
+                Destroy(_material);
+                _material = null;
+            }
+
+            _strength = 0f;
+            _holdUntil = 0f;
+            _logged = false;
+        }
+
         private void Awake()
         {
             if (_view == null)
@@ -272,10 +307,7 @@ namespace FrostSpace.Features.View
 
         private void OnDestroy()
         {
-            if (_ghost != null && _ghost.gameObject != null)
-                Destroy(_ghost.gameObject);
-            if (_material != null)
-                Destroy(_material);
+            TearDownGhost();
         }
     }
 }

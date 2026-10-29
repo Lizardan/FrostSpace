@@ -16864,6 +16864,7 @@ MonoBehaviour:
   _footDrop: 0
   _footHalfWidth: 0.27
   _footToeDown: 12
+  _kneeOut: 0.25
   _weightSpeed: 7
 --- !u!1001 &448454836
 PrefabInstance:
@@ -19164,7 +19165,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f24c2e8efd8037f45a4d2fd76cc41f19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Menu.MainMenuScreen
-  _gameScene: Game
+  _gameScene: CharacterSetup
   _title: FROSTSPACE
   _subtitle: COLONY 07  /  NORTH PERIMETER
   _hint: LINK READY

@@ -5,12 +5,15 @@
     blender --background --factory-startup --python Tools/Blender/build_robots.py
     blender --background --factory-startup --python Tools/Blender/build_robots.py -- --jump -- R1
     blender --background --factory-startup --python Tools/Blender/build_robots.py -- --carry -- R18
+    blender --background --factory-startup --python Tools/Blender/build_robots.py -- --carry --carry-idle -- R1 R10 R15
 
 Без аргументов собираются все дизайны из `robot_designs.BUILDERS`.
 Флаг `--jump` добавляет к клипам jump_start/jump_loop/jump_land из ActionForge;
 без списка роботов он собирает только R1 — прыжок нужен игроку, а не всем NPC.
 Флаг `--carry` добавляет walk_carry_loop; без списка роботов он собирает R18 —
 переноска ящика нужна только складскому носильщику в меню.
+Флаг `--carry-idle` добавляет carry_idle (стойка с грузом); без списка роботов
+он собирает три выбираемых корпуса — R1, R10, R15.
 """
 
 from __future__ import annotations
@@ -38,14 +41,18 @@ def main() -> int:
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     include_jump = any(a.lower() == "--jump" for a in args)
     include_carry = any(a.lower() == "--carry" for a in args)
+    include_carry_idle = any(a.lower() == "--carry-idle" for a in args)
     selected = {a.lower() for a in args if not a.startswith("--")}
     if include_jump and not selected:
         selected = {"r1"}
     if include_carry and not selected:
         selected = {"r18"}
+    if include_carry_idle and not selected:
+        selected = {"r1", "r10", "r15"}
 
     arm, _actions = robot_lib.load_rig(include_jump=include_jump,
-                                      include_carry=include_carry)
+                                      include_carry=include_carry,
+                                      include_carry_idle=include_carry_idle)
     built = []
     for builder in robot_designs.BUILDERS:
         name, obj, _mats = builder(arm)

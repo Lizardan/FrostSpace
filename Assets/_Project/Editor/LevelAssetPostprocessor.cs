@@ -17,11 +17,23 @@ namespace FrostSpace.Editor
     public sealed class LevelAssetPostprocessor : AssetPostprocessor
     {
         private const string LevelFolder = "/Content/Models/Level/";
+        private const string TrainFolder = "/Content/Models/Train/";
         private const string MaterialFolder = "Assets/_Project/Content/Materials/Level/";
+
+        /// <summary>
+        /// Папки, которые используют палитру `Level_*`: уровень и вагон.
+        /// Вагон вынесен отдельно, чтобы `Prop_*` уровня и `Prop_*` вагона
+        /// не пересекались в glob-шаблонах пайплайна.
+        /// </summary>
+        private static bool UsesLevelPalette(string path)
+        {
+            var normalized = path.Replace('\\', '/');
+            return normalized.Contains(LevelFolder) || normalized.Contains(TrainFolder);
+        }
 
         private void OnPreprocessModel()
         {
-            if (!assetPath.Replace('\\', '/').Contains(LevelFolder))
+            if (!UsesLevelPalette(assetPath))
             {
                 return;
             }
@@ -36,7 +48,7 @@ namespace FrostSpace.Editor
 
         private void OnPostprocessModel(GameObject root)
         {
-            if (!assetPath.Replace('\\', '/').Contains(LevelFolder))
+            if (!UsesLevelPalette(assetPath))
             {
                 return;
             }

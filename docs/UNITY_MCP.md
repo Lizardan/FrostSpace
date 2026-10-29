@@ -35,9 +35,9 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 |---|---|
 | `manage_scene(action: "get_active")` | `MainMenu`, `Assets/Scenes/MainMenu.unity`, buildIndex 1 |
 | `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 2)` | 10 корней (`Player`, `NPC`, дом, деревья, забор, свет...); `next_cursor: null` |
-| `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `Game` (2), все enabled |
+| `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `CharacterSetup` (2), `Train` (3), `Game` (4), все enabled (2026-10-29) |
 | `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` после сборки уровня и тестов |
-| `run_tests` + `get_test_job` | 42 EditMode-тест — `succeeded` (2026-10-23) |
+| `run_tests` + `get_test_job` | 107 EditMode-тестов, `succeeded` (2026-10-29) |
 | `execute_code(action: "execute")` | работает, `compiler: roslyn`; видит типы проектных сборок (`FrostSpace.Features`, `FrostSpace.Editor`) |
 | `manage_asset(action: "delete")` | папка `Assets/Screenshots` удаляется после проверки (расходник, STYLE.md); на 2026-10-22 её в проекте нет |
 | `manage_camera(action: "screenshot", capture_source: "game_view")` | работает: PNG в `Assets/Screenshots/`, вид из `view_position` на `view_target`; **значения в файле линейные** — см. «Ловушки» |

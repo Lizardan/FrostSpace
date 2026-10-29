@@ -24,7 +24,9 @@ FrostSpace/
    ├─ Scenes/                    # ЕДИНСТВЕННАЯ папка сцен
    │  ├─ Boot.unity              # стартовая сцена, build index 0: загрузка сервисов → MainMenu
    │  ├─ MainMenu.unity          # главное меню с диорамой, build index 1
-   │  └─ Game.unity              # игровой уровень, build index 2
+   │  ├─ CharacterSetup.unity    # выбор из трёх корпусов, build index 2
+   │  ├─ Train.unity             # заглушка вагона: интерьер, свет, игрок, build index 3
+   │  └─ Game.unity              # прежний уровень, build index 4, вне потока
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
@@ -32,6 +34,9 @@ FrostSpace/
    │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, CameraPose, InteriorZone, PlayerSilhouette,
    │  │  │  │                    # PlayerLocalView, CameraOcclusionFader/Debris/Group, ScreenAperture.
    │  │  │  │                    # Namespace папки — FrostSpace.Features.View (ADR 0010)
+   │  │  │  ├─ Character/        # RobotProfile (SO), CharacterCatalog (SO), CharacterSelection
+   │  │  │  │                    # (PlayerPrefs + сброс статики), PlayerVisualBinder, CharacterSetupScreen,
+   │  │  │  │                    # CharacterCardPreview (камера в RenderTexture), CharacterBackdrop, UiSnowfall
    │  │  │  ├─ Dialogue/         # DialogueAsset (граф реплик и вариантов), DialogueNode,
    │  │  │  │                    # DialogueChoice, DialogueSession (чистая логика графа),
    │  │  │  │                    # DialogueSpeaker (маркер на NPC), DialogueController (E и
@@ -55,6 +60,9 @@ FrostSpace/
    │  │  │  └─ Scan/             # ObjectScanner (Q-сонар + ближайшая и прицельная детекция),
    │  │  │                       # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
    │  │  │                       # ScanMath (чистая математика)
+   │  │  ├─ Carry/              # Carryable (предмет), CarrySlot (гнездо), CarryController (E:
+   │  │  │                       # взять, поставить, бросить)
+   │  │  ├─ Story/              # TrainMotionRig (параллакс и снег за окнами вагона)
    │  │  └─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │                          # перехода и единственный вызывающий SceneManager),
    │  │                          # MusicManager (фоновая музыка), GameSettings (музыка и каналы детекции)
@@ -70,7 +78,7 @@ FrostSpace/
    │  ├─ Tests/
    │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode: CameraModeTests, ScanMathTests,
    │  │                          # RobotVisualPrefabTests, AnimalVisualPrefabTests,
-   │  │                          # MechVisualPrefabTests, ScreenApertureTests,
+   │  │                          # MechVisualPrefabTests, ScreenApertureTests, CharacterSelectionTests,
    │  │                          # DialogueSessionTests, DialogueAssetValidationTests,
    │  │                          # DialogueContentTests, DialogueFontTests
    │  └─ Content/
@@ -80,6 +88,8 @@ FrostSpace/
    │     ├─ Models/RobotAnimals/    # <Species>/RA_<Species>.fbx + SOURCE.md (происхождение ригов)
    │     ├─ Models/Mechs/           # ME_*Walker.fbx (4) — наш корпус на ригах Ultimate Space Kit
    │     ├─ Models/Level/           # FBX уровня: рельеф, дом, интерьер, деревья, пропы
+   │     ├─ Models/Train/           # TrainInterior (TrainBody + TrainDoor), Prop_Battery,
+   │     │                          # Prop_GravCart — вагон и груз среза «Поезд»
    │     ├─ Models/Menu/            # ShipWreck_Mesh.asset — процедурный меш диорамы меню
    │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал (20)
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал (13)
@@ -92,7 +102,8 @@ FrostSpace/
    │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
    │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню;
-   │     │                          # Dialogues/*.asset — графы диалогов роботов (ADR 0025)
+   │     │                          # Dialogues/*.asset — графы диалогов роботов (ADR 0025);
+   │     │                          # Characters/ — CharacterCatalog.asset и три RobotProfile
    │     ├─ Fonts/                  # LiberationSans Cyrillic SDF.asset — TMP-шрифт диалогов
    │     └─ Settings/               # зарезервировано под игровые настройки
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
@@ -105,7 +116,23 @@ FrostSpace/
 не сохраняют. Каталога `Assets/ThirdParty/` пока нет — он появится вместе с первым
 импортированным пакетом (`SOURCE.md` обязателен).
 
+## Планируемые пути (ещё не созданы)
+
+По ADR 0026–0029 появятся следующие пути. Это **план**, а не факт: пока файла нет,
+ссылаться на него как на существующий нельзя.
+
+| Путь | Что появится |
+|---|---|
+| `Assets/Scenes/Frontier.unity` | депо, затем дорога и станция, build index 4 |
+| `Assets/_Project/Scripts/Features/Quest/` | `QuestAsset`, `QuestObjective`, `QuestLog`, `QuestDirector`, `QuestTracker` |
+| `Assets/_Project/Scripts/Features/Story/` | `TrainSequenceDirector`, `TitleCardScreen`, `DepotArrivalDirector` (папка есть, `TrainMotionRig` создан) |
+| `Assets/_Project/Scripts/Features/Map/` | миникарта и маркеры (Stage 3) |
+| `Assets/_Project/Content/Data/Quests/` | `TrainBatteries.asset` |
+
 ## С чего начинается выполнение
+
+Целевой поток — ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`.
+Ниже — **фактическое** состояние на 2026-10-29; сцена депо ещё не создана.
 
 1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0): корневой `SceneController`
    уходит в `DontDestroyOnLoad`, `BootScreen` три секунды показывает консоль загрузки
@@ -113,17 +140,25 @@ FrostSpace/
 2. `Assets/Scenes/MainMenu.unity` (build index 1) — `MenuFlow` с `MainMenuScreen`,
    пять видов меню (`MenuOpen`, `MenuRepair`, `MenuStorage`, `MenuTrainDepot`,
    `MenuRide`), пять камер видов, снег, Volume.
-   НАЧАТЬ → белый переход → `Game`.
-3. Сцена `Game` (build index 2) — обычный сохранённый ассет: рельеф,
+   НАЧАТЬ → белый переход → `CharacterSetup`.
+3. `Assets/Scenes/CharacterSetup.unity` (build index 2) — камера, два источника света
+   и `CharacterSetup` с `CharacterSetupScreen`: три карточки с 3D-превью
+   (`CharacterCardPreview` рендерит корпус в `RenderTexture`), `CONFIRM` пишет выбор
+   в `CharacterSelection` и грузит `Train`.
+4. `Assets/Scenes/Train.unity` (build index 3) — заглушка: коробка вагона 4,4×3×16 м
+   (`TrainInterior`: пол, стены, потолок, дверной проём), `Sun` и `CabinLamp`, `Player`
+   с `PlayerVisualBinder` (корпус из `CharacterSelection`), `Main Camera` с
+   `PlayerCameraRig`. Интерьера, квеста и параллакса ещё нет.
+5. Сцена `Game` (build index 4, вне потока) — обычный сохранённый ассет: рельеф,
    дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
    камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
-4. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
+6. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
    внутри — визуальный префаб `R1_PolarMechanic_Model`.
-5. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
+7. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
    `NPC_R5_Ranger`: кинематический `CharacterController`, `NpcController` (маршрут из
    вейпоинтов), `DialogueSpeaker` (диалог по E, ADR 0025) и визуальный ребёнок; без
    ввода и без обычной физики.
-6. `NPC/Animals` — 13 актёров `AN_<Species>`: наземные с кинематическим
+8. `NPC/Animals` — 13 актёров `AN_<Species>`: наземные с кинематическим
    `CharacterController` и `NpcController`, `AN_Eagle` и `AN_Piranha` — с
    `AirPatrolController` и маршрутом с высотой; визуальный ребёнок —
    `RA_<Species>_Model` (ADR 0009).
@@ -135,6 +170,8 @@ FrostSpace/
 
 | Что | Путь / инструмент |
 |---|---|
+| Мир: география, Тишина, холод, быт и речь | `docs/WORLD.md` |
+| Сюжет, поток сцен, системы, критерии готовности | `docs/GAME_DESIGN.md` |
 | Версия Unity | `ProjectSettings/ProjectVersion.txt` |
 | Пакеты | `Packages/manifest.json`, `Packages/packages-lock.json` |
 | Render pipeline | `Assets/Settings/FrostSpace_RPAsset.asset`, `FrostSpace_Renderer.asset`, `QualitySettings.asset` (единый уровень `Default`, ADR 0016) |

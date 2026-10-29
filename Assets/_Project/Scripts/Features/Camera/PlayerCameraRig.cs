@@ -153,6 +153,15 @@ namespace FrostSpace.Features.View
         /// <summary>Кость головы: от неё сканер выпускает конус сканирования.</summary>
         public Transform HeadBone => _headBone;
 
+        /// <summary>
+        /// Смена визуала игрока: камера от первого лица встаёт в голову новой
+        /// модели. Вызывается до или после <c>Awake</c> — риг не пересоздаётся.
+        /// </summary>
+        public void RebindHead(Transform headBone)
+        {
+            _headBone = headBone;
+        }
+
 
         /// <summary>Объект, вокруг которого строится вид сверху (ховербайк, мотоцикл).</summary>
         public Transform RideTarget => _rideTarget;

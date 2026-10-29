@@ -15,7 +15,7 @@ import os
 
 import bmesh
 import bpy
-from mathutils import Euler, Matrix, Vector
+from mathutils import Euler, Matrix, Quaternion, Vector
 
 import lowpoly
 
@@ -286,7 +286,86 @@ def rig_points(arm):
     return points
 
 
-def load_rig(include_jump: bool = False, include_carry: bool = False):
+def _zero_root_forward(action) -> None:
+    """Обнуляет перенос вперёд у корневой кости: клип становится in-place."""
+    for layer in getattr(action, "layers", []):
+        for strip in layer.strips:
+            for bag in getattr(strip, "channelbags", []):
+                for fc in bag.fcurves:
+                    if (fc.data_path == 'pose.bones["root"].location'
+                            and fc.array_index == 1):
+                        for kp in fc.keyframe_points:
+                            kp.co[1] = 0.0
+                            kp.handle_left[1] = 0.0
+                            kp.handle_right[1] = 0.0
+                        fc.update()
+
+
+def _make_carry_idle(arm, carry_action):
+    """Строит `carry_idle` из позы переноски: стойка с грузом и дыхание.
+
+    Пак ActionForge не содержит idle-переноски. Брать `walk_carry_loop` целиком
+    нельзя — персонаж будет шагать на месте. Поэтому берётся поза контакта
+    (кадр 0, обе стопы на земле), из неё удаляются все кривые и заново
+    расставляются три ключа: 0 — стойка, 15 — вдох, 30 — снова стойка.
+
+    Смещения маленькие (десятые доли градуса): задача — снять «замороженность»,
+    а не изобразить усталость. Руки остаются в позе груза.
+    """
+    idle = carry_action.copy()
+    idle.name = "carry_idle"
+
+    arm.animation_data.action = idle
+    try:
+        arm.animation_data.action_slot = idle.slots[0]
+    except Exception:
+        pass
+    bpy.context.scene.frame_set(0)
+    bpy.context.view_layer.update()
+
+    captured = {}
+    for bone in arm.pose.bones:
+        captured[bone.name] = (bone.location.copy(),
+                               bone.rotation_quaternion.copy(),
+                               bone.scale.copy())
+
+    for layer in idle.layers:
+        for strip in layer.strips:
+            for bag in strip.channelbags:
+                for curve in list(bag.fcurves):
+                    bag.fcurves.remove(curve)
+
+    # (кадр, доля вдоха): 0 и 30 — одна и та же поза, петля замкнута.
+    for frame, factor in ((0, 0.0), (15, 1.0), (30, 0.0)):
+        for bone in arm.pose.bones:
+            loc, rot, scale = captured[bone.name]
+            bone.location = loc
+            bone.rotation_quaternion = rot
+            bone.scale = scale
+        if factor:
+            for name, deg in (("spine_01", -0.6), ("spine_02", -0.4),
+                              ("Head", 0.3)):
+                bone = arm.pose.bones.get(name)
+                if bone is not None:
+                    bone.rotation_quaternion = bone.rotation_quaternion @ (
+                        Quaternion((1.0, 0.0, 0.0), math.radians(deg * factor)))
+            for name in ("upperarm_l", "upperarm_r"):
+                bone = arm.pose.bones.get(name)
+                if bone is not None:
+                    bone.rotation_quaternion = bone.rotation_quaternion @ (
+                        Quaternion((1.0, 0.0, 0.0), math.radians(0.4 * factor)))
+        for bone in arm.pose.bones:
+            bone.keyframe_insert("location", frame=frame, group=bone.name)
+            bone.keyframe_insert("rotation_quaternion", frame=frame,
+                                 group=bone.name)
+            bone.keyframe_insert("scale", frame=frame, group=bone.name)
+
+    print("IDLE carry_idle frames=%s" % (tuple(idle.frame_range),))
+    return idle
+
+
+def load_rig(include_jump: bool = False, include_carry: bool = False,
+             include_carry_idle: bool = False):
     """Импортирует скелет ActionForge и клипы, возвращает арматуру.
 
     Все клипы переведены в in-place: смещение root по Y (вперёд) обнулено.
@@ -299,6 +378,10 @@ def load_rig(include_jump: bool = False, include_carry: bool = False):
     `include_carry=True` добавляет walk_carry_loop — клип переноски ящика для
     складского носильщика (R18). Остальным роботам он не нужен и раздувал бы
     каждый FBX.
+
+    `include_carry_idle=True` добавляет carry_idle — стойку с грузом. Клипа
+    в паке нет, он собирается из позы walk_carry_loop (см. `_make_carry_idle`).
+    Нужен трём выбираемым корпусам, поэтому подразумевает carry.
     """
     clear_scene()
     bpy.context.scene.render.fps = 30
@@ -306,7 +389,7 @@ def load_rig(include_jump: bool = False, include_carry: bool = False):
     clips = ["walk_loop", "idle_loop", "sprint_loop"]
     if include_jump:
         clips += ["jump_start", "jump_loop", "jump_land"]
-    if include_carry:
+    if include_carry or include_carry_idle:
         clips += ["walk_carry_loop"]
 
     base = None
@@ -340,19 +423,14 @@ def load_rig(include_jump: bool = False, include_carry: bool = False):
     for track in list(base.animation_data.nla_tracks):
         base.animation_data.nla_tracks.remove(track)
 
+    if include_carry_idle:
+        # Сначала in-place, потом копия позы: иначе стойка уедет вперёд.
+        _zero_root_forward(actions["walk_carry_loop"])
+        actions["carry_idle"] = _make_carry_idle(base, actions["walk_carry_loop"])
+        base.animation_data.action = None
+
     for clip, action in actions.items():
-        # in-place: root.location[1] — это перенос вперёд
-        for layer in getattr(action, "layers", []):
-            for strip in layer.strips:
-                for bag in getattr(strip, "channelbags", []):
-                    for fc in bag.fcurves:
-                        if (fc.data_path == 'pose.bones["root"].location'
-                                and fc.array_index == 1):
-                            for kp in fc.keyframe_points:
-                                kp.co[1] = 0.0
-                                kp.handle_left[1] = 0.0
-                                kp.handle_right[1] = 0.0
-                            fc.update()
+        _zero_root_forward(action)
         track = base.animation_data.nla_tracks.new()
         track.name = clip
         strip = track.strips.new(clip, int(action.frame_range[0]), action)

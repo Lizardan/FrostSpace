@@ -4,9 +4,13 @@
 
 **FrostSpace** — Unity-проект на ранней стадии: есть играбельный вертикальный срез
 (снежный уровень `Game`, роботы, локомоция игрока), sci-fi экран загрузки, главное меню
-с 3D-диорамой и белые переходы между сценами. Назначение игры, жанр и целевые
-платформы пока не зафиксированы; не выдумывай их по набору пакетов или ассетов.
-Текущая реализация — источник истины, пока не доказано обратное.
+с 3D-диорамой и белые переходы между сценами. Сюжет, герой и поток сцен зафиксированы
+как замысел в `docs/GAME_DESIGN.md` (робот-курьер аккумуляторов; срез «Поезд»), но
+квестов и переноски в коде ещё нет. Выбор корпуса (`CharacterSetup`, три пресета)
+реализован, сцена `Train` пока — заглушка вагона (ADR 0026, 0028). Жанр —
+сюжетное приключение с доставкой груза; платформа — WebGL. Текущая реализация —
+источник истины о том, что уже есть; GDD — о том, что задумано. Не выдумывай системы,
+которых нет ни в коде, ни в GDD.
 
 Этот файл — обязательная точка входа для любого AI-агента. Читай его первым, затем
 только те документы из `docs/`, которые нужны текущей задаче.
@@ -34,8 +38,9 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 | Цвет | Linear |
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |
 | Play Mode | domain reload **выключен**, scene reload включён; Play тикает только при фокусе окна (`runInBackground` не заменяет) |
-| Сцены | Поток `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `Game` (2, игровой уровень); переходы — только через `Core/SceneController.cs` (ADR 0011) |
-| Код | `Core/` (3 файла), `Features/` (9 фич: Boot, Camera, Dialogue, Hud, Locomotion, Menu, Npc, Ride, Scan), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (10 файлов, 91 тест); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
+| Сцены | Факт: `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `CharacterSetup` (2, выбор корпуса) → `Train` (3, заглушка вагона) → `Game` (4, прежний уровень, вне потока). Целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`; сцена `Frontier` ещё не создана, `Game` уходит последним индексом. Переходы — только через `Core/SceneController.cs` |
+| Сюжет и дизайн | `docs/WORLD.md` — мир, Тишина, холод, быт; `docs/GAME_DESIGN.md` — предпосылка, три корпуса, поезд, депо, системы, ID битов. Статус: **design intent**; не выдавай его за код |
+| Код | `Core/` (3 файла), `Features/` (10 фич: Boot, Camera, Character, Dialogue, Hud, Locomotion, Menu, Npc, Ride, Scan; планируются Carry, Quest, Story, Map — ADR 0026–0029), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (11 файлов, 107 тестов); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
 | Unity MCP | пакет `com.coplaydev.unity-mcp`, порт `127.0.0.1:6400` |
 | Blender | **5.2.3 LTS**, аддон `blender_mcp` (протокол 14), порт `9876` (только GUI) |
 | Исходники ассетов | `AssetSource/` — вне git, Unity их не видит |
@@ -82,7 +87,8 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 
 ## Карта документации
 
-- `docs/PROJECT_OVERVIEW.md`, `ARCHITECTURE.md`, `PROJECT_MAP.md` — проект, слои, пути.
+- `docs/PROJECT_OVERVIEW.md`, `WORLD.md`, `GAME_DESIGN.md`, `ARCHITECTURE.md`,
+  `PROJECT_MAP.md` — проект, мир, замысел игры, слои, пути.
 - `docs/DEVELOPMENT.md`, `ASSETS.md`, `BLENDER.md`, `UNITY_MCP.md`, `UNITY_EDITOR.md` — работа и инструменты.
 - `docs/DEPLOY.md` — публикация WebGL на GitHub Pages: раннер, деплой, гашение процесса.
 - `docs/STYLE.md` — визуальный стиль и дизайн-код ассетов: правила, палитры, проверка.
@@ -205,7 +211,8 @@ pwsh -File Tools/Agent/LinkAgentSkills.ps1 -Check    # только провер
 
 ## Структура (кратко)
 
-- `Assets/Scenes/` — единственная папка сцен (`Boot`, `MainMenu`, `Game`).
+- `Assets/Scenes/` — единственная папка сцен; сейчас `Boot`, `MainMenu`,
+  `CharacterSetup`, `Train`, `Game`; по ADR 0026 планируется `Frontier`.
 - `Assets/_Project/Scripts/` — единственный корень C#: `Core/`, `Features/<Feature>/`.
 - `Assets/_Project/Editor/`, `Assets/_Project/Tests/EditMode/`.
 - `Assets/_Project/Content/{Animation,Audio,Data,Materials,Models,Prefabs,Settings,VFX}/`.

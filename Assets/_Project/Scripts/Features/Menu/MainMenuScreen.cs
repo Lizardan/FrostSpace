@@ -26,7 +26,7 @@ namespace FrostSpace.Features.Menu
     {
         [Header("Переход")]
         [Tooltip("Сцена, которая грузится по кнопке START")]
-        [SerializeField] private string _gameScene = "Game";
+        [SerializeField] private string _gameScene = "CharacterSetup";
 
         [Header("Тексты")]
         [SerializeField] private string _title = "FROSTSPACE";
