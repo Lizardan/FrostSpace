@@ -5,9 +5,11 @@
 **FrostSpace** — Unity-проект на ранней стадии: есть играбельный вертикальный срез
 (снежный уровень `Game`, роботы, локомоция игрока), sci-fi экран загрузки, главное меню
 с 3D-диорамой и белые переходы между сценами. Сюжет, герой и поток сцен зафиксированы
-как замысел в `docs/GAME_DESIGN.md` (робот-курьер аккумуляторов; срез «Поезд»), но
-квестов и переноски в коде ещё нет. Выбор корпуса (`CharacterSetup`, три пресета)
-реализован, сцена `Train` пока — заглушка вагона (ADR 0026, 0028). Жанр —
+как замысел в `docs/GAME_DESIGN.md` (робот-курьер аккумуляторов; срез «Поезд»). Выбор
+корпуса (`CharacterSetup`, три пресета), переноска в `Train`, квест «Погрузка»,
+диалоги R13, финал с камерой и титулом реализованы; `Frontier` существует как
+депо-заглушка, сюжета депо и сохранений ещё нет. `Train` — интерьер вагона, а не
+заглушка (ADR 0026, 0027, 0028). Жанр —
 сюжетное приключение с доставкой груза; платформа — WebGL. Текущая реализация —
 источник истины о том, что уже есть; GDD — о том, что задумано. Не выдумывай системы,
 которых нет ни в коде, ни в GDD.
@@ -28,6 +30,8 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 
 - Пользователю и в документации — **русский**; код, имена, команды и пути — в оригинале.
 - Документы и комментарии — русский; идентификаторы — английский.
+- Игровой UI — русский, кроме декоративных подписей (бренд, виды меню, технические
+  строки); латиница в них — осознанный стиль, а не пропущенная локализация.
 
 ## Факты проекта
 
@@ -38,10 +42,10 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 | Цвет | Linear |
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |
 | Play Mode | domain reload **выключен**, scene reload включён; Play тикает только при фокусе окна (`runInBackground` не заменяет) |
-| Сцены | Факт: `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `CharacterSetup` (2, выбор корпуса) → `Train` (3, заглушка вагона) → `Game` (4, прежний уровень, вне потока). Целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`; сцена `Frontier` ещё не создана, `Game` уходит последним индексом. Переходы — только через `Core/SceneController.cs` |
+| Сцены | Факт: `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `CharacterSetup` (2, выбор корпуса) → `Train` (3, интерьер, переноска, квест, диалоги R13 и финал) → `Frontier` (4, депо-заглушка) → `Game` (5, прежний уровень, вне потока). Целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`; `Game` уходит последним индексом. Переходы — только через `Core/SceneController.cs` |
 | Сюжет и дизайн | `docs/WORLD.md` — мир, Тишина, холод, быт; `docs/GAME_DESIGN.md` — предпосылка, три корпуса, поезд, депо, системы, ID битов. Статус: **design intent**; не выдавай его за код |
-| Код | `Core/` (3 файла), `Features/` (10 фич: Boot, Camera, Character, Dialogue, Hud, Locomotion, Menu, Npc, Ride, Scan; планируются Carry, Quest, Story, Map — ADR 0026–0029), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (11 файлов, 107 тестов); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
-| Unity MCP | пакет `com.coplaydev.unity-mcp`, порт `127.0.0.1:6400` |
+| Код | `Core/` (3 файла), `Features/` (14 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story; планируется Map — ADR 0026–0029), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (15 файлов, 137 тестов); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
+| Unity MCP | пакет `com.coplaydev.unity-mcp`; сервер слушает 6400 или следующий свободный (сейчас 6401), клиент — `Tools/Unity/unity_bridge.py`, порт через `UNITY_MCP_PORT` |
 | Blender | **5.2.3 LTS**, аддон `blender_mcp` (протокол 14), порт `9876` (только GUI) |
 | Исходники ассетов | `AssetSource/` — вне git, Unity их не видит |
 

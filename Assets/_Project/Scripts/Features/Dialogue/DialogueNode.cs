@@ -19,6 +19,10 @@ namespace FrostSpace.Features.Dialogue
         [SerializeField] private List<DialogueChoice> _choices = new();
         [Tooltip("Переход, когда вариантов нет. Пусто — конец диалога.")]
         [SerializeField] private string _nextId;
+        [Tooltip("Действие при показе узла; None — без действия")]
+        [SerializeField] private DialogueAction _action;
+        [Tooltip("Id квеста; пусто — квест, назначенный сцене")]
+        [SerializeField] private string _questId = string.Empty;
 
         public DialogueNode()
         {
@@ -42,12 +46,28 @@ namespace FrostSpace.Features.Dialogue
         /// <summary>Переход без вариантов; для узла с вариантами не используется.</summary>
         public string NextId => _nextId;
 
+        /// <summary>Действие, которое вызывает показ узла.</summary>
+        public DialogueAction Action => _action;
+
+        /// <summary>Id квеста действия; пусто — квест, назначенный сцене.</summary>
+        public string QuestId => _questId;
+
+        /// <summary>У узла есть действие, а не только реплика.</summary>
+        public bool HasAction => _action != DialogueAction.None;
+
         /// <summary>Узел завершает диалог: ни вариантов, ни перехода.</summary>
         public bool IsTerminal => _choices.Count == 0 && string.IsNullOrWhiteSpace(_nextId);
 
         public void SetLine(string line) => _line = line;
 
         public void SetNextId(string nextId) => _nextId = nextId;
+
+        /// <summary>Назначает действие и квест; пустой id — квест сцены.</summary>
+        public void SetAction(DialogueAction action, string questId = "")
+        {
+            _action = action;
+            _questId = questId;
+        }
 
         /// <summary>Добавляет вариант без ограничения: лимит проверяет валидация.</summary>
         public DialogueChoice AddChoice(string text = "", string nextId = "")
@@ -68,6 +88,8 @@ namespace FrostSpace.Features.Dialogue
         {
             var copy = new DialogueNode(id, _line);
             copy._nextId = _nextId;
+            copy._action = _action;
+            copy._questId = _questId;
             for (var i = 0; i < _choices.Count; i++)
                 copy._choices.Add(new DialogueChoice(_choices[i].Text, _choices[i].NextId));
             return copy;

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Character.RobotProfile
   _id: R10_Pipewright
   _displayName: PIPEWRIGHT
-  _role: HEAVY REPAIRMAN
-  _description: Slow but steady. The strongest grip of the three.
+  _role: "\u0422\u042F\u0416\u0401\u041B\u042B\u0419 \u0420\u0415\u041C\u041E\u041D\u0422\u041D\u0418\u041A"
+  _description: "\u041C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439, \u043D\u043E \u0443\u0441\u0442\u043E\u0439\u0447\u0438\u0432\u044B\u0439. \u0421\u0430\u043C\u0430\u044F \u0441\u0438\u043B\u044C\u043D\u0430\u044F \u0445\u0432\u0430\u0442\u043A\u0430 \u0438\u0437 \u0442\u0440\u0451\u0445."
   _visualPrefab: {fileID: 3541021159531876678, guid: 64fbc796757c8c5409ff3a4a913f3c6e, type: 3}
   _walkMultiplier: 0.9
   _sprintMultiplier: 0.85

@@ -496,11 +496,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Character.CharacterSetupScreen
   _catalog: {fileID: 11400000, guid: d9f66060c8e9e35449bb2c5d51e15619, type: 2}
   _nextScene: Train
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
   _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
   _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
   _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
-  _cardIdle: {r: 0.045, g: 0.075, b: 0.095, a: 0.86}
-  _cardHover: {r: 0.08, g: 0.14, b: 0.18, a: 0.92}
+  _rowIdle: {r: 0.035, g: 0.06, b: 0.078, a: 0.38}
+  _rowHover: {r: 0.065, g: 0.12, b: 0.155, a: 0.62}
+  _rowSelected: {r: 0.04, g: 0.11, b: 0.145, a: 0.82}
+  _buttonIdle: {r: 0.045, g: 0.075, b: 0.095, a: 0.92}
+  _buttonHover: {r: 0.08, g: 0.14, b: 0.18, a: 0.95}
 --- !u!4 &1858095616
 Transform:
   m_ObjectHideFlags: 0

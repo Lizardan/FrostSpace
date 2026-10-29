@@ -10,7 +10,7 @@
 | Python | 3.14.3 (для `Tools/`) | да |
 | Скиллы | `.Aura/Skills/` + мост `.agents/skills/` | настроены `Tools/Agent/LinkAgentSkills.ps1` |
 | Blender | 5.2.3 LTS, `G:\Steam\steamapps\common\Blender\blender.exe` | да |
-| Unity MCP | порт `127.0.0.1:6400`, инструменты доступны | да |
+| Unity MCP | сервер на 6400 или следующем свободном порту (2026-10-29 — 6401), мост `Tools/Unity/unity_bridge.py` | да |
 | Blender MCP | сервер `mcp-for-blender==2.2.2`, аддон протокол 14, порт `9876`, только при запущенном GUI-Blender | версии согласованы; end-to-end не проверен |
 
 Версия Unity берётся из `ProjectSettings/ProjectVersion.txt`, а не из памяти. Путь к
@@ -42,12 +42,13 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 107 тестов:
+Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 137 тестов:
 проверки префабов и клипов роботов, животных и ходунов (carry и jump у трёх корпусов),
 выбор корпуса и `PlayerPrefs`, `ViewBlend`,
-экранный вырез, математика сканера, граф диалогов и его контент). Флаг `-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
+экранный вырез, математика сканера, граф диалогов и его контент, порядок целей квеста
+и действия узлов диалога). Флаг `-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
 не существует. `total: 0` в отчёте означает, что тесты не найдены, а не что «всё прошло».
-Срез «Поезд» добавит тесты квестов и переноски (ADR 0027).
+Сценовая обвязка квеста, трекер и сохранение ещё добавят тесты (ADR 0027, 0031).
 
 Сборка: build-метод есть — `FrostSpace.Editor.BuildWebGL.PerformBuild` (см. раздел
 «WebGL и публикация»). Собирается только из CLI, меню в редакторе нет (ADR 0005).
@@ -146,9 +147,15 @@ python Tools/Blender/gui_session.py stop     # закрыть, если сесс
 | Анализ PNG | `blender --background ... inspect_image.py -- <file.png>` | работает |
 | Unity ping через мост | `python Tools/Unity/unity_bridge.py ping` | `pong` |
 | Unity MCP Console | `read_console(types: ["error"])` | 0 ошибок |
-| Unity MCP сцена | `manage_scene(get_active)` | `Boot` (index 0) — активная сцена редактора; `MainMenu` — index 1 |
-| Unity MCP Build Settings | `manage_scene(get_build_settings)` | `Boot` 0, `MainMenu` 1, `CharacterSetup` 2, `Train` 3, `Game` 4 |
-| Тесты Unity | `run_tests` + `get_test_job` | 107 тестов: `succeeded`, 107 passed (2026-10-29) |
+| Unity MCP сцена | `manage_scene(get_active)` | `Train` (index 3) — активная сцена редактора |
+| Unity MCP Build Settings | `manage_scene(get_build_settings)` | `Boot` 0, `MainMenu` 1, `CharacterSetup` 2, `Train` 3, `Frontier` 4, `Game` 5 |
+| Тесты Unity | `run_tests` + `get_test_job` | 137 тестов: `succeeded`, 137 passed (2026-10-29) |
+| Play-проверка среза «Поезд» | MCP: диалог R13 → `AcceptQuest` → 4 слота → `TrainCompanion_Done` → `CompleteQuest` | PASS (2026-10-29): трекер `ПОГРУЗИТЬ АККУМУЛЯТОРЫ 0/4`, цель доставки закрывается, R13 меняет диалог, Console 0 ошибок |
+| Play-проверка UI | MCP: главное меню, пауза, журнал, настройки-шестерёнка, трекер | PASS (2026-10-29): русские подписи, журнал с целями, шестерёнка и прогресс-бар; Console 0 ошибок |
+| Гейт переноски | MCP: `FindNearestItem` до и после `AcceptQuest` | PASS (2026-10-29): до квеста `none`, после — `Prop_Battery_1` |
+| Финальный диалог | MCP: терминальный узел после `CompleteQuest` | PASS (2026-10-29): одно E дорисовывает и закрывает диалог, блокировки сняты, камера и карта `Player` возвращены |
+| Финал `Train` | MCP: `CompleteQuest` → отъезд камеры → титул → `Frontier` | PASS (2026-10-29): камера уходит к окну, титул `FROSTSPACE` над занавесом, `Frontier` загружается, управление возвращается |
+| Опыт | MCP: завершение квеста | PASS (2026-10-29): `250 / 1000 (25%)`, `УР. 1` → `УР. 2`; EditMode XP-тесты 5/5 |
 | Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | базлайн 2026-10-18: walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° — **на ровном рельефе** |
 | Play-замер прыжка | тот же стенд, строка `PROBE jump` | PASS (2026-10-21): height 1.19 м при цели 1.2, airtime 1.07 с |
 | Баланс шага на фасетном рельефе | длина клипа × клиповая скорость = путь за цикл (живой замер) | PASS (2026-10-18): клип 1.333 с × 0.912 м/с = 1.217 м против 1.215 м пути — стопа стоит |

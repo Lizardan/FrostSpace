@@ -1,5 +1,6 @@
 using FrostSpace.Features.Dialogue;
 using FrostSpace.Features.Locomotion;
+using FrostSpace.Features.Quest;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -30,12 +31,22 @@ namespace FrostSpace.Features.Carry
         [Tooltip("Диалог игрока: пока он открыт, E не трогает груз")]
         [SerializeField] private DialogueController _dialogue;
 
+        [Tooltip("Квест сцены: предметы с RequiredQuestId доступны только после взятия")]
+        [SerializeField] private QuestDirector _questDirector;
+
         [Header("Руки")]
         [Tooltip("Кость левой кисти: груз висит на середине между кистями")]
         [SerializeField] private Transform _handLeft;
 
         [Tooltip("Кость правой кисти")]
         [SerializeField] private Transform _handRight;
+
+        [Header("Хват")]
+        [Tooltip("Смещение груза вперёд от середины кистей, м")]
+        [SerializeField] private float _gripForward = 0.33f;
+
+        [Tooltip("Подъём низа груза над кистями, м")]
+        [SerializeField] private float _gripLift = 0.03f;
 
         [Tooltip("Ассет ввода; если пусто — InputSystem.actions")]
         [SerializeField] private InputActionAsset _actions;
@@ -52,7 +63,7 @@ namespace FrostSpace.Features.Carry
 
         private InputAction _interact;
         private Carryable _held;
-        private float _gripOffset = 0.475f;
+        private float _bottomOffset;
         private bool _handsSearched;
 
         /// <summary>В руках есть предмет.</summary>
@@ -116,7 +127,9 @@ namespace FrostSpace.Features.Carry
             }
 
             var middle = (left + right) * 0.5f;
-            _handAnchor.position = middle - up * _gripOffset;
+            _handAnchor.position = middle
+                + forward.normalized * _gripForward
+                + up * (_gripLift - _bottomOffset);
             _handAnchor.rotation = Quaternion.LookRotation(forward.normalized, up);
         }
 
@@ -174,7 +187,9 @@ namespace FrostSpace.Features.Carry
             if (item != null)
             {
                 var renderer = item.GetComponentInChildren<Renderer>();
-                _gripOffset = renderer != null ? renderer.bounds.size.y * 0.62f : 0.58f;
+                _bottomOffset = renderer != null
+                    ? item.transform.position.y - renderer.bounds.min.y
+                    : 0f;
                 EnsureHands();
                 item.Take(_handAnchor);
                 _held = item;
@@ -210,7 +225,7 @@ namespace FrostSpace.Features.Carry
             for (var i = 0; i < hits.Length; i++)
             {
                 var item = hits[i].GetComponentInParent<Carryable>();
-                if (item == null || item.IsCarried || item.IsPlaced)
+                if (item == null || item.IsCarried || item.IsPlaced || !CanCarry(item))
                 {
                     continue;
                 }
@@ -224,6 +239,22 @@ namespace FrostSpace.Features.Carry
             }
 
             return best;
+        }
+
+        /// <summary>
+        /// Предмет с RequiredQuestId открывается только после взятия этого квеста.
+        /// До разговора с R13 аккумуляторы лежат на месте и не подбираются.
+        /// </summary>
+        private bool CanCarry(Carryable item)
+        {
+            if (string.IsNullOrWhiteSpace(item.RequiredQuestId))
+                return true;
+
+            var log = _questDirector != null ? _questDirector.Log : null;
+            if (log == null || log.Quest == null || log.State == QuestState.Inactive)
+                return false;
+
+            return string.Equals(log.Quest.QuestId, item.RequiredQuestId);
         }
 
         private CarrySlot FindNearestSlot()

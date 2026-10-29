@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Character.RobotProfile
   _id: R1_PolarMechanic
   _displayName: POLAR MECHANIC
-  _role: UNIVERSAL
-  _description: Balanced service frame. No weak spot, no extra reach.
+  _role: "\u0423\u041D\u0418\u0412\u0415\u0420\u0421\u0410\u041B"
+  _description: "\u0421\u0431\u0430\u043B\u0430\u043D\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u043A\u043E\u0440\u043F\u0443\u0441. \u0411\u0435\u0437 \u0441\u043B\u0430\u0431\u044B\u0445 \u043C\u0435\u0441\u0442 \u0438 \u0431\u0435\u0437 \u043B\u0438\u0448\u043D\u0435\u0433\u043E \u0432\u0435\u0441\u0430."
   _visualPrefab: {fileID: 687843981644673691, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
   _walkMultiplier: 1
   _sprintMultiplier: 1

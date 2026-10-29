@@ -430,6 +430,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Carry.Carryable
   _itemType: battery
+  _requiredQuestId: train_batteries
 --- !u!1001 &81958810
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3702,6 +3703,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Carry.Carryable
   _itemType: battery
+  _requiredQuestId: train_batteries
 --- !u!1001 &252015436
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4180,6 +4182,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Carry.Carryable
   _itemType: battery
+  _requiredQuestId: train_batteries
 --- !u!1001 &344803481
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4593,7 +4596,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3480514392134574407, guid: f98086fd7b93be9498146d8e4085ea60, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1347579799}
+    - targetCorrespondingSourceObject: {fileID: 3480514392134574407, guid: f98086fd7b93be9498146d8e4085ea60, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1347579798}
+    - targetCorrespondingSourceObject: {fileID: 3480514392134574407, guid: f98086fd7b93be9498146d8e4085ea60, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1347579797}
   m_SourcePrefab: {fileID: 100100000, guid: f98086fd7b93be9498146d8e4085ea60, type: 3}
 --- !u!1001 &456171189
 PrefabInstance:
@@ -6346,6 +6358,13 @@ GameObject:
   - component: {fileID: 783711651}
   - component: {fileID: 783711650}
   - component: {fileID: 783711657}
+  - component: {fileID: 783711661}
+  - component: {fileID: 783711660}
+  - component: {fileID: 783711659}
+  - component: {fileID: 783711658}
+  - component: {fileID: 783711662}
+  - component: {fileID: 783711664}
+  - component: {fileID: 783711663}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -6550,13 +6569,268 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Carry.CarryController
   _handAnchor: {fileID: 739685647}
   _locomotion: {fileID: 783711655}
-  _dialogue: {fileID: 0}
+  _dialogue: {fileID: 783711660}
+  _questDirector: {fileID: 783711659}
+  _handLeft: {fileID: 0}
+  _handRight: {fileID: 0}
+  _gripForward: 0.33
+  _gripLift: 0.03
   _actions: {fileID: 0}
   _pickupRadius: 2.4
   _slotRadius: 2.6
   _mask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &783711658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783711648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 614d21c0d8a339c4ea522d061bf68bd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Hud.QuestTracker
+  _director: {fileID: 783711659}
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
+  _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
+  _plate: {r: 0.016, g: 0.026, b: 0.038, a: 0.72}
+  _track: {r: 0.1, g: 0.15, b: 0.18, a: 0.9}
+--- !u!114 &783711659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783711648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4eebfb286cc432844b13557ce91e4adf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Quest.QuestDirector
+  _quest: {fileID: 11400000, guid: 27dcb875f9727a24aa6e4444314feedc, type: 2}
+  _dialogue: {fileID: 783711660}
+  _slots:
+  - {fileID: 147996650}
+  - {fileID: 120831208}
+  - {fileID: 772570579}
+  - {fileID: 1190937481}
+  _speaker: {fileID: 1347579799}
+  _completedDialogue: {fileID: 11400000, guid: 938fe6bc8b889914da2273e83725ee56, type: 2}
+  _experience: {fileID: 783711664}
+  _completionExperience: 250
+--- !u!114 &783711660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783711648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4023147f8038d55449f3b698d8758751, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueController
+  _rig: {fileID: 1498862677}
+  _scanner: {fileID: 1498862676}
+  _pause: {fileID: 783711662}
+  _screen: {fileID: 783711661}
+  _locomotion: {fileID: 783711655}
+  _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  _blockers:
+    serializedVersion: 2
+    m_Bits: 4294967231
+  _rayDistance: 12
+  _talkRadius: 4
+--- !u!114 &783711661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783711648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c1a579a73bb777488c904583a387465, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueScreen
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
+  _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
+  _panelColor: {r: 0.016, g: 0.026, b: 0.038, a: 0.96}
+  _choiceIdle: {r: 0.055, g: 0.085, b: 0.105, a: 0.42}
+  _promptPlate: {r: 0.016, g: 0.026, b: 0.038, a: 0.78}
+  _charactersPerSecond: 50
+  _showSeconds: 0.18
+  _hideSeconds: 0.12
+--- !u!114 &783711662
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783711648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d60abc43e6537684090e43d331e33652, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Menu.PauseMenuScreen
+  _mainMenuScene: MainMenu
+  _rig: {fileID: 1498862677}
+  _scanner: {fileID: 1498862676}
+  _questDirector: {fileID: 783711659}
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
+  _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
+  _panelColor: {r: 0.016, g: 0.026, b: 0.038, a: 0.96}
+  _shadeColor: {r: 0.008, g: 0.016, b: 0.026, a: 0.78}
+  _buttonIdle: {r: 0.055, g: 0.085, b: 0.105, a: 0.82}
+  _buttonHover: {r: 0.1, g: 0.19, b: 0.24, a: 0.95}
+  _contentColor: {r: 0.028, g: 0.045, b: 0.06, a: 0.55}
+--- !u!114 &783711663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783711648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0fdc90a66b22fd44b8e338c55283e80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Hud.ExperienceBar
+  _experience: {fileID: 783711664}
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+  _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
+  _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
+  _segmentOff: {r: 0.302, g: 0.902, b: 1, a: 0.12}
+--- !u!114 &783711664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783711648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7506bab92b54d4944947bc0f4392360d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Progression.PlayerExperience
+  _level: 1
+  _experience: 0
+  _baseRequirement: 1000
+  _growth: 1.35
+--- !u!1 &807522707
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 807522709}
+  - component: {fileID: 807522708}
+  m_Layer: 0
+  m_Name: TrainSequence
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &807522708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 807522707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4f2fdeedbc634449845e11940fd9c30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Story.TrainSequenceDirector
+  _quest: {fileID: 783711659}
+  _dialogue: {fileID: 783711660}
+  _locomotion: {fileID: 783711655}
+  _rig: {fileID: 1498862677}
+  _motion: {fileID: 493898835}
+  _titleCard: {fileID: 808392504}
+  _nextScene: Frontier
+  _cameraSeconds: 2.4
+  _windowPosition: {x: 3.2, y: 2, z: -4}
+  _windowLookAt: {x: 9, y: 1.8, z: -4}
+--- !u!4 &807522709
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 807522707}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &808392503
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 808392505}
+  - component: {fileID: 808392504}
+  m_Layer: 0
+  m_Name: TitleCard
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &808392504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 808392503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60646ec525356b741a1e50427fcea140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Story.TitleCardScreen
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
+  _title: FROSTSPACE
+  _subtitle: "\u0421\u0415\u0412\u0415\u0420\u041D\u042B\u0419 \u0420\u0415\u0419\u0421  \xB7  \u0414\u0415\u041F\u041E"
+  _ink: {r: 0.025, g: 0.06, b: 0.085, a: 1}
+  _dim: {r: 0.22, g: 0.38, b: 0.45, a: 1}
+  _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
+--- !u!4 &808392505
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 808392503}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &817257290
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6711,7 +6985,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -8.5
+      value: -4.65
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7987,7 +8261,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.5
+      value: -1.65
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalRotation.w
@@ -8223,7 +8497,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.5
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalRotation.w
@@ -11170,6 +11444,65 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Carry.Carryable
   _itemType: battery
+  _requiredQuestId: train_batteries
+--- !u!1 &1347579794 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3480514392134574407, guid: f98086fd7b93be9498146d8e4085ea60, type: 3}
+  m_PrefabInstance: {fileID: 444037576}
+  m_PrefabAsset: {fileID: 0}
+--- !u!136 &1347579797
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347579794}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.4
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &1347579798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347579794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aed5eff045d33bc4e84ea58ecef5f933, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueMarker
+  _speaker: {fileID: 1347579799}
+  _height: 2.35
+  _color: {r: 0.302, g: 0.902, b: 1, a: 1}
+--- !u!114 &1347579799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347579794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dade26ac8513db244a3ffb30068682ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
+  _npc: {fileID: 0}
+  _dialogue: {fileID: 11400000, guid: a6c57fdee0b4ac141bc72f9d98ff69db, type: 2}
+  _turnSpeed: 360
 --- !u!1001 &1353253740
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13053,7 +13386,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -6.5
+      value: -3.65
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 51c0002caa958684aafedf2c86dd4ccd, type: 3}
       propertyPath: m_LocalRotation.w
@@ -14562,3 +14895,5 @@ SceneRoots:
   - {fileID: 153698849}
   - {fileID: 1203050509}
   - {fileID: 493898836}
+  - {fileID: 808392505}
+  - {fileID: 807522709}

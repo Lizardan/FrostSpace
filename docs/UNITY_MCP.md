@@ -4,17 +4,17 @@
 — `DEVELOPMENT.md`. Перекомпиляция, `execute_code`, авторинг сцен и проверка результата —
 `UNITY_EDITOR.md`. Blender-мост — `BLENDER.md`.
 
-## Статус: подключён и проверен (2026-10-18)
+## Статус: подключён и проверен (2026-10-29)
 
 | Параметр | Значение |
 |---|---|
 | Пакет | `com.coplaydev.unity-mcp` (git, `MCPForUnity#main`) |
-| Resolved hash | `aa5fc638d623f56178d50329d9ad8c541a57fe66` (в `Packages/packages-lock.json`) |
+| Resolved hash | `81542a7e86292b5c4c21b1782c5af23b567f45ce` (в `Packages/packages-lock.json`) |
 | Сервер в клиенте | `unityMCP` |
-| Порт | `127.0.0.1:6400` |
+| Порт | `127.0.0.1:6400` по умолчанию; 2026-10-29 сервер поднялся на `6401`, мост берёт порт из `UNITY_MCP_PORT` |
 | Unity | 6000.6.7f1 |
-| Активная сцена | `Assets/Scenes/MainMenu.unity` (build index 1); поток — `Boot` 0 → `MainMenu` 1 → `Game` 2 |
-| Состояние | редактор запущен, компиляция завершена, EditMode-тесты 17/17, ошибок в Console нет |
+| Активная сцена | `Assets/Scenes/Train.unity` (build index 3); поток — `Boot` 0 → `MainMenu` 1 → `CharacterSetup` 2 → `Train` 3 → `Frontier` 4 → `Game` 5 |
+| Состояние | редактор запущен, компиляция завершена, EditMode-тесты 137/137, ошибок в Console нет |
 
 `manifest.json` ссылается на ветку `#main`, поэтому версия сервера может измениться при
 перерезолве. Hash в lockfile фиксирует текущую; имена инструментов проверяй по схеме,
@@ -33,11 +33,11 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 
 | Вызов | Фактический результат |
 |---|---|
-| `manage_scene(action: "get_active")` | `MainMenu`, `Assets/Scenes/MainMenu.unity`, buildIndex 1 |
-| `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 2)` | 10 корней (`Player`, `NPC`, дом, деревья, забор, свет...); `next_cursor: null` |
-| `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `CharacterSetup` (2), `Train` (3), `Game` (4), все enabled (2026-10-29) |
+| `manage_scene(action: "get_active")` | `Train`, `Assets/Scenes/Train.unity`, buildIndex 3 (2026-10-29) |
+| `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 1)` | Train: 16 корней (`Player`, `Main Camera`, `Sun`, `CabinLamp`, `TrainInterior`, 4×`Prop_Battery`, `Prop_GravCart`, `R13_Prospector`, `TrainMotionRig`, `TitleCard`, `TrainSequence`, `SnowfallLeft/Right`); `next_cursor: null` |
+| `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `CharacterSetup` (2), `Train` (3), `Frontier` (4), `Game` (5), все enabled (2026-10-29) |
 | `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` после сборки уровня и тестов |
-| `run_tests` + `get_test_job` | 107 EditMode-тестов, `succeeded` (2026-10-29) |
+| `run_tests` + `get_test_job` | 137 EditMode-тестов, `succeeded` (2026-10-29) |
 | `execute_code(action: "execute")` | работает, `compiler: roslyn`; видит типы проектных сборок (`FrostSpace.Features`, `FrostSpace.Editor`) |
 | `manage_asset(action: "delete")` | папка `Assets/Screenshots` удаляется после проверки (расходник, STYLE.md); на 2026-10-22 её в проекте нет |
 | `manage_camera(action: "screenshot", capture_source: "game_view")` | работает: PNG в `Assets/Screenshots/`, вид из `view_position` на `view_target`; **значения в файле линейные** — см. «Ловушки» |
@@ -176,9 +176,11 @@ unity_docs(action: "get_manual", slug: "execution-order")
 
 ## Если MCP-инструментов нет в клиенте
 
-Unity уже слушает 6400. Пока инструменты не появились, используй прямой клиент:
+Unity слушает 6400 или следующий свободный порт (2026-10-29 — 6401). Пока инструменты
+не появились, используй прямой клиент; порт задаётся `UNITY_MCP_PORT`:
 
 ```powershell
+$env:UNITY_MCP_PORT = "6401"
 python Tools/Unity/unity_bridge.py ping
 python Tools/Unity/unity_bridge.py call manage_scene '{"action": "get_active"}'
 ```

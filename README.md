@@ -10,8 +10,11 @@ Unity-проект на ранней стадии: есть играбельны
 у напарника и прибывает в депо — [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md); мир,
 холод и Тишина — [docs/WORLD.md](docs/WORLD.md). Поток сцен —
 `Boot → MainMenu → CharacterSetup → Train → Frontier`. Выбор корпуса реализован
-(`CharacterSetup`, три пресета), сцена `Train` пока — заглушка вагона; квестов
-и переноски в коде ещё нет.
+(`CharacterSetup`, три пресета), в `Train` есть интерьер вагона, переноска, квест
+«Погрузка», диалоги R13 и финал с отъездом камеры и титулом; `Frontier` — депо-заглушка,
+сюжета депо и сохранений пока нет. Меню, пауза, журнал и квест русифицированы;
+декоративные подписи остались латиницей. Внизу экрана — полоса опыта с текущим
+и следующим уровнем.
 
 **Играбельная WebGL-сборка:** https://lizardan.github.io/FrostSpace/ — собирается и
 публикуется автоматически после пуша в `main` (см. `docs/DEPLOY.md`).
@@ -21,10 +24,10 @@ Unity-проект на ранней стадии: есть играбельны
 | Unity | 6000.6.7f1 |
 | Render pipeline | URP 17.6.0 |
 | Ввод | Input System |
-| Сцены | Факт: `Boot` (0) → `MainMenu` (1) → `CharacterSetup` (2) → `Train` (3, заглушка) → `Game` (4, вне потока); целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`, `Game` — последним индексом |
+| Сцены | Факт: `Boot` (0) → `MainMenu` (1) → `CharacterSetup` (2) → `Train` (3, интерьер, переноска, квест и финал) → `Frontier` (4, депо-заглушка) → `Game` (5, вне потока); целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model`, движение kinematic |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` |
-| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 107 EditMode-тестов |
+| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` + `FrostSpace.Editor`, 137 EditMode-тестов |
 
 ## С чего начать
 

@@ -22,7 +22,12 @@ namespace FrostSpace.Features.Dialogue
         [Tooltip("Диалог робота")]
         [SerializeField] private DialogueAsset _dialogue;
 
+        [Header("Разговор")]
+        [Tooltip("Скорость доворота корпуса к игроку, градусов/с")]
+        [SerializeField] private float _turnSpeed = 360f;
+
         private bool _usable;
+        private Transform _conversationFocus;
 
         /// <summary>Диалог робота.</summary>
         public DialogueAsset Dialogue => _dialogue;
@@ -62,6 +67,24 @@ namespace FrostSpace.Features.Dialogue
                 Category = "NPC";
             }
 
+            RefreshUsability();
+        }
+
+        /// <summary>
+        /// Меняет диалог на лету: после погрузки R13 получает реплику похвалы.
+        /// Доступность пересчитывается теми же правилами, что и в Awake.
+        /// </summary>
+        public void SetDialogue(DialogueAsset dialogue)
+        {
+            if (_dialogue == dialogue)
+                return;
+
+            _dialogue = dialogue;
+            RefreshUsability();
+        }
+
+        private void RefreshUsability()
+        {
             _usable = false;
             if (_dialogue == null)
                 return;
@@ -84,7 +107,10 @@ namespace FrostSpace.Features.Dialogue
                 return;
 
             IsTalking = true;
-            _npc?.EnterConversation(player);
+            _conversationFocus = player;
+
+            if (_npc != null)
+                _npc.EnterConversation(player);
         }
 
         /// <summary>Возвращает NPC на маршрут.</summary>
@@ -94,7 +120,32 @@ namespace FrostSpace.Features.Dialogue
                 return;
 
             IsTalking = false;
+            _conversationFocus = null;
             _npc?.EndConversation();
+        }
+
+        /// <summary>
+        /// Общее правило разговора: говорящий поворачивается к игроку. NPC с
+        /// <see cref="NpcController"/> делает это сам; актёрам без контроллера
+        /// (например, R13) доворот даёт сам маркер диалога.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if ((_npc != null && _npc.isActiveAndEnabled) ||
+                !IsTalking ||
+                _conversationFocus == null)
+            {
+                return;
+            }
+
+            var offset = _conversationFocus.position - transform.position;
+            offset.y = 0f;
+            if (offset.sqrMagnitude < 0.0001f)
+                return;
+
+            var target = Quaternion.LookRotation(offset.normalized, Vector3.up);
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation, target, _turnSpeed * Time.deltaTime);
         }
     }
 }

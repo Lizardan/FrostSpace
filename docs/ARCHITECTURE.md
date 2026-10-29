@@ -2,10 +2,11 @@
 
 ## Сейчас (факт)
 
-Есть вертикальный срез на `Assets/Scenes/Game.unity` (build index 4, вне потока; перед ним
+Есть вертикальный срез на `Assets/Scenes/Game.unity` (build index 5, вне потока; перед ним
 идут `Assets/Scenes/Boot.unity`, build index 0, `Assets/Scenes/MainMenu.unity`, build index 1,
-`Assets/Scenes/CharacterSetup.unity`, build index 2 — выбор корпуса, и
-`Assets/Scenes/Train.unity`, build index 3 — заглушка вагона):
+`Assets/Scenes/CharacterSetup.unity`, build index 2 — выбор корпуса,
+`Assets/Scenes/Train.unity`, build index 3 — интерьер, переноска, квест и финал, и
+`Assets/Scenes/Frontier.unity`, build index 4 — депо-заглушка):
 
 - `FrostSpace.Features` (`Assets/_Project/Scripts/Features/`):
   `Locomotion/RobotLocomotion.cs` — движение через kinematic `CharacterController`,
@@ -51,9 +52,9 @@
   и луч мачты; `Menu/MenuRobotPose.cs` — процедурная поза робота меню (`Slump`,
   `Repair`, `Kneel`, `HoldLamp`, `Sit`) поверх клипа `Idle` с двухкостным IK к точке
   хвата (ADR 0015);
-  `Menu/PauseMenuScreen.cs` — меню паузы игровой сцены: Esc замораживает время, отпускает
-  курсор и показывает `RESUME` / `SETTINGS` / `MAIN MENU`; настройки (музыка, детекция
-  ближайшего, детекция по прицелу) пишутся в `Core/GameSettings.cs`;
+  `Menu/PauseMenuScreen.cs` — экран паузы игровой сцены: Esc замораживает время,
+  отпускает курсор и показывает обзор, журнал и настройки-шестерёнку; настройки
+  (музыка, детекция ближайшего, детекция по прицелу) пишутся в `Core/GameSettings.cs`;
   `Scan/ObjectScanner.cs` — сканирование: Q пускает одну волну (цели за её фронтом получают
   контур, по земле расходится `Scan/ScanPulse.cs`), подписи держатся пару секунд и гаснут
   сами; ближайшая цель и цель в области прицела подписываются автоматически (выбор
@@ -66,7 +67,8 @@
   id, до четырёх вариантов ответа, переходы строкой и полная валидация графа;
   `Dialogue/DialogueSession.cs` — чистая runtime-логика (`Advance`/`Choose`/`IsFinished`)
   без UI, поэтому граф тестируется без сцены; `Dialogue/DialogueSpeaker.cs` — маркер на
-  сценовом NPC: ассет диалога и остановка патруля; `Dialogue/DialogueController.cs` —
+  сценовом NPC: ассет диалога, остановка патруля и доворот к игроку (для актёров без
+  `NpcController`, например R13, доворот делает сам); `Dialogue/DialogueController.cs` —
   E по лучу из перекрестия (12 м, без слоя `Player`), радиус разговора 4 м, на время
   разговора гасит карту ввода `Player`, локомоцию, камеру и сканер, а паузу выключает и
   возвращает в `LateUpdate`; `Dialogue/DialogueScreen.cs` — панель на Canvas 40
@@ -152,24 +154,31 @@ ScriptableObject-конфиг — `DialogueAsset` (авторские репли
 Слой `Infrastructure/` не создан. Это **не** архитектурный долг: просто ещё
 не написано.
 
-**Поток сцен меняется.** В коде сейчас `Boot → MainMenu → CharacterSetup → Train`;
-`Train` — заглушка (вагон, свет, игрок), сюжета в ней нет. По ADR 0026 целевой поток —
-`Boot → MainMenu → CharacterSetup → Train → Frontier`. `SceneController`
-и белая накладка при этом не меняются.
+**Поток сцен меняется.** В коде сейчас
+`Boot → MainMenu → CharacterSetup → Train → Frontier`; `Train` — интерьер вагона,
+переноска, квест «Погрузка», диалоги R13, трекер и финал с титулом; `Frontier` —
+депо-заглушка с выходом игрока на платформу. `SceneController` и белая накладка
+при этом не меняются.
 
 ## Фичи первого среза
 
-`Character` реализован (ADR 0028): профиль корпуса, каталог, выбор с `PlayerPrefs`,
-`PlayerVisualBinder` и публичные `Rebind*` в камере и силуэте. Остальные фичи не начаты.
-Таблица фиксирует границы, чтобы реализации не разъехались; данные и правила — в
-`GAME_DESIGN.md`, причины — в ADR 0026–0029.
+`Character` (ADR 0028), `Carry` и `Quest` (ADR 0027) реализованы для среза «Поезд»:
+профиль корпуса, каталог, выбор с `PlayerPrefs`, `PlayerVisualBinder` и публичные
+`Rebind*` в камере и силуэте; подбор, перенос и слоты; `QuestAsset`, `QuestLog`,
+`QuestDirector`, действия `AcceptQuest`/`CompleteQuest` в узлах диалога и
+`QuestTracker`; работает `Progression` — `PlayerExperience` и полоса опыта;
+`Story` закрывает финал `Train` — `TrainSequenceDirector` и `TitleCardScreen`.
+Остальной `Story` (прибытие и депо) и `Map` не начаты. Таблица фиксирует границы,
+чтобы реализации не разъехались; данные и правила — в `GAME_DESIGN.md`, причины — в
+ADR 0026–0029.
 
 | Фича | Путь | Ответственность | Зависит от |
 |---|---|---|---|
 | Character | `Features/Character/` | профиль корпуса (SO), каталог, выбор и его `PlayerPrefs`, привязка визуала и rebind камеры/силуэта | Locomotion, Camera |
 | Carry | `Features/Carry/` | подбор по E, перенос с `CarryWalk`, слоты тележки | Locomotion, Hud |
-| Quest | `Features/Quest/` | данные квеста, `QuestLog` без Unity, сценовый `QuestDirector`, HUD-трекер | Dialogue (подписка), Carry (подписка) |
-| Story | `Features/Story/` | титульный экран, финал поезда, прибытие в депо, параллакс за окнами | Core/SceneController, Quest |
+| Quest | `Features/Quest/`, `Features/Hud/QuestTracker.cs` | данные квеста, `QuestLog` без Unity, сценовый `QuestDirector`, HUD-трекер | Dialogue (подписка), Carry (подписка) |
+| Progression | `Features/Progression/`, `Features/Hud/ExperienceBar.cs` | уровень, опыт, кривая до следующего уровня, начисление награды | Quest |
+| Story | `Features/Story/` | финал поезда, титульный экран, прибытие в депо, параллакс за окнами | Core/SceneController, Quest |
 | Map | `Features/Map/` (Stage 3) | миникарта и маркеры | — |
 
 Направление зависимостей внутри фич:

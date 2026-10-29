@@ -1,3 +1,4 @@
+using System;
 using FrostSpace.Features.Locomotion;
 using FrostSpace.Features.Menu;
 using FrostSpace.Features.Scan;
@@ -59,6 +60,12 @@ namespace FrostSpace.Features.Dialogue
 
         /// <summary>Диалог сейчас открыт.</summary>
         public bool IsOpen => _open;
+
+        /// <summary>
+        /// Показан узел с действием: действие и id квеста. Пустой id означает
+        /// квест, назначенный сцене. Событие приходит один раз за показ узла.
+        /// </summary>
+        public event Action<DialogueAction, string> ActionInvoked;
 
         private void Awake()
         {
@@ -220,13 +227,17 @@ namespace FrostSpace.Features.Dialogue
 
         private void ShowCurrent()
         {
-            if (_session == null || _session.Current == null)
+            var node = _session?.Current;
+            if (node == null)
             {
                 Close();
                 return;
             }
 
-            _screen.Show(_session.Current, _speaker.DisplayName, _speaker.Category);
+            _screen.Show(node, _speaker.DisplayName, _speaker.Category);
+
+            if (node.HasAction)
+                ActionInvoked?.Invoke(node.Action, node.QuestId);
         }
 
         private void Close()
@@ -316,6 +327,10 @@ namespace FrostSpace.Features.Dialogue
             if (_screen.IsTyping)
             {
                 _screen.CompleteTyping();
+                // Терминальный узел: после раскрытия текста закрываем сразу,
+                // иначе управление остаётся заблокированным до второго E.
+                if (_session.Current != null && _session.Current.IsTerminal)
+                    Close();
                 return;
             }
 

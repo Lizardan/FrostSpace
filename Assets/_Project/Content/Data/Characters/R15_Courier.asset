@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Character.RobotProfile
   _id: R15_Courier
   _displayName: COURIER
-  _role: LIGHT COURIER
-  _description: Fast and agile. Arms are built for parcels, not for hauling.
+  _role: "\u041B\u0401\u0413\u041A\u0418\u0419 \u041A\u0423\u0420\u042C\u0415\u0420"
+  _description: "\u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0438 \u0433\u0438\u0431\u043A\u0438\u0439. \u0420\u0443\u043A\u0438 \u0441\u043E\u0431\u0440\u0430\u043D\u044B \u043F\u043E\u0434 \u043F\u0435\u0440\u0435\u043D\u043E\u0441\u043A\u0443, \u043D\u0435 \u043F\u043E\u0434 \u0434\u0440\u0430\u043A\u0443."
   _visualPrefab: {fileID: 6389186582201502242, guid: e814637e0844ff243b0918c29d04148a, type: 3}
   _walkMultiplier: 1.15
   _sprintMultiplier: 1.1

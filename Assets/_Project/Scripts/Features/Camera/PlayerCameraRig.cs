@@ -130,6 +130,20 @@ namespace FrostSpace.Features.View
                 LockCursor();
         }
 
+        /// <summary>
+        /// Кинематографическая блокировка: риг перестаёт писать позу, но курсор
+        /// остаётся скрытым — сценовая последовательность сама ведёт камеру.
+        /// </summary>
+        public void SetCinematic(bool active)
+        {
+            _paused = active;
+            if (active)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = false;
+            }
+        }
+
         /// <summary>Правая кнопка мыши удерживается: включаются эффекты выбранного модуля.</summary>
         public bool IsAiming => !_paused && Mode == CameraMode.ThirdPerson &&
                                 _aimAction != null && _aimAction.IsPressed();

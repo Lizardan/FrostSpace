@@ -142,6 +142,8 @@ namespace FrostSpace.Editor
             var id = nodeProp.FindPropertyRelative("_id").stringValue;
             var lineProp = nodeProp.FindPropertyRelative("_line");
             var nextProp = nodeProp.FindPropertyRelative("_nextId");
+            var actionProp = nodeProp.FindPropertyRelative("_action");
+            var questProp = nodeProp.FindPropertyRelative("_questId");
             var choicesProp = nodeProp.FindPropertyRelative("_choices");
 
             EditorGUILayout.BeginVertical("box");
@@ -162,6 +164,8 @@ namespace FrostSpace.Editor
                     "на панели она может обрезаться.",
                     MessageType.Warning);
             }
+
+            DrawAction(actionProp, questProp);
 
             EditorGUILayout.LabelField("Варианты ответа", EditorStyles.miniBoldLabel);
             for (var c = 0; c < choicesProp.arraySize; c++)
@@ -232,6 +236,21 @@ namespace FrostSpace.Editor
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(2f);
+        }
+
+        private static void DrawAction(
+            SerializedProperty actionProp, SerializedProperty questProp)
+        {
+            EditorGUILayout.PropertyField(actionProp, new GUIContent("Действие"));
+            if ((DialogueAction)actionProp.enumValueIndex == DialogueAction.None)
+                return;
+
+            EditorGUILayout.PropertyField(questProp, new GUIContent("ID квеста"));
+            if (string.IsNullOrWhiteSpace(questProp.stringValue))
+            {
+                EditorGUILayout.HelpBox(
+                    "Пусто — квест, назначенный сцене.", MessageType.None);
+            }
         }
 
         private void DrawChoice(

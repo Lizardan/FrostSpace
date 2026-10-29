@@ -1,4 +1,6 @@
+using System.Text;
 using FrostSpace.Core;
+using FrostSpace.Features.Quest;
 using FrostSpace.Features.Scan;
 using FrostSpace.Features.View;
 using TMPro;
@@ -11,27 +13,22 @@ using UnityEngine.UI;
 namespace FrostSpace.Features.Menu
 {
     /// <summary>
-    /// Меню паузы игровой сцены: Esc замораживает время, отпускает курсор и показывает
-    /// <c>RESUME</c> / <c>SETTINGS</c> / <c>MAIN MENU</c>.
-    ///
-    /// Геометрия, как и у <c>MainMenuScreen</c>, собирается кодом: в сцене <c>Game</c>
-    /// нет ни Canvas, ни EventSystem, а стиль экранов живёт в одном месте. Отличие в том,
-    /// что меню паузы обязано добавить <c>GraphicRaycaster</c> — HUD его не ставит, потому
-    /// что курсор в игре захвачен и кликать некуда.
-    ///
-    /// Настройки лежат здесь же, в панели <c>SETTINGS</c>: музыка, детекция ближайшего
-    /// объекта и детекция по прицелу. Значения хранит <see cref="GameSettings"/>,
-    /// поэтому они переживают перезапуск и не дублируются в главном меню.
-    ///
-    /// Пауза — это три согласованных состояния: <c>Time.timeScale = 0</c>, камера
-    /// в режиме паузы (обзор заморожен, курсор свободен) и выключенный сканер. Выход
-    /// из паузы обязан вернуть все три, иначе игра останется стоять или перекрестие
-    /// останется без захвата курсора.
+    /// Экран паузы: затемнение, левая навигация, журнал заданий и настройки.
+    /// Геометрия собирается кодом, как у главного меню; настройки открываются
+    /// шестерёнкой, журнал — отдельной кнопкой. Esc из любого раздела возвращает
+    /// обзор, а из обзора — в игру.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(260)]
     public sealed class PauseMenuScreen : MonoBehaviour
     {
+        private enum Content
+        {
+            Overview,
+            Journal,
+            Settings
+        }
+
         [Header("Ссылки")]
         [Tooltip("Сцена главного меню")]
         [SerializeField] private string _mainMenuScene = "MainMenu";
@@ -39,25 +36,30 @@ namespace FrostSpace.Features.Menu
         [SerializeField] private PlayerCameraRig _rig;
         [Tooltip("Сканер: на паузе выключается, чтобы Q не переключал режим под меню")]
         [SerializeField] private ObjectScanner _scanner;
+        [Tooltip("Квест сцены: наполняет журнал; пусто — журнал пуст")]
+        [SerializeField] private QuestDirector _questDirector;
+
+        [Header("Шрифт")]
+        [Tooltip("Кириллический TMP-ассет; пусто — шрифт TMP по умолчанию")]
+        [SerializeField] private TMP_FontAsset _font;
 
         [Header("Палитра")]
-        [Tooltip("Циан — единственный холодный акцент стиля")]
         [SerializeField] private Color _accent = new(0.302f, 0.902f, 1f, 1f);
         [SerializeField] private Color _text = new(0.72f, 0.86f, 0.92f, 1f);
         [SerializeField] private Color _dim = new(0.30f, 0.42f, 0.50f, 1f);
-        [Tooltip("Фон панели")]
         [SerializeField] private Color _panelColor = new(0.016f, 0.026f, 0.038f, 0.96f);
-        [Tooltip("Затемнение сцены под меню")]
         [SerializeField] private Color _shadeColor = new(0.008f, 0.016f, 0.026f, 0.78f);
         [SerializeField] private Color _buttonIdle = new(0.055f, 0.085f, 0.105f, 0.82f);
         [SerializeField] private Color _buttonHover = new(0.10f, 0.19f, 0.24f, 0.95f);
+        [SerializeField] private Color _contentColor = new(0.028f, 0.045f, 0.060f, 0.55f);
 
-        private const float ButtonWidth = 360f;
-        private const float ButtonHeight = 62f;
-        private const float ButtonStep = 78f;
+        private const float ButtonWidth = 300f;
+        private const float ButtonHeight = 58f;
+        private const float ButtonStep = 72f;
         private const float MarkerWidth = 4f;
+        private const float PanelWidth = 1180f;
+        private const float PanelHeight = 720f;
 
-        /// <summary>Строка настроек с переключателем: плашка, подпись и состояние.</summary>
         private sealed class Switch
         {
             public Image Track;
@@ -65,7 +67,6 @@ namespace FrostSpace.Features.Menu
             public TextMeshProUGUI State;
             public bool Value;
 
-            /// <summary>Перерисовывает переключатель под текущее значение.</summary>
             public void Apply(Color accent, Color dim)
             {
                 var on = Value;
@@ -84,20 +85,25 @@ namespace FrostSpace.Features.Menu
 
                 if (State != null)
                 {
-                    State.text = on ? "ON" : "OFF";
+                    State.text = on ? "ВКЛ" : "ВЫКЛ";
                     State.color = on ? accent : dim;
                 }
             }
         }
 
         private GameObject _root;
-        private GameObject _menuPanel;
+        private GameObject _overviewPanel;
+        private GameObject _journalPanel;
         private GameObject _settingsPanel;
+        private TextMeshProUGUI _overviewText;
+        private TextMeshProUGUI _journalText;
         private Switch _music;
         private Switch _nearest;
         private Switch _aim;
+        private Content _content;
+        private Texture2D _gearTexture;
+        private Sprite _gearSprite;
 
-        /// <summary>Меню открыто.</summary>
         public bool IsPaused { get; private set; }
 
         private void Awake()
@@ -114,10 +120,16 @@ namespace FrostSpace.Features.Menu
 
         private void OnDisable()
         {
-            // Сцена выгружается или компонент выключили — время обязано идти дальше,
-            // иначе следующая сцена стартует замороженной.
             if (IsPaused)
                 Resume();
+        }
+
+        private void OnDestroy()
+        {
+            if (_gearSprite != null)
+                Destroy(_gearSprite);
+            if (_gearTexture != null)
+                Destroy(_gearTexture);
         }
 
         private void Update()
@@ -126,11 +138,9 @@ namespace FrostSpace.Features.Menu
             if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
                 return;
 
-            // Esc в настройках закрывает настройки, а не игру: иначе из панели
-            // невозможно выйти, не возобновив игру.
-            if (_settingsPanel != null && _settingsPanel.activeSelf)
+            if (IsPaused && _content != Content.Overview)
             {
-                _settingsPanel.SetActive(false);
+                ShowContent(Content.Overview);
                 return;
             }
 
@@ -140,7 +150,7 @@ namespace FrostSpace.Features.Menu
                 Open();
         }
 
-        /// <summary>Открывает паузу. Публичный, потому что паузу может включить не только Esc.</summary>
+        /// <summary>Открывает паузу. Публичный: паузу может включить не только Esc.</summary>
         public void Open()
         {
             if (IsPaused)
@@ -157,10 +167,11 @@ namespace FrostSpace.Features.Menu
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            _settingsPanel.SetActive(false);
-            _menuPanel.SetActive(true);
-            SetVisible(true);
+            ShowContent(Content.Overview);
             RefreshSwitches();
+            RefreshOverview();
+            RefreshJournal();
+            SetVisible(true);
         }
 
         /// <summary>Возвращает игру: время, камера, сканер и курсор — в исходное состояние.</summary>
@@ -179,18 +190,32 @@ namespace FrostSpace.Features.Menu
 
         private void OnSettingsPressed()
         {
-            var open = !_settingsPanel.activeSelf;
-            _settingsPanel.SetActive(open);
-            _menuPanel.SetActive(!open);
+            if (_content == Content.Settings)
+            {
+                ShowContent(Content.Overview);
+                return;
+            }
 
-            if (open)
-                RefreshSwitches();
+            ShowContent(Content.Settings);
+            RefreshSwitches();
         }
+
+        private void OnJournalPressed()
+        {
+            if (_content == Content.Journal)
+            {
+                ShowContent(Content.Overview);
+                return;
+            }
+
+            ShowContent(Content.Journal);
+            RefreshJournal();
+        }
+
+        private void OnBackPressed() => ShowContent(Content.Overview);
 
         private void OnMainMenuPressed()
         {
-            // Сначала снимаем паузу: SceneController грузит сцену в реальном времени,
-            // но следующая сцена не должна получить timeScale = 0.
             Resume();
 
             var controller = SceneController.Instance;
@@ -201,6 +226,21 @@ namespace FrostSpace.Features.Menu
             }
 
             controller.LoadScene(_mainMenuScene);
+        }
+
+        private void ShowContent(Content content)
+        {
+            _content = content;
+            _overviewPanel.SetActive(content == Content.Overview);
+            _journalPanel.SetActive(content == Content.Journal);
+            _settingsPanel.SetActive(content == Content.Settings);
+
+            if (content == Content.Overview)
+                RefreshOverview();
+            else if (content == Content.Journal)
+                RefreshJournal();
+            else
+                RefreshSwitches();
         }
 
         private void RefreshSwitches()
@@ -235,17 +275,92 @@ namespace FrostSpace.Features.Menu
             RefreshSwitches();
         }
 
+        private void RefreshOverview()
+        {
+            if (_overviewText != null)
+                _overviewText.text = BuildQuestText(false);
+        }
+
+        private void RefreshJournal()
+        {
+            if (_journalText != null)
+                _journalText.text = BuildQuestText(true);
+        }
+
+        private string BuildQuestText(bool detailed)
+        {
+            var log = _questDirector != null ? _questDirector.Log : null;
+            if (log == null || log.Quest == null || log.State == QuestState.Inactive)
+            {
+                return detailed
+                    ? "Журнал пуст.\n\nНовых заданий нет."
+                    : "Активных заданий нет.\n\nПодойдите к R13 и нажмите E.";
+            }
+
+            var quest = log.Quest;
+            var builder = new StringBuilder();
+
+            if (detailed)
+            {
+                builder.Append("<size=30><b>").Append(quest.Title).AppendLine("</b></size>");
+                if (!string.IsNullOrWhiteSpace(quest.Description))
+                    builder.AppendLine(quest.Description);
+                builder.AppendLine();
+            }
+            else
+            {
+                builder.Append("<size=26><b>").Append(quest.Title).AppendLine("</b></size>");
+            }
+
+            if (log.IsCompleted)
+            {
+                for (var i = 0; i < quest.Objectives.Count; i++)
+                {
+                    var objective = quest.Objectives[i];
+                    if (objective != null)
+                        builder.Append("[x] ").AppendLine(objective.Text);
+                }
+
+                builder.AppendLine();
+                builder.Append("Задание выполнено.");
+                return builder.ToString();
+            }
+
+            var current = log.CurrentObjective;
+            if (!detailed && current != null)
+            {
+                builder.AppendLine(current.Text);
+                if (current.Required > 1)
+                    builder.Append($"Прогресс: {log.Progress} / {current.Required}");
+                return builder.ToString();
+            }
+
+            for (var i = 0; i < quest.Objectives.Count; i++)
+            {
+                var objective = quest.Objectives[i];
+                if (objective == null)
+                    continue;
+
+                var marker = i < log.ObjectiveIndex
+                    ? "[x]"
+                    : i == log.ObjectiveIndex ? "[>]" : "[ ]";
+                builder.Append(marker).Append(' ').Append(objective.Text);
+
+                if (i == log.ObjectiveIndex && objective.Required > 1)
+                    builder.Append($"  {log.Progress}/{objective.Required}");
+
+                builder.AppendLine();
+            }
+
+            return builder.ToString();
+        }
+
         private void SetVisible(bool visible)
         {
             if (_root != null && _root.activeSelf != visible)
                 _root.SetActive(visible);
         }
 
-        /// <summary>
-        /// Меню живёт без EventSystem в сцене, поэтому модуль ввода создаётся кодом.
-        /// Действия назначаются явно: у добавленного из кода модуля их нет, и без них
-        /// клик не превращается в событие UI.
-        /// </summary>
         private void EnsureEventSystem()
         {
             if (EventSystem.current != null)
@@ -263,7 +378,6 @@ namespace FrostSpace.Features.Menu
 
             var canvas = _root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            // Выше HUD (10) и ниже занавеса перехода SceneController (1000).
             canvas.sortingOrder = 50;
 
             var scaler = _root.AddComponent<CanvasScaler>();
@@ -272,68 +386,154 @@ namespace FrostSpace.Features.Menu
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
-            // Без GraphicRaycaster луч указателя не попадает ни в один элемент:
-            // кнопки остаются видимыми, но не нажимаются.
             _root.AddComponent<GraphicRaycaster>();
 
             var shade = NewImage(_root.transform, "Shade", _shadeColor);
             Stretch(shade.rectTransform);
 
-            _menuPanel = BuildMenuPanel(_root.transform);
-            _settingsPanel = BuildSettingsPanel(_root.transform);
-            _settingsPanel.SetActive(false);
+            BuildMenuPanel(_root.transform);
         }
 
         private GameObject BuildMenuPanel(Transform parent)
         {
-            var panel = NewPanel(parent, "PausePanel", new Vector2(620f, 420f));
+            var panel = NewPanel(parent, "PausePanel", new Vector2(PanelWidth, PanelHeight));
 
-            NewText(panel.transform, "Title", "PAUSED", 44f, _text, TextAlignmentOptions.Left,
-                new Vector2(0f, 1f), new Vector2(52f, -46f), new Vector2(500f, 56f), 16f);
+            NewText(panel.transform, "Title", "ПАУЗА", 54f, _text, TextAlignmentOptions.Left,
+                new Vector2(0f, 1f), new Vector2(52f, -42f), new Vector2(420f, 64f), 12f);
 
-            NewText(panel.transform, "Subtitle", "COLONY 07  /  SYSTEM HOLD", 18f, _dim,
-                TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(52f, -104f),
-                new Vector2(500f, 28f), 12f);
+            NewText(panel.transform, "Subtitle", "КОЛОНИЯ 07  /  СИСТЕМА НА ПАУЗЕ", 14f, _dim,
+                TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(52f, -108f),
+                new Vector2(400f, 26f), 4f);
 
-            NewButton(panel.transform, "Resume", "RESUME", new Vector2(52f, -168f), Resume);
-            NewButton(panel.transform, "Settings", "SETTINGS", new Vector2(52f, -168f - ButtonStep),
-                OnSettingsPressed);
-            NewButton(panel.transform, "MainMenu", "MAIN MENU", new Vector2(52f, -168f - ButtonStep * 2f),
-                OnMainMenuPressed);
+            NewButton(panel.transform, "Resume", "ПРОДОЛЖИТЬ", new Vector2(52f, -184f), Resume);
+            NewButton(panel.transform, "Journal", "ЖУРНАЛ", new Vector2(52f, -184f - ButtonStep),
+                OnJournalPressed);
+            NewButton(panel.transform, "MainMenu", "В ГЛАВНОЕ МЕНЮ",
+                new Vector2(52f, -184f - ButtonStep * 2f), OnMainMenuPressed);
 
+            var divider = NewImage(panel.transform, "Divider", new Color(_dim.r, _dim.g, _dim.b, 0.24f));
+            var dividerRect = divider.rectTransform;
+            dividerRect.anchorMin = new Vector2(0f, 0f);
+            dividerRect.anchorMax = new Vector2(0f, 1f);
+            dividerRect.pivot = new Vector2(0.5f, 0.5f);
+            dividerRect.sizeDelta = new Vector2(1f, -180f);
+            dividerRect.anchoredPosition = new Vector2(392f, -40f);
+
+            var content = new GameObject("Content", typeof(RectTransform));
+            content.transform.SetParent(panel.transform, false);
+            var contentRect = (RectTransform)content.transform;
+            contentRect.anchorMin = Vector2.zero;
+            contentRect.anchorMax = Vector2.one;
+            contentRect.offsetMin = new Vector2(420f, 48f);
+            contentRect.offsetMax = new Vector2(-48f, -140f);
+
+            _overviewPanel = BuildOverviewPanel(content.transform);
+            _journalPanel = BuildJournalPanel(content.transform);
+            _settingsPanel = BuildSettingsPanel(content.transform);
+            _journalPanel.SetActive(false);
+            _settingsPanel.SetActive(false);
+
+            BuildGearButton(panel.transform);
+            return panel;
+        }
+
+        private GameObject BuildOverviewPanel(Transform parent)
+        {
+            var panel = NewContentPanel(parent, "OverviewPanel");
+            NewText(panel.transform, "Title", "ОБЗОР", 30f, _accent, TextAlignmentOptions.Left,
+                new Vector2(0f, 1f), new Vector2(28f, -24f), new Vector2(400f, 40f), 4f);
+
+            _overviewText = NewText(panel.transform, "Text", string.Empty, 21f, _text,
+                TextAlignmentOptions.TopLeft, new Vector2(0f, 1f), new Vector2(28f, -80f),
+                new Vector2(640f, 360f), 0f);
+            _overviewText.textWrappingMode = TextWrappingModes.Normal;
+
+            NewText(panel.transform, "Hint", "ESC — ПРОДОЛЖИТЬ", 16f, _dim,
+                TextAlignmentOptions.BottomLeft, new Vector2(0f, 0f), new Vector2(28f, 24f),
+                new Vector2(400f, 24f), 4f);
+
+            return panel;
+        }
+
+        private GameObject BuildJournalPanel(Transform parent)
+        {
+            var panel = NewContentPanel(parent, "JournalPanel");
+            NewText(panel.transform, "Title", "ЖУРНАЛ", 30f, _accent, TextAlignmentOptions.Left,
+                new Vector2(0f, 1f), new Vector2(28f, -24f), new Vector2(400f, 40f), 4f);
+
+            _journalText = NewText(panel.transform, "Text", string.Empty, 20f, _text,
+                TextAlignmentOptions.TopLeft, new Vector2(0f, 1f), new Vector2(28f, -78f),
+                new Vector2(640f, 370f), 0f);
+            _journalText.textWrappingMode = TextWrappingModes.Normal;
+
+            NewBackButton(panel.transform);
             return panel;
         }
 
         private GameObject BuildSettingsPanel(Transform parent)
         {
-            var panel = NewPanel(parent, "SettingsPanel", new Vector2(700f, 470f));
+            var panel = NewContentPanel(parent, "SettingsPanel");
+            NewText(panel.transform, "Title", "НАСТРОЙКИ", 30f, _accent, TextAlignmentOptions.Left,
+                new Vector2(0f, 1f), new Vector2(28f, -24f), new Vector2(500f, 40f), 4f);
 
-            NewText(panel.transform, "Title", "SETTINGS", 38f, _text, TextAlignmentOptions.Left,
-                new Vector2(0f, 1f), new Vector2(48f, -42f), new Vector2(560f, 48f), 12f);
+            _music = BuildSwitch(panel.transform, "Music", "МУЗЫКА", -112f, ToggleMusic);
+            _nearest = BuildSwitch(panel.transform, "Nearest", "ДЕТЕКЦИЯ БЛИЖАЙШИХ", -188f, ToggleNearest);
+            _aim = BuildSwitch(panel.transform, "Aim", "ДЕТЕКЦИЯ ПРИЦЕЛА", -264f, ToggleAim);
 
-            _music = BuildSwitch(panel.transform, "Music", "MUSIC", -140f, ToggleMusic);
-            _nearest = BuildSwitch(panel.transform, "Nearest", "NEAREST DETECTION", -216f, ToggleNearest);
-            _aim = BuildSwitch(panel.transform, "Aim", "AIM DETECTION", -292f, ToggleAim);
+            NewText(panel.transform, "Note", "НАСТРОЙКИ СОХРАНЯЮТСЯ", 16f, _dim,
+                TextAlignmentOptions.BottomLeft, new Vector2(0f, 0f), new Vector2(28f, 82f),
+                new Vector2(520f, 24f), 4f);
 
-            NewText(panel.transform, "Note", "SETTINGS PERSIST BETWEEN RUNS", 18f, _dim,
-                TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(48f, 108f),
-                new Vector2(500f, 28f), 12f);
-
-            var close = NewButton(panel.transform, "Close", "CLOSE", Vector2.zero, OnSettingsPressed);
-            var closeRect = (RectTransform)close.transform;
-            closeRect.anchorMin = new Vector2(0f, 0f);
-            closeRect.anchorMax = new Vector2(0f, 0f);
-            closeRect.pivot = new Vector2(0f, 0f);
-            closeRect.sizeDelta = new Vector2(240f, 56f);
-            closeRect.anchoredPosition = new Vector2(48f, 40f);
-
+            NewBackButton(panel.transform);
             return panel;
         }
 
-        /// <summary>
-        /// Строка настройки: подпись слева, переключатель справа. Кликается вся строка —
-        /// целиться в маленький тумблер мышью в паузе неудобно.
-        /// </summary>
+        private void BuildGearButton(Transform parent)
+        {
+            var go = new GameObject("SettingsGear", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = new Vector2(180f, 54f);
+            rect.anchoredPosition = new Vector2(-48f, -42f);
+
+            var background = go.AddComponent<Image>();
+            background.color = _buttonIdle;
+            background.raycastTarget = true;
+
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = background;
+            button.transition = Selectable.Transition.ColorTint;
+            var colors = button.colors;
+            colors.normalColor = _buttonIdle;
+            colors.highlightedColor = _buttonHover;
+            colors.pressedColor = _accent;
+            colors.selectedColor = _buttonHover;
+            colors.fadeDuration = 0.12f;
+            button.colors = colors;
+            button.onClick.AddListener(OnSettingsPressed);
+
+            var iconObject = new GameObject("GearIcon", typeof(RectTransform));
+            iconObject.transform.SetParent(go.transform, false);
+            var iconRect = (RectTransform)iconObject.transform;
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.sizeDelta = new Vector2(44f, 44f);
+            iconRect.anchoredPosition = new Vector2(12f, 0f);
+
+            var icon = iconObject.AddComponent<Image>();
+            icon.sprite = GearSprite;
+            icon.color = _accent;
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+
+            NewText(go.transform, "Label", "НАСТРОЙКИ", 16f, _text, TextAlignmentOptions.MidlineLeft,
+                new Vector2(0f, 0.5f), new Vector2(62f, 0f), new Vector2(106f, 26f), 2f);
+        }
+
         private Switch BuildSwitch(
             Transform parent, string name, string label, float y, UnityEngine.Events.UnityAction action)
         {
@@ -343,8 +543,8 @@ namespace FrostSpace.Features.Menu
             rowRect.anchorMin = new Vector2(0f, 1f);
             rowRect.anchorMax = new Vector2(1f, 1f);
             rowRect.pivot = new Vector2(0.5f, 1f);
-            rowRect.offsetMin = new Vector2(48f, 0f);
-            rowRect.offsetMax = new Vector2(-48f, 0f);
+            rowRect.offsetMin = new Vector2(28f, 0f);
+            rowRect.offsetMax = new Vector2(-28f, 0f);
             rowRect.sizeDelta = new Vector2(rowRect.sizeDelta.x, 56f);
             rowRect.anchoredPosition = new Vector2(0f, y);
 
@@ -363,10 +563,9 @@ namespace FrostSpace.Features.Menu
             button.colors = colors;
             button.onClick.AddListener(action);
 
-            NewText(row.transform, "Label", label, 20f, _text, TextAlignmentOptions.Left,
-                new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(420f, 28f), 12f);
+            NewText(row.transform, "Label", label, 19f, _text, TextAlignmentOptions.Left,
+                new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(440f, 28f), 4f);
 
-            // Тумблер: дорожка, ползунок и подпись состояния справа.
             var track = NewImage(row.transform, "Track", new Color(_dim.r, _dim.g, _dim.b, 0.35f));
             var trackRect = track.rectTransform;
             trackRect.anchorMin = new Vector2(1f, 0.5f);
@@ -383,13 +582,34 @@ namespace FrostSpace.Features.Menu
             knobRect.sizeDelta = new Vector2(20f, 20f);
             knobRect.anchoredPosition = new Vector2(-16f, 0f);
 
-            var state = NewText(row.transform, "State", "ON", 18f, _accent, TextAlignmentOptions.Right,
-                new Vector2(1f, 0.5f), new Vector2(-20f, 0f), new Vector2(60f, 24f), 10f);
+            var state = NewText(row.transform, "State", "ВКЛ", 17f, _accent, TextAlignmentOptions.Right,
+                new Vector2(1f, 0.5f), new Vector2(-20f, 0f), new Vector2(60f, 24f), 2f);
 
             return new Switch { Track = track, Knob = knobRect, State = state, Value = true };
         }
 
-        /// <summary>Панель по центру: тёмная плашка с акцентной линией по верхнему краю.</summary>
+        private GameObject NewContentPanel(Transform parent, string name)
+        {
+            var panel = new GameObject(name, typeof(RectTransform));
+            panel.transform.SetParent(parent, false);
+            var rect = (RectTransform)panel.transform;
+            Stretch(rect);
+
+            var background = panel.AddComponent<Image>();
+            background.color = _contentColor;
+            background.raycastTarget = false;
+
+            var edge = NewImage(panel.transform, "EdgeLine", _accent);
+            var edgeRect = edge.rectTransform;
+            edgeRect.anchorMin = new Vector2(0f, 1f);
+            edgeRect.anchorMax = new Vector2(1f, 1f);
+            edgeRect.pivot = new Vector2(0.5f, 1f);
+            edgeRect.sizeDelta = new Vector2(0f, 2f);
+            edgeRect.anchoredPosition = Vector2.zero;
+
+            return panel;
+        }
+
         private GameObject NewPanel(Transform parent, string name, Vector2 size)
         {
             var panel = new GameObject(name, typeof(RectTransform));
@@ -418,7 +638,7 @@ namespace FrostSpace.Features.Menu
 
         private Button NewButton(
             Transform parent, string name, string label, Vector2 position,
-            UnityEngine.Events.UnityAction action)
+            UnityEngine.Events.UnityAction action, float width = ButtonWidth, float fontSize = 24f)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -426,7 +646,7 @@ namespace FrostSpace.Features.Menu
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
-            rect.sizeDelta = new Vector2(ButtonWidth, ButtonHeight);
+            rect.sizeDelta = new Vector2(width, ButtonHeight);
             rect.anchoredPosition = position;
 
             var background = go.AddComponent<Image>();
@@ -454,10 +674,72 @@ namespace FrostSpace.Features.Menu
             markerRect.sizeDelta = new Vector2(MarkerWidth, 0f);
             markerRect.anchoredPosition = Vector2.zero;
 
-            NewText(go.transform, "Label", label, 28f, _text, TextAlignmentOptions.Left,
-                new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(ButtonWidth - 48f, 36f), 10f);
+            NewText(go.transform, "Label", label, fontSize, _text, TextAlignmentOptions.Left,
+                new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(width - 42f, 34f), 4f);
 
             return button;
+        }
+
+        private void NewBackButton(Transform parent)
+        {
+            var button = NewButton(parent, "Back", "НАЗАД", Vector2.zero, OnBackPressed, 160f, 20f);
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 0f);
+            rect.pivot = new Vector2(0f, 0f);
+            rect.sizeDelta = new Vector2(160f, 50f);
+            rect.anchoredPosition = new Vector2(28f, 24f);
+        }
+
+        private Sprite GearSprite
+        {
+            get
+            {
+                if (_gearSprite != null)
+                    return _gearSprite;
+
+                _gearTexture = BuildGearTexture();
+                _gearSprite = Sprite.Create(
+                    _gearTexture,
+                    new Rect(0f, 0f, _gearTexture.width, _gearTexture.height),
+                    new Vector2(0.5f, 0.5f),
+                    100f);
+                return _gearSprite;
+            }
+        }
+
+        private static Texture2D BuildGearTexture()
+        {
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "PauseGear",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+
+            var center = (size - 1) * 0.5f;
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var dx = x - center;
+                    var dy = y - center;
+                    var radius = Mathf.Sqrt(dx * dx + dy * dy);
+                    var angle = Mathf.Atan2(dy, dx);
+                    var sector = Mathf.PI * 2f / 8f;
+                    var phase = Mathf.Repeat(angle + Mathf.PI, sector);
+                    var tooth = phase < sector * 0.55f;
+                    var body = radius >= 7f && radius <= 24f;
+                    var rim = radius > 24f && radius <= 30f && tooth;
+                    var alpha = body || rim ? 1f : 0f;
+                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+
+            texture.Apply();
+            return texture;
         }
 
         private static void Stretch(RectTransform rect)
@@ -478,7 +760,7 @@ namespace FrostSpace.Features.Menu
             return image;
         }
 
-        private static TextMeshProUGUI NewText(
+        private TextMeshProUGUI NewText(
             Transform parent, string name, string content, float size, Color color,
             TextAlignmentOptions alignment, Vector2 anchor, Vector2 position, Vector2 boxSize, float spacing)
         {
@@ -494,8 +776,7 @@ namespace FrostSpace.Features.Menu
             rect.anchoredPosition = position;
 
             var text = go.AddComponent<TextMeshProUGUI>();
-            if (TMP_Settings.defaultFontAsset != null)
-                text.font = TMP_Settings.defaultFontAsset;
+            text.font = _font != null ? _font : TMP_Settings.defaultFontAsset;
             text.text = content;
             text.fontSize = size;
             text.color = color;

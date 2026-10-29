@@ -16,12 +16,18 @@ namespace FrostSpace.Features.Carry
         [Tooltip("Тип предмета: слот принимает только совпадающий тип")]
         [SerializeField] private string _itemType = "battery";
 
+        [Tooltip("Квест, без которого предмет нельзя взять; пусто — можно всегда")]
+        [SerializeField] private string _requiredQuestId = string.Empty;
+
         private Vector3 _homePosition;
         private Quaternion _homeRotation;
         private Collider[] _colliders;
 
         /// <summary>Тип предмета для сверки со слотом.</summary>
         public string ItemType => _itemType;
+
+        /// <summary>Квест, который должен быть взят; пусто — предмет доступен сразу.</summary>
+        public string RequiredQuestId => _requiredQuestId;
 
         /// <summary>Предмет сейчас в руках.</summary>
         public bool IsCarried { get; private set; }

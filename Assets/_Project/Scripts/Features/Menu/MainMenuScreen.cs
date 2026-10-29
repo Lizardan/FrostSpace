@@ -33,6 +33,10 @@ namespace FrostSpace.Features.Menu
         [SerializeField] private string _subtitle = "COLONY 07  /  NORTH PERIMETER";
         [SerializeField] private string _hint = "LINK READY";
 
+        [Header("Шрифт")]
+        [Tooltip("Кириллический TMP-ассет; пусто — шрифт TMP по умолчанию")]
+        [SerializeField] private TMP_FontAsset _font;
+
         [Header("Палитра")]
         [Tooltip("Циан — единственный холодный акцент стиля")]
         [SerializeField] private Color _accent = new(0.302f, 0.902f, 1f, 1f);
@@ -340,9 +344,9 @@ namespace FrostSpace.Features.Menu
 
             _menuButtons = new[]
             {
-                NewButton(root, "Start", "START", new Vector2(96f, -424f), OnStartPressed),
-                NewButton(root, "Settings", "SETTINGS", new Vector2(96f, -424f - ButtonStep), OnSettingsPressed),
-                NewButton(root, "Exit", "EXIT", new Vector2(96f, -424f - ButtonStep * 2f), OnExitPressed),
+                NewButton(root, "Start", "НАЧАТЬ", new Vector2(96f, -424f), OnStartPressed),
+                NewButton(root, "Settings", "НАСТРОЙКИ", new Vector2(96f, -424f - ButtonStep), OnSettingsPressed),
+                NewButton(root, "Exit", "ВЫХОД", new Vector2(96f, -424f - ButtonStep * 2f), OnExitPressed),
             };
 
             NewText(root, "Hint", _hint, 20f, _dim, TextAlignmentOptions.BottomLeft,
@@ -455,22 +459,22 @@ namespace FrostSpace.Features.Menu
             edgeRect.sizeDelta = new Vector2(0f, 3f);
             edgeRect.anchoredPosition = Vector2.zero;
 
-            NewText(panel.transform, "SettingsTitle", "SETTINGS", 38f, _text, TextAlignmentOptions.Left,
+            NewText(panel.transform, "SettingsTitle", "НАСТРОЙКИ", 38f, _text, TextAlignmentOptions.Left,
                 new Vector2(0f, 1f), new Vector2(48f, -40f), new Vector2(560f, 48f), 12f);
 
-            NewText(panel.transform, "VolumeLabel", "MASTER VOLUME", 20f, _dim, TextAlignmentOptions.Left,
-                new Vector2(0f, 1f), new Vector2(48f, -132f), new Vector2(400f, 30f), 14f);
+            NewText(panel.transform, "VolumeLabel", "ОБЩАЯ ГРОМКОСТЬ", 18f, _dim, TextAlignmentOptions.Left,
+                new Vector2(0f, 1f), new Vector2(48f, -132f), new Vector2(420f, 30f), 6f);
 
             _volume = BuildSlider(panel.transform, new Vector2(48f, -186f), 584f);
             _volume.value = PlayerPrefs.GetFloat(VolumeKey, AudioListener.volume);
             AudioListener.volume = _volume.value;
             _volume.onValueChanged.AddListener(OnVolumeChanged);
 
-            NewText(panel.transform, "SettingsNote", "SETTINGS PERSIST BETWEEN RUNS", 18f, _dim,
+            NewText(panel.transform, "SettingsNote", "НАСТРОЙКИ СОХРАНЯЮТСЯ", 18f, _dim,
                 TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(48f, -252f),
-                new Vector2(500f, 28f), 12f);
+                new Vector2(500f, 28f), 10f);
 
-            var close = NewButton(panel.transform, "Close", "CLOSE", Vector2.zero, OnSettingsPressed);
+            var close = NewButton(panel.transform, "Close", "ЗАКРЫТЬ", Vector2.zero, OnSettingsPressed);
             var closeRect = (RectTransform)close.transform;
             closeRect.anchorMin = new Vector2(0f, 0f);
             closeRect.anchorMax = new Vector2(0f, 0f);
@@ -695,7 +699,7 @@ namespace FrostSpace.Features.Menu
             return image;
         }
 
-        private static TextMeshProUGUI NewText(
+        private TextMeshProUGUI NewText(
             Transform parent, string name, string content, float size, Color color,
             TextAlignmentOptions alignment, Vector2 anchor, Vector2 position, Vector2 boxSize, float spacing)
         {
@@ -711,8 +715,7 @@ namespace FrostSpace.Features.Menu
             rect.anchoredPosition = position;
 
             var text = go.AddComponent<TextMeshProUGUI>();
-            if (TMP_Settings.defaultFontAsset != null)
-                text.font = TMP_Settings.defaultFontAsset;
+            text.font = _font != null ? _font : TMP_Settings.defaultFontAsset;
             text.text = content;
             text.fontSize = size;
             text.color = color;

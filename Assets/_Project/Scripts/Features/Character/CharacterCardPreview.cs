@@ -21,10 +21,26 @@ namespace FrostSpace.Features.Character
         [SerializeField] private float _fieldOfView = 32f;
         [Tooltip("Камера смотрит на эту высоту модели, м")]
         [SerializeField] private float _lookHeight = 1f;
+        [Tooltip("Прозрачный фон для парящего превью без карточки")]
+        [SerializeField] private bool _transparentBackground;
 
         private GameObject _rig;
         private Camera _camera;
         private RenderTexture _texture;
+
+        /// <summary>
+        /// Настраивает превью до <see cref="Show"/>: прозрачный фон, разрешение
+        /// и кадрирование под конкретное место экрана.
+        /// </summary>
+        public void Configure(
+            bool transparentBackground, Vector2Int resolution,
+            float fieldOfView = 32f, float lookHeight = 1f)
+        {
+            _transparentBackground = transparentBackground;
+            _resolution = resolution;
+            _fieldOfView = fieldOfView;
+            _lookHeight = lookHeight;
+        }
 
         /// <summary>Поставить в карточку превью корпуса; соседние карточки не трогаются.</summary>
         public void Show(RobotProfile profile, RawImage target, int slot)
@@ -60,7 +76,9 @@ namespace FrostSpace.Features.Character
             _camera = cameraObject.AddComponent<Camera>();
             _camera.fieldOfView = _fieldOfView;
             _camera.clearFlags = CameraClearFlags.SolidColor;
-            _camera.backgroundColor = new Color(0.035f, 0.055f, 0.075f, 1f);
+            _camera.backgroundColor = _transparentBackground
+                ? new Color(0f, 0f, 0f, 0f)
+                : new Color(0.035f, 0.055f, 0.075f, 1f);
             _camera.nearClipPlane = 0.05f;
             _camera.farClipPlane = 10f;
             _camera.allowHDR = false;

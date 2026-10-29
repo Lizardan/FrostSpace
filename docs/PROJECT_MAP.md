@@ -25,8 +25,9 @@ FrostSpace/
    │  ├─ Boot.unity              # стартовая сцена, build index 0: загрузка сервисов → MainMenu
    │  ├─ MainMenu.unity          # главное меню с диорамой, build index 1
    │  ├─ CharacterSetup.unity    # выбор из трёх корпусов, build index 2
-   │  ├─ Train.unity             # заглушка вагона: интерьер, свет, игрок, build index 3
-   │  └─ Game.unity              # прежний уровень, build index 4, вне потока
+   │  ├─ Train.unity             # интерьер, переноска, квест, диалоги R13, финал; build index 3
+   │  ├─ Frontier.unity          # депо-заглушка: платформа, навес, поезд, охрана; build index 4
+   │  └─ Game.unity              # прежний уровень, build index 5, вне потока
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
@@ -34,35 +35,42 @@ FrostSpace/
    │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, CameraPose, InteriorZone, PlayerSilhouette,
    │  │  │  │                    # PlayerLocalView, CameraOcclusionFader/Debris/Group, ScreenAperture.
    │  │  │  │                    # Namespace папки — FrostSpace.Features.View (ADR 0010)
+   │  │  │  ├─ Carry/            # Carryable (предмет), CarrySlot (гнездо), CarryController (E:
+   │  │  │  │                    # взять, поставить, бросить)
    │  │  │  ├─ Character/        # RobotProfile (SO), CharacterCatalog (SO), CharacterSelection
    │  │  │  │                    # (PlayerPrefs + сброс статики), PlayerVisualBinder, CharacterSetupScreen,
    │  │  │  │                    # CharacterCardPreview (камера в RenderTexture), CharacterBackdrop, UiSnowfall
    │  │  │  ├─ Dialogue/         # DialogueAsset (граф реплик и вариантов), DialogueNode,
    │  │  │  │                    # DialogueChoice, DialogueSession (чистая логика графа),
-   │  │  │  │                    # DialogueSpeaker (маркер на NPC), DialogueController (E и
-   │  │  │  │                    # блокировки ввода/камеры), DialogueScreen (панель диалога)
+   │  │  │  │                    # DialogueSpeaker (маркер на NPC), DialogueMarker (плашка E),
+   │  │  │  │                    # DialogueController (E и блокировки ввода/камеры),
+   │  │  │  │                    # DialogueScreen (панель диалога)
    │  │  │  ├─ Hud/              # PlayerHud (перекрестие, пул подписей, рамка цели, Q SCAN/SCANNING,
-   │  │  │  │                    # счётчик FPS), ScanLabelView (одна подпись из пула)
+   │  │  │  │                    # счётчик FPS), ScanLabelView (одна подпись из пула),
+   │  │  │  │                    # QuestTracker (АККУМУЛЯТОРЫ и текущая цель),
+   │  │  │  │                    # ExperienceBar (уровни и полоса опыта)
    │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
    │  │  │  ├─ Menu/             # MainMenuScreen, MenuViewSwitch (пять видов меню), MenuCameraOrbit,
    │  │  │  │                    # MenuCameraSweep (проезд равнины, лаборатории и депо), MenuRadarSweep,
    │  │  │  │                    # MenuRobotPose (позы роботов меню), MenuRobotWalker (маршрут),
    │  │  │  │                    # MenuRideScroll (прокрутка дороги RIDE), MenuRider (посадка наездника
-   │  │  │  │                    # в меню), PauseMenuScreen (Esc: пауза и настройки), TechButtonFx, BeaconPulse
+   │  │  │  │                    # в меню), PauseMenuScreen (Esc: обзор, журнал, настройки), TechButtonFx, BeaconPulse
    │  │  │  ├─ Npc/              # NpcController, AirPatrolController (маршрут, паузы, антизастревание),
    │  │  │  │                    # AnimationCulling (AlwaysAnimate и честные границы скинных мешей)
+   │  │  │  ├─ Progression/      # PlayerExperience (уровни, кривая опыта, награда квеста)
+   │  │  │  ├─ Quest/            # QuestAsset (SO), QuestObjective, QuestLog (чистая логика),
+   │  │  │  │                    # QuestEvent, QuestDirector (сценовый владелец прогресса)
    │  │  │  ├─ Ride/             # Hoverbike, HoverbikeGlow, Motorcycle, MotorcycleRideVisual,
    │  │  │  │                    # RiderPose (посадка верхом поверх клипа), RiderCockpit
    │  │  │  │                    # (данные посадки байка: наклон, шея, KneeOut, Seat Point),
    │  │  │  │                    # Mech (ездовый ходун), MechSeat (сиденье едет за Chest),
    │  │  │  │                    # MechSelection (общий адресат E: сканер, иначе ближайший),
    │  │  │  │                    # RideCameraProfile (радиус и пределы облёта)
-   │  │  │  └─ Scan/             # ObjectScanner (Q-сонар + ближайшая и прицельная детекция),
-   │  │  │                       # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
-   │  │  │                       # ScanMath (чистая математика)
-   │  │  ├─ Carry/              # Carryable (предмет), CarrySlot (гнездо), CarryController (E:
-   │  │  │                       # взять, поставить, бросить)
-   │  │  ├─ Story/              # TrainMotionRig (параллакс и снег за окнами вагона)
+   │  │  │  ├─ Scan/             # ObjectScanner (Q-сонар + ближайшая и прицельная детекция),
+   │  │  │  │                    # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
+   │  │  │  │                    # ScanMath (чистая математика)
+   │  │  │  └─ Story/            # TrainMotionRig (параллакс и снег), TrainSequenceDirector
+   │  │  │                       # (отъезд камеры и переход), TitleCardScreen (белый титул)
    │  │  └─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │                          # перехода и единственный вызывающий SceneManager),
    │  │                          # MusicManager (фоновая музыка), GameSettings (музыка и каналы детекции)
@@ -80,7 +88,8 @@ FrostSpace/
    │  │                          # RobotVisualPrefabTests, AnimalVisualPrefabTests,
    │  │                          # MechVisualPrefabTests, ScreenApertureTests, CharacterSelectionTests,
    │  │                          # DialogueSessionTests, DialogueAssetValidationTests,
-   │  │                          # DialogueContentTests, DialogueFontTests
+   │  │                          # DialogueContentTests, DialogueFontTests, DialogueActionTests,
+   │  │                          # QuestLogTests, QuestAssetTests, PlayerExperienceTests
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller; ME_*.controller (ходуны);
    │     │                          # RobotAnimals/<Species>/RA_<Species>.controller
@@ -103,6 +112,7 @@ FrostSpace/
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
    │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню;
    │     │                          # Dialogues/*.asset — графы диалогов роботов (ADR 0025);
+   │     │                          # Quests/TrainBatteries.asset — квест «Погрузка» (ADR 0027);
    │     │                          # Characters/ — CharacterCatalog.asset и три RobotProfile
    │     ├─ Fonts/                  # LiberationSans Cyrillic SDF.asset — TMP-шрифт диалогов
    │     └─ Settings/               # зарезервировано под игровые настройки
@@ -123,16 +133,13 @@ FrostSpace/
 
 | Путь | Что появится |
 |---|---|
-| `Assets/Scenes/Frontier.unity` | депо, затем дорога и станция, build index 4 |
-| `Assets/_Project/Scripts/Features/Quest/` | `QuestAsset`, `QuestObjective`, `QuestLog`, `QuestDirector`, `QuestTracker` |
-| `Assets/_Project/Scripts/Features/Story/` | `TrainSequenceDirector`, `TitleCardScreen`, `DepotArrivalDirector` (папка есть, `TrainMotionRig` создан) |
+| `Assets/_Project/Scripts/Features/Story/` | `DepotArrivalDirector` и сюжет прибытия в депо (финал и титул уже есть) |
 | `Assets/_Project/Scripts/Features/Map/` | миникарта и маркеры (Stage 3) |
-| `Assets/_Project/Content/Data/Quests/` | `TrainBatteries.asset` |
 
 ## С чего начинается выполнение
 
 Целевой поток — ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`.
-Ниже — **фактическое** состояние на 2026-10-29; сцена депо ещё не создана.
+Ниже — **фактическое** состояние на 2026-10-29; `Frontier` создана как депо-заглушка.
 
 1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0): корневой `SceneController`
    уходит в `DontDestroyOnLoad`, `BootScreen` три секунды показывает консоль загрузки
@@ -142,17 +149,24 @@ FrostSpace/
    `MenuRide`), пять камер видов, снег, Volume.
    НАЧАТЬ → белый переход → `CharacterSetup`.
 3. `Assets/Scenes/CharacterSetup.unity` (build index 2) — камера, два источника света
-   и `CharacterSetup` с `CharacterSetupScreen`: три карточки с 3D-превью
-   (`CharacterCardPreview` рендерит корпус в `RenderTexture`), `CONFIRM` пишет выбор
-   в `CharacterSelection` и грузит `Train`.
-4. `Assets/Scenes/Train.unity` (build index 3) — заглушка: коробка вагона 4,4×3×16 м
-   (`TrainInterior`: пол, стены, потолок, дверной проём), `Sun` и `CabinLamp`, `Player`
-   с `PlayerVisualBinder` (корпус из `CharacterSelection`), `Main Camera` с
-   `PlayerCameraRig`. Интерьера, квеста и параллакса ещё нет.
-5. Сцена `Game` (build index 4, вне потока) — обычный сохранённый ассет: рельеф,
+   и `CharacterSetup` с `CharacterSetupScreen`: слева список трёх корпусов с мини-превью,
+   справа крупный 3D-герой на голографическом кольце, статы и описание
+   (`CharacterCardPreview` рендерит корпус в `RenderTexture`), `ПОДТВЕРДИТЬ` пишет
+   выбор в `CharacterSelection` и грузит `Train`.
+4. `Assets/Scenes/Train.unity` (build index 3) — интерьер вагона 8×24 м
+   (`TrainInterior`: пол, стены, потолок, дверной проём), `Sun` и два `CabinLamp`,
+   `Player` с `PlayerVisualBinder`, `CarryController`, `DialogueController`/`DialogueScreen`,
+   `QuestDirector` и `QuestTracker`, четыре аккумулятора и тележка с четырьмя слотами,
+   `R13_Prospector` с `DialogueSpeaker`/`DialogueMarker`, `TrainMotionRig` с параллаксом
+   и снегом, `Main Camera` с `PlayerCameraRig`; `TrainSequence` + `TitleCard` дают
+   отъезд камеры и белый титул перед `Frontier`.
+5. `Assets/Scenes/Frontier.unity` (build index 4) — депо-заглушка: снежная земля,
+   платформа, навес, поезд с путём, ворота, мачта, `Player`, `R16_Warden` ×2 и
+   `R7_Drifter`. Сюжетных диалогов депо и выдачи снаряжения пока нет.
+6. Сцена `Game` (build index 5, вне потока) — обычный сохранённый ассет: рельеф,
    дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
    камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
-6. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
+7. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
    внутри — визуальный префаб `R1_PolarMechanic_Model`.
 7. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
    `NPC_R5_Ranger`: кинематический `CharacterController`, `NpcController` (маршрут из
@@ -191,8 +205,9 @@ FrostSpace/
 | Маршрут NPC и животных | вейпоинты в `NpcController` на `NPC_R*` и `AN_<Species>`; у `AN_Eagle`/`AN_Piranha` — `AirPatrolController` с высотой; точки — дочерние `WP_*` |
 | Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView` (ADR 0010, 0012) |
 | Сканирование | `ObjectScanner` на `Main Camera` (Q-сонар, ближайшая и прицельная детекция) + `ScanTarget` на целях (реестр `ScanTarget.All`), кольцо — `ScanPulse`, математика — `ScanMath`, показ — `PlayerHud` + `ScanLabelView` (ADR 0020) |
-| Меню паузы и настройки | `PauseMenuScreen` на `GameFlow` (Esc): `RESUME` / `SETTINGS` / `MAIN MENU`; значения — `GameSettings` (`PlayerPrefs`: музыка, детекция ближайшего, детекция по прицелу) (ADR 0020) |
-| Диалоги | данные — `Content/Data/Dialogues/*.asset` (`DialogueAsset`), авторство — `Editor/DialogueAssetEditor.cs`; на сцене — `DialogueSpeaker` на четырёх наземных `NPC_R*`, `DialogueController` + `DialogueScreen` на `GameFlow` (E — действие `Player/Interact`); шрифт кириллицы — `Content/Fonts/LiberationSans Cyrillic SDF.asset` (ADR 0025) |
+| Меню паузы и настройки | `PauseMenuScreen` на `Player`/`GameFlow` (Esc): обзор, журнал квеста, настройки-шестерёнка, продолжение и выход в меню; значения — `GameSettings` (`PlayerPrefs`: музыка, детекция ближайшего, детекция по прицелу) (ADR 0020, 0027) |
+| Опыт и уровни | `PlayerExperience` на `Player`: уровень, опыт, кривая до следующего; `ExperienceBar` внизу экрана показывает `УР. N` / `опыт / требование (проценты)` / `УР. N+1`; квест даёт 250 XP |
+| Диалоги | данные — `Content/Data/Dialogues/*.asset` (`DialogueAsset`), авторство — `Editor/DialogueAssetEditor.cs`; на сцене — `DialogueSpeaker` на `NPC_R*` в `Game` и на `R13_Prospector` в `Train`, `DialogueController` + `DialogueScreen` на `GameFlow`/`Player` (E — действие `Player/Interact`); `DialogueMarker` показывает «E»; шрифт кириллицы — `Content/Fonts/LiberationSans Cyrillic SDF.asset` (ADR 0025, 0027) |
 | Ховербайк | `Hoverbike` + `HoverbikeGlow` + `RiderCockpit` в `Features/Ride/`; префаб — `Content/Prefabs/Ride/Hoverbike_Model` (корень с `CharacterController` и `RiderCockpit`, дочерние `Visual` с якорями `Seat`/`Seat Point`/`Grip L/R`/`Foot L/R`, `Cushion`, `ExitPoint`, `EngineGlow`); сборка — `Editor/HoverbikeModelBuilder.cs` (ADR 0012) |
 | Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
 | Ездовые ходуны | `Mech` + `MechSeat` + `RideCameraProfile` в `Features/Ride/`; префабы — `Content/Prefabs/Ride/ME_*_Model` (корень — сразу транспорт: `Animator`, `CharacterController`, `Mech`, `ScanTarget` категории `WALKER`, `RiderCockpit`; дочерние `Seat` с якорями `Seat Point`/`Grip L/R`/`Foot L/R` и `ExitPoint`); клипы — `Content/Animation/Controllers/ME_*.controller`; сборка — `Tools/Blender/build_mechs.py`, регистр — `Tools/Blender/mech_manifest.json` (ADR 0024) |

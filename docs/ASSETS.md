@@ -211,8 +211,9 @@ FBX-экспортёр конвертирует оси. Не «поправля�
   перекрытий (ADR 0006).
 - Превью — AssetSource/Previews/Level/; в Assets/ скриншотов и .blend нет.
 - Assets/TextMesh Pro/ — ресурсы TextMeshPro, **не трогать**: Resources/TMP Settings.asset
-  задаёт defaultFontAsset, который используют BootScreen, MainMenuScreen,
-  PlayerHud и SceneController через TMP_Settings.defaultFontAsset. Шейдеры в
+  задаёт defaultFontAsset, который используют BootScreen, PlayerHud и SceneController
+  через TMP_Settings.defaultFontAsset. Меню, пауза, журнал, диалоги и трекер квеста
+  берут кириллический `Content/Fonts/LiberationSans Cyrillic SDF.asset`. Шейдеры в
   этой папке — легаси TMP 3.x; в проекте используется только TMP_SDF-Mobile.shader,
   остальные удалены 2026-10-22 как неиспользуемые (TMP 5.x внутри com.unity.ugui 2.6.0).
 - Ховербайк — отдельный FBX того же пайплайна: `Tools/Blender/build_hoverbike.py`

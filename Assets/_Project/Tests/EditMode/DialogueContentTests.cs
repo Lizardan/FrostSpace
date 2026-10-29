@@ -27,9 +27,17 @@ namespace FrostSpace.Tests
         }
 
         [Test]
-        public void Folder_ContainsFourStarterDialogues()
+        public void Folder_ContainsStarterAndTrainDialogues()
         {
-            Assert.AreEqual(4, LoadAll().Length, "Ожидаются диалоги для четырёх роботов сцены Game.");
+            var names = LoadAll().Select(asset => asset.name).ToArray();
+            foreach (var expected in new[]
+                     {
+                         "R2_Furnace", "R3_Scout", "R4_Hauler", "R5_Ranger",
+                         "TrainCompanion_Intro", "TrainCompanion_Done"
+                     })
+            {
+                CollectionAssert.Contains(names, expected);
+            }
         }
 
         [Test]

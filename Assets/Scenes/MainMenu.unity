@@ -19169,6 +19169,7 @@ MonoBehaviour:
   _title: FROSTSPACE
   _subtitle: COLONY 07  /  NORTH PERIMETER
   _hint: LINK READY
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
   _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
   _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
   _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}

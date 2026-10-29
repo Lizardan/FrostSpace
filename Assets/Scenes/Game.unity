@@ -11596,6 +11596,8 @@ MonoBehaviour:
   _mainMenuScene: MainMenu
   _rig: {fileID: 0}
   _scanner: {fileID: 0}
+  _questDirector: {fileID: 0}
+  _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
   _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
   _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
   _dim: {r: 0.3, g: 0.42, b: 0.5, a: 1}
@@ -11603,6 +11605,7 @@ MonoBehaviour:
   _shadeColor: {r: 0.008, g: 0.016, b: 0.026, a: 0.78}
   _buttonIdle: {r: 0.055, g: 0.085, b: 0.105, a: 0.82}
   _buttonHover: {r: 0.1, g: 0.19, b: 0.24, a: 0.95}
+  _contentColor: {r: 0.028, g: 0.045, b: 0.06, a: 0.55}
 --- !u!114 &1497351648
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13540,6 +13543,7 @@ MonoBehaviour:
   _airControl: 0.65
   _walkClipSpeed: 0.91182196
   _sprintClipSpeed: 8.918498
+  _carryClipSpeed: 0.591
 --- !u!143 &1786677827
 CharacterController:
   m_ObjectHideFlags: 0

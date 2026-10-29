@@ -9,9 +9,10 @@ sci-fi экран загрузки в `Boot`, главное меню с 3D-ди
 Сюжет и целевой поток сцен **зафиксированы как замысел** и реализованы частично:
 `GAME_DESIGN.md` описывает игру про робота-курьера аккумуляторов и путь
 `MainMenu → CharacterSetup → Train → Frontier`. Выбор героя уже в коде
-(`CharacterSetup`, три корпуса, ADR 0028), сцена `Train` пока — заглушка вагона;
-сцены `Frontier`, квестов
-и переноски пока нет — первым идёт вертикальный срез «Поезд» (`ADR 0026`–`ADR 0029`).
+(`CharacterSetup`, три корпуса, ADR 0028); в `Train` есть интерьер вагона, переноска,
+квест «Погрузка», диалоги R13, HUD-трекер и финал с титулом (`TR-09`, `TR-10`).
+`Frontier` создана как депо-заглушка; сюжета депо и сохранений ещё нет — срез
+«Поезд» (`ADR 0026`–`ADR 0029`) почти закрыт.
 Реализация — источник истины о том, что уже есть; GDD — источник истины о том, что
 задумано.
 
@@ -31,38 +32,40 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Ввод | только Input System | `activeInputHandler: 1` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
 | Play Mode | domain reload выключен, scene reload включён | `m_EnterPlayModeOptionsEnabled: 1`, `m_EnterPlayModeOptions: 1` |
-| Игровая сцена | `Assets/Scenes/Game.unity`, build index 4 — прежний срез, вне потока; по ADR 0026 выводится из сборки после Stage 3 | `EditorBuildSettings.asset`, Unity MCP |
-| Сюжет и целевой поток | `docs/GAME_DESIGN.md`: робот-курьер, `MainMenu → CharacterSetup → Train → Frontier`; статус — design intent, реализованы выбор корпуса и заглушка `Train` | `docs/GAME_DESIGN.md`, ADR 0026–0029 |
+| Игровая сцена | `Assets/Scenes/Frontier.unity`, build index 4 — депо-заглушка; `Game.unity` — build index 5, прежний срез, вне потока | `EditorBuildSettings.asset`, Unity MCP |
+| Сюжет и целевой поток | `docs/GAME_DESIGN.md`: робот-курьер, `MainMenu → CharacterSetup → Train → Frontier`; реализованы выбор корпуса, переноска, квест «Погрузка», диалоги R13 и финал `Train`; `Frontier` — депо-заглушка | `docs/GAME_DESIGN.md`, ADR 0026–0029 |
 | Содержимое Game | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами и животными | сцена `Assets/Scenes/Game.unity` |
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (10 фич: Boot, Camera, Character, Dialogue, Hud, Locomotion, Menu, Npc, Ride, Scan), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (107 тестов) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (14 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (137 тестов) | `Assets/_Project/`, `run_tests` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
 | Ездовые ходуны | 4 FBX (`ME_*Walker`) — наш корпус на ригах `Mech_*` пака, клипы печёт `author_gait`; префабы `ME_*_Model` — сразу транспорт с `Mech` и кабиной; сборка `Tools/Blender/build_mechs.py` | `Assets/_Project/Content/`, ADR 0024 |
 | Транспорт | байки (`Hoverbike`, `Motorcycle`) — вид сверху с фиксированным курсом; ходуны (`Mech`) — облёт мышью, WASD от камеры; защёлка посадки общая | `Assets/_Project/Scripts/Features/Ride/` |
-| Интерфейс | строится кодом: `BootScreen`, `MainMenuScreen` (меню и лента видов), `PlayerHud` (подписи сканера, FPS), `PauseMenuScreen` (пауза и настройки), `DialogueScreen` (панель разговора) | `Assets/_Project/Scripts/Features/` |
+| Интерфейс | строится кодом и русифицирован, кроме декоративных подписей: `BootScreen`, `MainMenuScreen` (меню и лента видов), `PlayerHud` (подписи сканера, FPS), `PauseMenuScreen` (обзор, журнал, настройки-шестерёнка), `QuestTracker` (текущий квест), `ExperienceBar` (уровни и опыт), `DialogueScreen` (панель разговора) | `Assets/_Project/Scripts/Features/` |
 | Диалоги | граф реплик в `DialogueAsset` (`Content/Data/Dialogues/`), авторский инспектор, E у робота в радиусе 4 м; на время разговора NPC стоит и поворачивается, игрок и камера заморожены | `Assets/_Project/Scripts/Features/Dialogue/`, ADR 0025 |
+| Квест «Погрузка» | `TrainBatteries.asset`, `TrainCompanion_Intro/Done`, `QuestTracker`; Play-проверка 2026-10-29: диалог → квест → 4 слота → похвала → завершение | `Content/Data/`, `Features/Quest/`, `Assets/Scenes/Train.unity` |
 | Сканирование | Q — сонар (кольцо + контуры), ближайшая цель и цель в области прицела подписываются сами; тумблеры — в паузе | `Assets/_Project/Scripts/Features/Scan/`, ADR 0020 |
 | Аудио | `MusicManager` + `Music_FrostSpaceTheme.mp3` из `Content/Audio/Resources/Music/` | `Assets/_Project/Scripts/Core/MusicManager.cs` |
 | NPC | `NpcController` (ходьба по маршруту) и `AirPatrolController` (патруль) | `Assets/_Project/Scripts/Features/Npc/` |
 | Сборка и CI | `BuildWebGL.PerformBuild` (только CLI) + `.github/workflows/webgl.yml` (game-ci, `unityVersion: auto`) | `Assets/_Project/Editor/BuildWebGL.cs` |
-| Unity MCP | пакет установлен, порт 6400, инструменты работают | live-проверка 2026-10-22 |
+| Unity MCP | пакет установлен; сервер слушает 6400 или следующий свободный (2026-10-29 — 6401), мост `Tools/Unity/unity_bridge.py` работает | live-проверка 2026-10-29 |
 | Blender | 5.2.3 LTS, аддон `blender_mcp` (протокол 14, сервер 2.2.2) установлен | `--version` и `install-addon` |
 | Пайплайн ассетов | единый вход `Tools/Blender/build_all.py`: сборка → проверки → превью (ADR 0017) | прогон 2026-10-22 |
 | Скиллы | 34 скилла Unity + 2 проектных (`plans`, `frostspace-3d-assets`), мосты для всех агентов | `.Aura/Skills/`, `Tools/Agent/LinkAgentSkills.ps1` |
 
 ## Чего в проекте нет
 
-- Реализованного сюжета и квестов: замысел зафиксирован в `GAME_DESIGN.md`, но сцены
-  `Frontier`, переноски груза, титульного экрана и миникарты в коде нет. Выбор корпуса
-  (`CharacterSetup`) реализован, `Train` — заглушка вагона без квеста.
+- Сюжета депо и продолжения: финал `Train` с отъездом камеры и титулом (`TR-09`,
+  `TR-10`) реализован, `Frontier` существует как депо-заглушка, но `DP-01`…`DP-04`,
+  миникарта и сохранения в коде отсутствуют. Выбор корпуса, переноска, квест
+  «Погрузка», диалоги R13, HUD-трекер и опыт в `Train` реализованы.
 - Сохранений и сети. Ни серверной части, ни мультиплеера, ни облачных сервисов.
 - Собственного баланса и игровых правил: дизайн-параметры живут в `[SerializeField]`
-  прямо на компонентах. Исключение — контент диалогов: он лежит в `DialogueAsset`
-  (ScriptableObject), потому что это авторские данные, а не состояние.
-- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 107 шт.).
+  прямо на компонентах. Исключение — авторские данные: `DialogueAsset` и `QuestAsset`
+  (ScriptableObject), потому что это данные, а не состояние.
+- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 137 шт.).
 - Локализации: подписи меню и HUD намеренно латинские, `com.unity.localization`
   не подключён; реплики диалогов — русские и лежат прямо в ассетах.
 - Импортированных сторонних моделей: каталога `Assets/ThirdParty/` нет, исходники —
