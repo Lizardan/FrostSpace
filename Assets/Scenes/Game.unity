@@ -262,6 +262,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
   _npc: {fileID: 11746799}
   _dialogue: {fileID: 11400000, guid: 2f80b5b80cf4e7b4187026c948d4ec2d, type: 2}
+  _turnSpeed: 360
 --- !u!1 &13249030
 GameObject:
   m_ObjectHideFlags: 0
@@ -10307,6 +10308,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
   _npc: {fileID: 1310819457}
   _dialogue: {fileID: 11400000, guid: 1e4722cc2de887d4196def3fa9911348, type: 2}
+  _turnSpeed: 360
 --- !u!1001 &1311303197
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11547,6 +11549,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
   _npc: {fileID: 1491490877}
   _dialogue: {fileID: 11400000, guid: 28ea9c7539ae3db49a0816b8122702a6, type: 2}
+  _turnSpeed: 360
 --- !u!1 &1497351644
 GameObject:
   m_ObjectHideFlags: 0
@@ -11597,6 +11600,7 @@ MonoBehaviour:
   _rig: {fileID: 0}
   _scanner: {fileID: 0}
   _questDirector: {fileID: 0}
+  _equipment: {fileID: 0}
   _font: {fileID: 11400000, guid: 79e593aa89f56d84f925fce5a65063d8, type: 2}
   _accent: {r: 0.302, g: 0.902, b: 1, a: 1}
   _text: {r: 0.72, g: 0.86, b: 0.92, a: 1}
@@ -14794,7 +14798,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 0
-  m_Antialiasing: 2
+  m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -14897,6 +14901,7 @@ MonoBehaviour:
   _maxRenderers: 48
   _scanAreaHalf: 0.14
   _scanSamples: 5
+  _available: 1
   _nearestRadius: 20
   _sonarRadius: 25
   _maxSonarTargets: 24
@@ -18978,6 +18983,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Dialogue.DialogueSpeaker
   _npc: {fileID: 2115495057}
   _dialogue: {fileID: 11400000, guid: 2c7c30b766b34ce45824dad4837f8a62, type: 2}
+  _turnSpeed: 360
 --- !u!1 &2116555853
 GameObject:
   m_ObjectHideFlags: 0

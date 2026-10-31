@@ -11,8 +11,10 @@ sci-fi экран загрузки в `Boot`, главное меню с 3D-ди
 `MainMenu → CharacterSetup → Train → Frontier`. Выбор героя уже в коде
 (`CharacterSetup`, три корпуса, ADR 0028); в `Train` есть интерьер вагона, переноска,
 квест «Погрузка», диалоги R13, HUD-трекер и финал с титулом (`TR-09`, `TR-10`).
-`Frontier` создана как депо-заглушка; сюжета депо и сохранений ещё нет — срез
-«Поезд» (`ADR 0026`–`ADR 0029`) почти закрыт.
+`Frontier` — депо: поезд того же масштаба приезжает снаружи, открывает боковые створки,
+выходят R13 и тележка, работают охрана и R7 (`DP-01`…`DP-04`). Прогресс квеста
+пишется в `FrostSpace.Save`, в меню есть `ПРОДОЛЖИТЬ` (ADR 0031); полный прогон
+`Boot → Frontier` и WebGL-сборка проверены.
 Реализация — источник истины о том, что уже есть; GDD — источник истины о том, что
 задумано.
 
@@ -32,13 +34,14 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Ввод | только Input System | `activeInputHandler: 1` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
 | Play Mode | domain reload выключен, scene reload включён | `m_EnterPlayModeOptionsEnabled: 1`, `m_EnterPlayModeOptions: 1` |
-| Игровая сцена | `Assets/Scenes/Frontier.unity`, build index 4 — депо-заглушка; `Game.unity` — build index 5, прежний срез, вне потока | `EditorBuildSettings.asset`, Unity MCP |
-| Сюжет и целевой поток | `docs/GAME_DESIGN.md`: робот-курьер, `MainMenu → CharacterSetup → Train → Frontier`; реализованы выбор корпуса, переноска, квест «Погрузка», диалоги R13 и финал `Train`; `Frontier` — депо-заглушка | `docs/GAME_DESIGN.md`, ADR 0026–0029 |
+| Игровая сцена | `Assets/Scenes/Frontier.unity`, build index 4 — депо: прибытие поезда, выход R13, охрана и R7; `Game.unity` — build index 5, прежний срез, вне потока | `EditorBuildSettings.asset`, Unity MCP |
+| Сюжет и целевой поток | `docs/GAME_DESIGN.md`: робот-курьер, `MainMenu → CharacterSetup → Train → Frontier`; реализованы выбор корпуса, переноска, квест «Погрузка», диалоги R13, финал `Train` и сюжет депо `DP-01`…`DP-04` | `docs/GAME_DESIGN.md`, ADR 0026–0029 |
 | Содержимое Game | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами и животными | сцена `Assets/Scenes/Game.unity` |
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (14 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (137 тестов) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (15 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (181 тест) | `Assets/_Project/`, `run_tests` |
+| Поезд среза | один вагон `TrainCar.fbx` 8×24 м на обе сцены (ADR 0032, 0033, 0034): интерьер, кабина 4,2 м с кокпитом, водителем и голопанелью, боковой проём, автодверь, раздвижные створки, тележки, фары | `Assets/_Project/Content/Models/Train/`, `Tools/Blender/build_train.py` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
 | Ездовые ходуны | 4 FBX (`ME_*Walker`) — наш корпус на ригах `Mech_*` пака, клипы печёт `author_gait`; префабы `ME_*_Model` — сразу транспорт с `Mech` и кабиной; сборка `Tools/Blender/build_mechs.py` | `Assets/_Project/Content/`, ADR 0024 |
@@ -46,6 +49,7 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Интерфейс | строится кодом и русифицирован, кроме декоративных подписей: `BootScreen`, `MainMenuScreen` (меню и лента видов), `PlayerHud` (подписи сканера, FPS), `PauseMenuScreen` (обзор, журнал, настройки-шестерёнка), `QuestTracker` (текущий квест), `ExperienceBar` (уровни и опыт), `DialogueScreen` (панель разговора) | `Assets/_Project/Scripts/Features/` |
 | Диалоги | граф реплик в `DialogueAsset` (`Content/Data/Dialogues/`), авторский инспектор, E у робота в радиусе 4 м; на время разговора NPC стоит и поворачивается, игрок и камера заморожены | `Assets/_Project/Scripts/Features/Dialogue/`, ADR 0025 |
 | Квест «Погрузка» | `TrainBatteries.asset`, `TrainCompanion_Intro/Done`, `QuestTracker`; Play-проверка 2026-10-29: диалог → квест → 4 слота → похвала → завершение | `Content/Data/`, `Features/Quest/`, `Assets/Scenes/Train.unity` |
+| Сохранение прогресса | один ключ `FrostSpace.Save` (`JSON`, `version 1`): сцена, корпус, квест и счётчик; запись на каждом изменении квеста, `ПРОДОЛЖИТЬ` в меню, `НАЧАТЬ` стирает | `Assets/_Project/Scripts/Features/Quest/ProgressSave.cs`, ADR 0031 |
 | Сканирование | Q — сонар (кольцо + контуры), ближайшая цель и цель в области прицела подписываются сами; тумблеры — в паузе | `Assets/_Project/Scripts/Features/Scan/`, ADR 0020 |
 | Аудио | `MusicManager` + `Music_FrostSpaceTheme.mp3` из `Content/Audio/Resources/Music/` | `Assets/_Project/Scripts/Core/MusicManager.cs` |
 | NPC | `NpcController` (ходьба по маршруту) и `AirPatrolController` (патруль) | `Assets/_Project/Scripts/Features/Npc/` |
@@ -57,15 +61,15 @@ WebGL (единственная, подтверждена сборкой). Ба�
 
 ## Чего в проекте нет
 
-- Сюжета депо и продолжения: финал `Train` с отъездом камеры и титулом (`TR-09`,
-  `TR-10`) реализован, `Frontier` существует как депо-заглушка, но `DP-01`…`DP-04`,
-  миникарта и сохранения в коде отсутствуют. Выбор корпуса, переноска, квест
-  «Погрузка», диалоги R13, HUD-трекер и опыт в `Train` реализованы.
-- Сохранений и сети. Ни серверной части, ни мультиплеера, ни облачных сервисов.
+- Продолжения на карте: финал `Train` (`TR-09`, `TR-10`), сюжет депо
+  `DP-01`…`DP-04` и сохранение прогресса квеста (`FrostSpace.Save`, ADR 0031)
+  реализованы; миникарта, прицеп, дорога и станция в коде отсутствуют. Выбор корпуса,
+  переноска, квест «Погрузка», диалоги R13, HUD-трекер и опыт реализованы.
+- Сети. Ни серверной части, ни мультиплеера, ни облачных сервисов.
 - Собственного баланса и игровых правил: дизайн-параметры живут в `[SerializeField]`
   прямо на компонентах. Исключение — авторские данные: `DialogueAsset` и `QuestAsset`
   (ScriptableObject), потому что это данные, а не состояние.
-- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 137 шт.).
+- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 181 шт.).
 - Локализации: подписи меню и HUD намеренно латинские, `com.unity.localization`
   не подключён; реплики диалогов — русские и лежат прямо в ассетах.
 - Импортированных сторонних моделей: каталога `Assets/ThirdParty/` нет, исходники —

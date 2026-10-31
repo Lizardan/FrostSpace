@@ -42,11 +42,12 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 137 тестов:
+Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 181 тест:
 проверки префабов и клипов роботов, животных и ходунов (carry и jump у трёх корпусов),
 выбор корпуса и `PlayerPrefs`, `ViewBlend`,
-экранный вырез, математика сканера, граф диалогов и его контент, порядок целей квеста
-и действия узлов диалога). Флаг `-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
+экранный вырез, математика сканера, граф диалогов и его контент, порядок целей квеста,
+действия узлов диалога, кривая опыта и идемпотентная выдача карты/сканера). Флаг
+`-testPlatform PlayMode` применять не к чему: сборки `FrostSpace.Tests.PlayMode`
 не существует. `total: 0` в отчёте означает, что тесты не найдены, а не что «всё прошло».
 Сценовая обвязка квеста, трекер и сохранение ещё добавят тесты (ADR 0027, 0031).
 
@@ -147,14 +148,16 @@ python Tools/Blender/gui_session.py stop     # закрыть, если сесс
 | Анализ PNG | `blender --background ... inspect_image.py -- <file.png>` | работает |
 | Unity ping через мост | `python Tools/Unity/unity_bridge.py ping` | `pong` |
 | Unity MCP Console | `read_console(types: ["error"])` | 0 ошибок |
-| Unity MCP сцена | `manage_scene(get_active)` | `Train` (index 3) — активная сцена редактора |
+| Unity MCP сцена | `manage_scene(get_active)` | `Frontier` (index 4) — активная сцена редактора |
 | Unity MCP Build Settings | `manage_scene(get_build_settings)` | `Boot` 0, `MainMenu` 1, `CharacterSetup` 2, `Train` 3, `Frontier` 4, `Game` 5 |
-| Тесты Unity | `run_tests` + `get_test_job` | 137 тестов: `succeeded`, 137 passed (2026-10-29) |
+| Тесты Unity | `run_tests` + `get_test_job` | 181 тест: `succeeded`, 181 passed (2026-10-29) |
 | Play-проверка среза «Поезд» | MCP: диалог R13 → `AcceptQuest` → 4 слота → `TrainCompanion_Done` → `CompleteQuest` | PASS (2026-10-29): трекер `ПОГРУЗИТЬ АККУМУЛЯТОРЫ 0/4`, цель доставки закрывается, R13 меняет диалог, Console 0 ошибок |
 | Play-проверка UI | MCP: главное меню, пауза, журнал, настройки-шестерёнка, трекер | PASS (2026-10-29): русские подписи, журнал с целями, шестерёнка и прогресс-бар; Console 0 ошибок |
 | Гейт переноски | MCP: `FindNearestItem` до и после `AcceptQuest` | PASS (2026-10-29): до квеста `none`, после — `Prop_Battery_1` |
 | Финальный диалог | MCP: терминальный узел после `CompleteQuest` | PASS (2026-10-29): одно E дорисовывает и закрывает диалог, блокировки сняты, камера и карта `Player` возвращены |
 | Финал `Train` | MCP: `CompleteQuest` → отъезд камеры → титул → `Frontier` | PASS (2026-10-29): камера уходит к окну, титул `FROSTSPACE` над занавесом, `Frontier` загружается, управление возвращается |
+| Прибытие в депо | MCP: Play `Frontier` | PASS (2026-10-29): поезд 8×24 въезжает и встаёт у платформы, створки раздвигаются, R13 и тележка выходят, управление возвращается, Console 0 ошибок |
+| Снаряжение депо | MCP: R7 → `GrantMap`/`GrantScanner`, повторный диалог, Q | PASS (2026-10-29): карта и сканер выдаются один раз, сканер видит 4 цели, охрана говорит по E, новых целей нет |
 | Опыт | MCP: завершение квеста | PASS (2026-10-29): `250 / 1000 (25%)`, `УР. 1` → `УР. 2`; EditMode XP-тесты 5/5 |
 | Play-замер локомоции | `LocomotionDiagnostics` на `Player`, Console по `PROBE` | базлайн 2026-10-18: walk 0.22, sprint 0.55 м/с скольжения; занос ≤ 8.8° — **на ровном рельефе** |
 | Play-замер прыжка | тот же стенд, строка `PROBE jump` | PASS (2026-10-21): height 1.19 м при цели 1.2, airtime 1.07 с |

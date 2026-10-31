@@ -103,5 +103,41 @@ namespace FrostSpace.Features.Quest
 
         /// <summary>Снимок текущего прогресса для сохранения и тестов.</summary>
         public QuestSnapshot Snapshot() => new(State, _objectiveIndex, _progress);
+
+        /// <summary>
+        /// Восстанавливает прогресс из сохранения (ADR 0031). Принимает только
+        /// активный квест с существующей целью и завершённый; неактивный снимок
+        /// и индекс вне списка отвергаются, чтобы сцена не стартовала сломанной.
+        /// Возвращает <c>true</c>, если состояние изменилось.
+        /// </summary>
+        public bool Restore(QuestSnapshot snapshot)
+        {
+            if (_quest == null || ObjectiveCount == 0)
+                return false;
+
+            switch (snapshot.State)
+            {
+                case QuestState.Completed:
+                    State = QuestState.Completed;
+                    _objectiveIndex = ObjectiveCount;
+                    _progress = 0;
+                    return true;
+
+                case QuestState.Active:
+                    if (snapshot.ObjectiveIndex < 0 || snapshot.ObjectiveIndex >= ObjectiveCount)
+                        return false;
+                    if (_quest.Objectives[snapshot.ObjectiveIndex] == null)
+                        return false;
+
+                    State = QuestState.Active;
+                    _objectiveIndex = snapshot.ObjectiveIndex;
+                    _progress = Mathf.Clamp(
+                        snapshot.Progress, 0, Mathf.Max(1, CurrentObjective.Required));
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
     }
 }

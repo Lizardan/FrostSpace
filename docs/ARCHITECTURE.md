@@ -6,7 +6,7 @@
 идут `Assets/Scenes/Boot.unity`, build index 0, `Assets/Scenes/MainMenu.unity`, build index 1,
 `Assets/Scenes/CharacterSetup.unity`, build index 2 — выбор корпуса,
 `Assets/Scenes/Train.unity`, build index 3 — интерьер, переноска, квест и финал, и
-`Assets/Scenes/Frontier.unity`, build index 4 — депо-заглушка):
+`Assets/Scenes/Frontier.unity`, build index 4 — депо с прибытием поезда):
 
 - `FrostSpace.Features` (`Assets/_Project/Scripts/Features/`):
   `Locomotion/RobotLocomotion.cs` — движение через kinematic `CharacterController`,
@@ -149,16 +149,18 @@
 - Камера `Game` на старте сразу стоит в верхней позе: блендинг инициализируется
   завершённым, поэтому нет выезда из позиции по умолчанию.
 
-Ещё нет composition root, сохранений, сети и игрового баланса; единственный игровой
+Ещё нет composition root, сети и игрового баланса; единственный игровой
 ScriptableObject-конфиг — `DialogueAsset` (авторские реплики, а не состояние).
+Прогресс демо живёт в одном ключе `PlayerPrefs` (`FrostSpace.Save`), а не в сервисе:
+см. раздел «Сохранение прогресса».
 Слой `Infrastructure/` не создан. Это **не** архитектурный долг: просто ещё
 не написано.
 
 **Поток сцен меняется.** В коде сейчас
 `Boot → MainMenu → CharacterSetup → Train → Frontier`; `Train` — интерьер вагона,
 переноска, квест «Погрузка», диалоги R13, трекер и финал с титулом; `Frontier` —
-депо-заглушка с выходом игрока на платформу. `SceneController` и белая накладка
-при этом не меняются.
+прибытие поезда того же масштаба, выход R13 и тележки через боковой проём, охрана,
+R7 и выдача карты со сканером. `SceneController` и белая накладка при этом не меняются.
 
 ## Фичи первого среза
 
@@ -167,18 +169,18 @@ ScriptableObject-конфиг — `DialogueAsset` (авторские репли
 `Rebind*` в камере и силуэте; подбор, перенос и слоты; `QuestAsset`, `QuestLog`,
 `QuestDirector`, действия `AcceptQuest`/`CompleteQuest` в узлах диалога и
 `QuestTracker`; работает `Progression` — `PlayerExperience` и полоса опыта;
-`Story` закрывает финал `Train` — `TrainSequenceDirector` и `TitleCardScreen`.
-Остальной `Story` (прибытие и депо) и `Map` не начаты. Таблица фиксирует границы,
-чтобы реализации не разъехались; данные и правила — в `GAME_DESIGN.md`, причины — в
-ADR 0026–0029.
+`Story` закрывает финал `Train` (`TrainSequenceDirector`, `TitleCardScreen`), прибытие
+в депо (`DepotArrivalDirector`) и выдачу снаряжения (`PlayerEquipment`). `Map` не начат.
+Таблица фиксирует границы, чтобы реализации не разъехались; данные и правила — в
+`GAME_DESIGN.md`, причины — в ADR 0026–0029.
 
 | Фича | Путь | Ответственность | Зависит от |
 |---|---|---|---|
 | Character | `Features/Character/` | профиль корпуса (SO), каталог, выбор и его `PlayerPrefs`, привязка визуала и rebind камеры/силуэта | Locomotion, Camera |
 | Carry | `Features/Carry/` | подбор по E, перенос с `CarryWalk`, слоты тележки | Locomotion, Hud |
-| Quest | `Features/Quest/`, `Features/Hud/QuestTracker.cs` | данные квеста, `QuestLog` без Unity, сценовый `QuestDirector`, HUD-трекер | Dialogue (подписка), Carry (подписка) |
+| Quest | `Features/Quest/`, `Features/Hud/QuestTracker.cs` | данные квеста, `QuestLog` без Unity, сценовый `QuestDirector`, HUD-трекер, сохранение прогресса в `FrostSpace.Save` | Dialogue (подписка), Carry (подписка), Character (id корпуса для записи) |
 | Progression | `Features/Progression/`, `Features/Hud/ExperienceBar.cs` | уровень, опыт, кривая до следующего уровня, начисление награды | Quest |
-| Story | `Features/Story/` | финал поезда, титульный экран, прибытие в депо, параллакс за окнами | Core/SceneController, Quest |
+| Story | `Features/Story/` | финал поезда, титульный экран, прибытие поезда и выход в депо, выдача карты и сканера, параллакс за окнами | Core/SceneController, Quest, Dialogue, Scan |
 | Map | `Features/Map/` (Stage 3) | миникарта и маркеры | — |
 
 Направление зависимостей внутри фич:
@@ -232,6 +234,26 @@ Free ──E──→ Carried ──E у слота──→ Placed
 Состояние живёт на предмете и слоте, а не в глобальном менеджере: сцена `Train`
 обходится одним директором и явными ссылками.
 
+### Сохранение прогресса
+
+Один ключ `PlayerPrefs` и один JSON-формат (ADR 0031), без сервиса и абстракций:
+
+```
+QuestDirector.Apply/Placed ─→ ProgressSave.Write(scene, characterId, questId, snapshot)
+QuestDirector.Awake        ←─ ProgressSave.TryLoad → QuestLog.Restore(snapshot)
+MainMenuScreen             ←─ ProgressSave.HasSave / TryLoad → SceneController.LoadScene
+DepotArrivalDirector.Start ─→ ProgressSave.MarkScene("Frontier")
+```
+
+- Пишется только то, что нельзя вывести из сцены: сцена, корпус, квест, состояние
+  и счётчик цели. Позиция и предметы не сохраняются — сцены короткие, спавн решает задачу.
+- `QuestDirector` пишет сразу после каждого изменения квеста; в `Frontier` директора нет,
+  поэтому сцену в сохранении переносит `DepotArrivalDirector`.
+- Завершённый квест после `Restore` сообщается событием `QuestCompleted` в `Start`:
+  иначе «Продолжить» после сдачи вело бы в вагон без финала.
+- Битый JSON, чужая версия, неизвестная сцена или состояние стирают ключ: лучше начать
+  заново, чем восстановить половину. `НАЧАТЬ` стирает сохранение явно.
+
 ## Целевая минимальная основа (предложение)
 
 Структура и пути — в `PROJECT_MAP.md`. Здесь — ответственность и зависимости.
@@ -280,7 +302,8 @@ Core ──→ ничего из FrostSpace.*
 ### Чего сознательно нет
 
 - DI-контейнера, event bus, service locator, ECS, MVVM, Clean Architecture «по учебнику».
-- Сетевого слоя, сохранений, UI-фреймворка — пока нет требований.
+- Сетевого слоя, UI-фреймворка и полноценной системы сохранений — пока нет требований:
+  прогресс среза пишется одним ключом (ADR 0031).
 - Стриминга, аддитивных сцен и Addressables: `Frontier` — одна сцена (ADR 0029).
 - Глобальных синглтонов нет, кроме персистентного `SceneController.Instance` (ADR 0011):
   его существование — условие того, что занавес переживает подмену сцены. Статика сервиса
@@ -296,8 +319,9 @@ Core ──→ ничего из FrostSpace.*
    паузами 2–10 с; реакций на игрока, работ и диалогов нет. Компонент вешается на
    сценовый актёр, а не на префаб. У животных (13 актёров `NPC/Animals`) поведение то же:
    маршрут, пауза, поворот — `NpcController` или `AirPatrolController`.
-3. **Нет сохранений, сети и полноценных конфигов.** UI есть и строится кодом; диалоги
-   лежат в SO. Профили корпусов и квесты появятся как SO вместе со срезом.
+3. **Нет сети и полноценных конфигов.** UI есть и строится кодом; диалоги, профили
+   корпусов и квесты лежат в SO. Прогресс квеста сохраняется одним ключом
+   `FrostSpace.Save` (ADR 0031); позиция игрока и предметы — нет.
 4. **`Boot.unity` — стартовая сцена** с реальной загрузкой: `BootScreen` имитирует
    инициализацию сервисов, `SceneController` отдаёт переход. Реальные сервисы, когда появятся,
    встанут в тот же таймлайн вместо строк лога. Не перемещаем существующие ассеты ради

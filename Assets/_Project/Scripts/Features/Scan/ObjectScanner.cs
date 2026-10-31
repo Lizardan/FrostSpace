@@ -118,6 +118,10 @@ namespace FrostSpace.Features.Scan
         [Tooltip("Сколько лучей по стороне квадрата области: 5 — это 25 лучей за кадр")]
         [SerializeField, Range(1, 9)] private int _scanSamples = 5;
 
+        [Header("Доступ")]
+        [Tooltip("Сканер выдан: до этого Q молчит, подписей и контуров нет")]
+        [SerializeField] private bool _available = true;
+
         [Header("Каналы")]
         [Tooltip("Радиус автодетекции ближайшего объекта, м")]
         [SerializeField] private float _nearestRadius = 20f;
@@ -218,6 +222,24 @@ namespace FrostSpace.Features.Scan
         /// <summary>Сколько подписей можно показать одновременно.</summary>
         public int MaxLabels => Mathf.Max(1, _maxLabels);
 
+        /// <summary>Сканер выдан и работает.</summary>
+        public bool Available => _available;
+
+        /// <summary>
+        /// Выдаёт или отбирает сканер. Пока сканер не выдан, Q не пускает волну,
+        /// а HUD не получает ни подписей, ни контуров — это часть повествования
+        /// (сканер выдаёт R7 в депо), а не только обучение.
+        /// </summary>
+        public void SetAvailable(bool value)
+        {
+            if (_available == value)
+                return;
+
+            _available = value;
+            if (!value)
+                ResetVisibility();
+        }
+
         /// <summary>Включает и выключает режим сонара (то же, что нажатие Q).</summary>
         public void SetScanning(bool value)
         {
@@ -263,6 +285,12 @@ namespace FrostSpace.Features.Scan
         private void OnDisable()
         {
             // Пауза и выгрузка сцены: контуры и кольцо не должны остаться на экране.
+            ResetVisibility();
+        }
+
+        /// <summary>Гасит все каналы и контуры, не меняя флаг выдачи.</summary>
+        private void ResetVisibility()
+        {
             IsScanning = false;
             _aimTarget = null;
             _aimCandidate = null;
@@ -300,6 +328,9 @@ namespace FrostSpace.Features.Scan
 
         private void LateUpdate()
         {
+            if (!_available)
+                return;
+
             var paused = _rig != null && _rig.IsPaused;
             if (paused)
                 return;

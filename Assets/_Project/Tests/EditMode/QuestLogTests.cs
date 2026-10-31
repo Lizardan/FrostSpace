@@ -207,6 +207,68 @@ namespace FrostSpace.Tests
         }
 
         [Test]
+        public void Restore_ActiveMidProgress_ContinuesCounter()
+        {
+            var log = NewQuest().CreateLog();
+
+            Assert.IsTrue(log.Restore(new QuestSnapshot(QuestState.Active, 1, 2)));
+            Assert.AreEqual(QuestState.Active, log.State);
+            Assert.AreEqual(1, log.ObjectiveIndex);
+            Assert.AreEqual(2, log.Progress);
+            Assert.AreEqual("q_load", log.CurrentObjective.Id);
+
+            Assert.IsTrue(log.Apply(Deliver(2)));
+            Assert.AreEqual("q_talk_done", log.CurrentObjective.Id);
+        }
+
+        [Test]
+        public void Restore_Completed_FinishesQuest()
+        {
+            var log = NewQuest().CreateLog();
+
+            Assert.IsTrue(log.Restore(new QuestSnapshot(QuestState.Completed, 3, 0)));
+            Assert.AreEqual(QuestState.Completed, log.State);
+            Assert.IsNull(log.CurrentObjective);
+            Assert.IsFalse(log.Activate());
+        }
+
+        [Test]
+        public void Restore_Inactive_IsRejected()
+        {
+            var log = NewQuest().CreateLog();
+
+            Assert.IsFalse(log.Restore(new QuestSnapshot(QuestState.Inactive, 0, 0)));
+            Assert.AreEqual(QuestState.Inactive, log.State);
+        }
+
+        [Test]
+        public void Restore_IndexOutOfRange_IsRejected()
+        {
+            var log = NewQuest().CreateLog();
+
+            Assert.IsFalse(log.Restore(new QuestSnapshot(QuestState.Active, 3, 0)));
+            Assert.IsFalse(log.Restore(new QuestSnapshot(QuestState.Active, -1, 0)));
+            Assert.AreEqual(QuestState.Inactive, log.State);
+        }
+
+        [Test]
+        public void Restore_ClampsProgressToRequired()
+        {
+            var log = NewQuest().CreateLog();
+
+            Assert.IsTrue(log.Restore(new QuestSnapshot(QuestState.Active, 1, 99)));
+            Assert.AreEqual(4, log.Progress);
+        }
+
+        [Test]
+        public void Restore_NullQuest_IsRejected()
+        {
+            var log = new QuestLog(null);
+
+            Assert.IsFalse(log.Restore(new QuestSnapshot(QuestState.Active, 0, 0)));
+        }
+
+        [Test]
         public void NullQuest_IsInert()
         {
             var log = new QuestLog(null);

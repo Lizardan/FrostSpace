@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace FrostSpace.Features.Story
@@ -58,22 +59,55 @@ namespace FrostSpace.Features.Story
             _instance = null;
         }
 
-        /// <summary>Показывает белый экран и гаснет после загрузки следующей сцены.</summary>
-        public void Play(float holdSeconds = 2f, float fadeIn = 0.45f, float fadeOut = 0.75f)
+        /// <summary>
+        /// Показывает белый экран и держит его, пока режиссёр не погасит: белый
+        /// обязан остаться до подмены сцены, иначе переход в депо короче, чем
+        /// занавес <see cref="Core.SceneController"/> в переходе `Boot → MainMenu`.
+        /// </summary>
+        public void Play(float fadeIn = 0.8f)
         {
             if (_playing)
                 return;
 
             _playing = true;
-            StartCoroutine(Run(holdSeconds, fadeIn, fadeOut));
+            StartCoroutine(Show(fadeIn));
         }
 
-        private IEnumerator Run(float holdSeconds, float fadeIn, float fadeOut)
+        /// <summary>
+        /// Гасит титул, дождавшись своей сцены. Ждать обязан сам титул:
+        /// он на `DontDestroyOnLoad`, а режиссёр финала живёт в старой сцене
+        /// и уничтожается раньше, чем новая станет активной.
+        /// </summary>
+        public void FadeOutWhenScene(string sceneName, float seconds = 0.9f,
+            float timeout = 6f)
+        {
+            if (!_playing)
+                return;
+
+            StartCoroutine(HideWhenScene(sceneName, seconds, timeout));
+        }
+
+        private IEnumerator HideWhenScene(string sceneName, float seconds, float timeout)
+        {
+            var startedAt = Time.realtimeSinceStartup;
+            while (SceneManager.GetActiveScene().name != sceneName &&
+                   Time.realtimeSinceStartup - startedAt < timeout)
+            {
+                yield return null;
+            }
+
+            yield return Hide(seconds);
+        }
+
+        private IEnumerator Show(float fadeIn)
         {
             _group.alpha = 0f;
             yield return Fade(0f, 1f, fadeIn);
-            yield return new WaitForSecondsRealtime(Mathf.Max(0f, holdSeconds));
-            yield return Fade(1f, 0f, fadeOut);
+        }
+
+        private IEnumerator Hide(float seconds)
+        {
+            yield return Fade(_group.alpha, 0f, seconds);
             Destroy(gameObject);
         }
 

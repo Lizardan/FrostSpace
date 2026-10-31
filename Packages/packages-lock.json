@@ -25,14 +25,22 @@
       "hash": "81542a7e86292b5c4c21b1782c5af23b567f45ce"
     },
     "com.ramenvr.aura-unity": {
-      "version": "https://github.com/ramenvr/AuraForUnityPlugin.git#v1.4.1",
+      "version": "https://github.com/ramenvr/AuraForUnityPlugin.git",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.inputsystem": "1.1.1",
         "com.unity.cloud.gltfast": "6.12.1"
       },
-      "hash": "406a8d058db2ec1708d4c4087deea334f7a92aa0"
+      "hash": "f885fe91a897de24715f219c196f6c92f81b867d"
+    },
+    "com.ramenvr.autopilot": {
+      "version": "file:com.ramenvr.autopilot-1.0.1.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.unity.nuget.mono-cecil": "1.11.6"
+      }
     },
     "com.unity.2d.animation": {
       "version": "16.0.1",
@@ -278,7 +286,7 @@
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"

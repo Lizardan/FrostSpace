@@ -33,6 +33,16 @@ namespace FrostSpace.Features.Story
         [Tooltip("Куда смотрит камера за окном")]
         [SerializeField] private Vector3 _windowLookAt = new(9f, 1.8f, -4f);
 
+        [Header("Титул")]
+        [Tooltip("За сколько белый накрывает кадр; как занавес SceneController")]
+        [SerializeField] private float _titleFadeIn = 0.8f;
+        [Tooltip("Сколько белый держится до перехода в депо")]
+        [SerializeField] private float _titleHold = 1.8f;
+        [Tooltip("За сколько титул гаснет вместе с проявлением новой сцены")]
+        [SerializeField] private float _titleFadeOut = 0.9f;
+        [Tooltip("Сколько ждём активации новой сцены, прежде чем гасить титул принудительно")]
+        [SerializeField] private float _sceneWaitTimeout = 6f;
+
         private bool _running;
 
         private void OnEnable()
@@ -92,9 +102,14 @@ namespace FrostSpace.Features.Story
             }
 
             if (_titleCard != null)
-                _titleCard.Play();
+                _titleCard.Play(_titleFadeIn);
             else
                 Debug.LogWarning("TrainSequenceDirector: не назначен TitleCardScreen", this);
+
+            // Белый обязан накрыть кадр и удержаться до подмены сцены: раньше
+            // загрузка шла сразу за стартом титула, и переход в депо получался
+            // короче занавеса `Boot → MainMenu`.
+            yield return new WaitForSecondsRealtime(_titleFadeIn + _titleHold);
 
             var controller = SceneController.Instance;
             if (controller == null)
@@ -105,6 +120,10 @@ namespace FrostSpace.Features.Story
             }
 
             controller.LoadScene(_nextScene);
+
+            // Гасит титул он сам: дождаться новой сцены здесь нельзя — этот объект
+            // уничтожается вместе со старой сценой, и белый оставался на экране.
+            _titleCard?.FadeOutWhenScene(_nextScene, _titleFadeOut, _sceneWaitTimeout);
             _running = false;
         }
     }

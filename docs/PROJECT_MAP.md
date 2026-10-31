@@ -26,7 +26,7 @@ FrostSpace/
    │  ├─ MainMenu.unity          # главное меню с диорамой, build index 1
    │  ├─ CharacterSetup.unity    # выбор из трёх корпусов, build index 2
    │  ├─ Train.unity             # интерьер, переноска, квест, диалоги R13, финал; build index 3
-   │  ├─ Frontier.unity          # депо-заглушка: платформа, навес, поезд, охрана; build index 4
+   │  ├─ Frontier.unity          # депо: прибытие поезда 8×24, боковой проём, охрана, R7; build index 4
    │  └─ Game.unity              # прежний уровень, build index 5, вне потока
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
@@ -59,7 +59,8 @@ FrostSpace/
    │  │  │  │                    # AnimationCulling (AlwaysAnimate и честные границы скинных мешей)
    │  │  │  ├─ Progression/      # PlayerExperience (уровни, кривая опыта, награда квеста)
    │  │  │  ├─ Quest/            # QuestAsset (SO), QuestObjective, QuestLog (чистая логика),
-   │  │  │  │                    # QuestEvent, QuestDirector (сценовый владелец прогресса)
+   │  │  │  │                    # QuestEvent, QuestSnapshot, QuestDirector (сценовый владелец
+   │  │  │  │                    # прогресса), ProgressSave (ключ FrostSpace.Save, ADR 0031)
    │  │  │  ├─ Ride/             # Hoverbike, HoverbikeGlow, Motorcycle, MotorcycleRideVisual,
    │  │  │  │                    # RiderPose (посадка верхом поверх клипа), RiderCockpit
    │  │  │  │                    # (данные посадки байка: наклон, шея, KneeOut, Seat Point),
@@ -70,7 +71,9 @@ FrostSpace/
    │  │  │  │                    # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
    │  │  │  │                    # ScanMath (чистая математика)
    │  │  │  └─ Story/            # TrainMotionRig (параллакс и снег), TrainSequenceDirector
-   │  │  │                       # (отъезд камеры и переход), TitleCardScreen (белый титул)
+   │  │  │                       # (отъезд камеры и переход), TitleCardScreen (белый титул),
+   │  │  │                       # DepotArrivalDirector (прибытие поезда, створки, выход),
+   │  │  │                       # PlayerEquipment (карта и сканер из диалога)
    │  │  └─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │                          # перехода и единственный вызывающий SceneManager),
    │  │                          # MusicManager (фоновая музыка), GameSettings (музыка и каналы детекции)
@@ -89,7 +92,9 @@ FrostSpace/
    │  │                          # MechVisualPrefabTests, ScreenApertureTests, CharacterSelectionTests,
    │  │                          # DialogueSessionTests, DialogueAssetValidationTests,
    │  │                          # DialogueContentTests, DialogueFontTests, DialogueActionTests,
-   │  │                          # QuestLogTests, QuestAssetTests, PlayerExperienceTests
+   │  │                          # QuestLogTests, QuestAssetTests, PlayerExperienceTests,
+   │  │                          # PlayerEquipmentTests, ProgressSaveTests, CarrySlotTests,
+   │  │                          # SceneFlowTests (поток сцен по Build Settings)
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller; ME_*.controller (ходуны);
    │     │                          # RobotAnimals/<Species>/RA_<Species>.controller
@@ -97,9 +102,12 @@ FrostSpace/
    │     ├─ Models/RobotAnimals/    # <Species>/RA_<Species>.fbx + SOURCE.md (происхождение ригов)
    │     ├─ Models/Mechs/           # ME_*Walker.fbx (4) — наш корпус на ригах Ultimate Space Kit
    │     ├─ Models/Level/           # FBX уровня: рельеф, дом, интерьер, деревья, пропы
-   │     ├─ Models/Train/           # TrainInterior (TrainBody + TrainDoor), Prop_Battery,
-   │     │                          # Prop_GravCart — вагон и груз среза «Поезд»
+   │     ├─ Models/Train/           # TrainCar (TrainBody: интерьер и кабина 4,2 м;
+   │     │                          # TrainDoorL/R — створки торцевой двери;
+   │     │                          # TrainSideDoorL/R — створки бокового проёма),
+   │     │                          # Prop_Battery, Prop_GravCart — вагон и груз среза «Поезд»
    │     ├─ Models/Menu/            # ShipWreck_Mesh.asset — процедурный меш диорамы меню
+   │     ├─ Prefabs/Props/          # HoloPanel — голопанель на столе у кабины
    │     ├─ Prefabs/Robots/         # R*_Model.prefab — только визуал (20)
    │     ├─ Prefabs/RobotAnimals/   # <Species>/RA_<Species>_Model.prefab — только визуал (13)
    │     ├─ Prefabs/Ride/           # Hoverbike_Model (корпус, Visual, Cushion),
@@ -133,13 +141,13 @@ FrostSpace/
 
 | Путь | Что появится |
 |---|---|
-| `Assets/_Project/Scripts/Features/Story/` | `DepotArrivalDirector` и сюжет прибытия в депо (финал и титул уже есть) |
 | `Assets/_Project/Scripts/Features/Map/` | миникарта и маркеры (Stage 3) |
 
 ## С чего начинается выполнение
 
 Целевой поток — ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`.
-Ниже — **фактическое** состояние на 2026-10-29; `Frontier` создана как депо-заглушка.
+Ниже — **фактическое** состояние на 2026-10-29; `Frontier` — депо с прибытием поезда
+и сюжетом `DP-01`…`DP-04`.
 
 1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0): корневой `SceneController`
    уходит в `DontDestroyOnLoad`, `BootScreen` три секунды показывает консоль загрузки
@@ -154,15 +162,19 @@ FrostSpace/
    (`CharacterCardPreview` рендерит корпус в `RenderTexture`), `ПОДТВЕРДИТЬ` пишет
    выбор в `CharacterSelection` и грузит `Train`.
 4. `Assets/Scenes/Train.unity` (build index 3) — интерьер вагона 8×24 м
-   (`TrainInterior`: пол, стены, потолок, дверной проём), `Sun` и два `CabinLamp`,
+   (`TrainCar`: пол, стены, потолок, торцевая дверь, боковой проём со створками и нос-кабина),
+   `Sun` и два `CabinLamp`,
    `Player` с `PlayerVisualBinder`, `CarryController`, `DialogueController`/`DialogueScreen`,
    `QuestDirector` и `QuestTracker`, четыре аккумулятора и тележка с четырьмя слотами,
    `R13_Prospector` с `DialogueSpeaker`/`DialogueMarker`, `TrainMotionRig` с параллаксом
    и снегом, `Main Camera` с `PlayerCameraRig`; `TrainSequence` + `TitleCard` дают
    отъезд камеры и белый титул перед `Frontier`.
-5. `Assets/Scenes/Frontier.unity` (build index 4) — депо-заглушка: снежная земля,
-   платформа, навес, поезд с путём, ворота, мачта, `Player`, `R16_Warden` ×2 и
-   `R7_Drifter`. Сюжетных диалогов депо и выдачи снаряжения пока нет.
+5. `Assets/Scenes/Frontier.unity` (build index 4) — депо: снежная земля, платформа,
+   навес, поезд `TrainCar` (8×24) с путём, ворота, мачта, `Player`, `R16_Warden` ×2,
+   `R8_Bulwark` и `R7_Drifter`. `DepotArrival` проигрывает прибытие поезда, плавный
+   раздвиг створок и выход R13 с тележкой через боковой проём; управление возвращается
+   игроку в вагоне, на платформу он выходит сам. R7 выдаёт карту и сканер, ворота ведут
+   к будущей дороге.
 6. Сцена `Game` (build index 5, вне потока) — обычный сохранённый ассет: рельеф,
    дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
    камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.

@@ -43,6 +43,9 @@ Shader "FrostSpace/VFX/ScanHighlight"
             Cull Front
             ZWrite Off
             ZTest LEqual
+            // Копия меша совпадает с оригиналом пиксель в пиксель: без сдвига
+            // глубины половина граней проигрывает тест и подсветка «зудит».
+            Offset -1, -1
             Blend SrcAlpha One
 
             HLSLPROGRAM
@@ -116,6 +119,8 @@ Shader "FrostSpace/VFX/ScanHighlight"
             Cull Back
             ZWrite Off
             ZTest LEqual
+            // То же, что у контура: оверлей лежит ровно на поверхности цели.
+            Offset -1, -1
             Blend SrcAlpha One
 
             HLSLPROGRAM

@@ -39,6 +39,9 @@
 | [0029](0029-frontier-scene.md) | `Frontier` — одна открытая сцена без стриминга; бюджет WebGL и LOD | Accepted |
 | [0030](0030-frontier-map.md) | Карта `Frontier`: 2.4×2.4 км, четыре узла, свободное исследование после финала | Accepted |
 | [0031](0031-save-progress.md) | Сохранение прогресса демо: один ключ `PlayerPrefs`, «Продолжить» в меню | Accepted |
+| [0032](0032-single-train-car-asset.md) | Один ассет вагона `TrainCar`: оболочка строится один раз, нос-кабина, створки отдельно | Accepted |
+| [0033](0033-cabin-autodoor-holopanel.md) | Кабина 2,8 м, две створки с автодверью, водитель и голопанель | Accepted |
+| [0034](0034-cockpit-and-render-depth.md) | Кокпит в кабине 4,2 м, читаемая голопанель, тени и bloom в поезде | Accepted |
 
 ## Когда создавать ADR
 

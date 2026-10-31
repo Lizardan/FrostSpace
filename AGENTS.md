@@ -7,9 +7,11 @@
 с 3D-диорамой и белые переходы между сценами. Сюжет, герой и поток сцен зафиксированы
 как замысел в `docs/GAME_DESIGN.md` (робот-курьер аккумуляторов; срез «Поезд»). Выбор
 корпуса (`CharacterSetup`, три пресета), переноска в `Train`, квест «Погрузка»,
-диалоги R13, финал с камерой и титулом реализованы; `Frontier` существует как
-депо-заглушка, сюжета депо и сохранений ещё нет. `Train` — интерьер вагона, а не
-заглушка (ADR 0026, 0027, 0028). Жанр —
+диалоги R13, финал с камерой и титулом реализованы. В `Frontier` поезд того же
+масштаба въезжает в депо, боковые створки раздвигаются, выходят R13 и тележка, стоят
+охрана и R7, выдаются карта и сканер (`DP-01`…`DP-04`). Прогресс квеста сохраняется
+в один ключ `FrostSpace.Save`, а в меню есть `ПРОДОЛЖИТЬ` (ADR 0031). `Train` —
+интерьер вагона, а не заглушка (ADR 0026, 0027, 0028). Жанр —
 сюжетное приключение с доставкой груза; платформа — WebGL. Текущая реализация —
 источник истины о том, что уже есть; GDD — о том, что задумано. Не выдумывай системы,
 которых нет ни в коде, ни в GDD.
@@ -42,9 +44,9 @@ Claude Code, Codex CLI, Gemini CLI, Cursor, MiniMax Code, WorkBuddy, Freebuff и
 | Цвет | Linear |
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |
 | Play Mode | domain reload **выключен**, scene reload включён; Play тикает только при фокусе окна (`runInBackground` не заменяет) |
-| Сцены | Факт: `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `CharacterSetup` (2, выбор корпуса) → `Train` (3, интерьер, переноска, квест, диалоги R13 и финал) → `Frontier` (4, депо-заглушка) → `Game` (5, прежний уровень, вне потока). Целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`; `Game` уходит последним индексом. Переходы — только через `Core/SceneController.cs` |
+| Сцены | Факт: `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `CharacterSetup` (2, выбор корпуса) → `Train` (3, интерьер, переноска, квест, диалоги R13 и финал) → `Frontier` (4, депо: прибытие поезда, боковой проём, выход R13 и тележки, охрана, R7 и снаряжение) → `Game` (5, прежний уровень, вне потока). Целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`; `Game` уходит последним индексом. Переходы — только через `Core/SceneController.cs` |
 | Сюжет и дизайн | `docs/WORLD.md` — мир, Тишина, холод, быт; `docs/GAME_DESIGN.md` — предпосылка, три корпуса, поезд, депо, системы, ID битов. Статус: **design intent**; не выдавай его за код |
-| Код | `Core/` (3 файла), `Features/` (14 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story; планируется Map — ADR 0026–0029), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (15 файлов, 137 тестов); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
+| Код | `Core/` (3 файла), `Features/` (15 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story; планируется Map — ADR 0026–0029), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (21 файл, 181 тест); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
 | Unity MCP | пакет `com.coplaydev.unity-mcp`; сервер слушает 6400 или следующий свободный (сейчас 6401), клиент — `Tools/Unity/unity_bridge.py`, порт через `UNITY_MCP_PORT` |
 | Blender | **5.2.3 LTS**, аддон `blender_mcp` (протокол 14), порт `9876` (только GUI) |
 | Исходники ассетов | `AssetSource/` — вне git, Unity их не видит |
@@ -216,7 +218,7 @@ pwsh -File Tools/Agent/LinkAgentSkills.ps1 -Check    # только провер
 ## Структура (кратко)
 
 - `Assets/Scenes/` — единственная папка сцен; сейчас `Boot`, `MainMenu`,
-  `CharacterSetup`, `Train`, `Game`; по ADR 0026 планируется `Frontier`.
+  `CharacterSetup`, `Train`, `Frontier`, `Game`.
 - `Assets/_Project/Scripts/` — единственный корень C#: `Core/`, `Features/<Feature>/`.
 - `Assets/_Project/Editor/`, `Assets/_Project/Tests/EditMode/`.
 - `Assets/_Project/Content/{Animation,Audio,Data,Materials,Models,Prefabs,Settings,VFX}/`.

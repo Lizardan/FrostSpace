@@ -91,7 +91,8 @@ SetBool("m_SupportsTerrainHoles", false);
 
 SetBool("m_SupportsHDR", true);
 SetInt("m_HDRColorBufferPrecision", 0);   // 32 бита, дешевле 64
-SetInt("m_MSAA", 1);                      // Disabled: сглаживание даёт SMAA на камере
+SetInt("m_MSAA", 4);                      // 4x: SMAA в URP 17 живёт внутри пост-обработки,
+                                          // а она в сценах выключена — MSAA надёжнее и дешевле
 SetFloat("m_RenderScale", 1.0f);
 SetInt("m_ShEvalMode", 0);                // Auto
 
@@ -246,7 +247,7 @@ if (c4 != null) { c4.vector3Value = new UnityEngine.Vector3(0.1f, 0.25f, 0.5f); 
 QInt("shadowmaskMode", 1);       // Distance Shadowmask
 QInt("skinWeights", 4);
 QInt("anisotropicTextures", 2);  // Forced on: снег под острым углом без анизотропии мылит
-QInt("antiAliasing", 0);         // URP слушает камеру, не это поле
+QInt("antiAliasing", 4);         // 4x MSAA: согласовано с m_MSAA в URP-ассете
 QBool("softParticles", false);
 QBool("softVegetation", false);
 QBool("realtimeReflectionProbes", false);
@@ -292,12 +293,15 @@ if (gs != null)
     }
 }
 
-// ---------- 6. Камера сцены: SMAA ----------
+// ---------- 6. Камера активной сцены: MSAA вместо мёртвого SMAA ----------
+// В URP 17 SMAA записывается только внутри пост-обработки. Пока на камере
+// m_RenderPostProcessing = 0, настройка m_Antialiasing = 2 не делает ничего.
+// Держим её выключенной, а сглаживание даёт MSAA 4x из URP-ассета.
 var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
 string scenePath = scene.path;
-if (scenePath != "Assets/Scenes/Game.unity")
+if (string.IsNullOrEmpty(scenePath))
 {
-    Say("камера НЕ тронута: активная сцена " + scenePath + " (ожидалась Game)");
+    Say("камера НЕ тронута: активная сцена не сохранена");
 }
 else
 {
@@ -311,8 +315,10 @@ else
             var cso = new UnityEditor.SerializedObject(c);
             var aa = cso.FindProperty("m_Antialiasing");
             var aq = cso.FindProperty("m_AntialiasingQuality");
-            if (aa != null) aa.intValue = 2;   // SubpixelMorphologicalAntiAliasing
+            var rp = cso.FindProperty("m_RenderPostProcessing");
+            if (aa != null) aa.intValue = 0;   // SMAA выключен: работает MSAA
             if (aq != null) aq.intValue = 2;   // High
+            if (rp != null) rp.intValue = 0;   // пост-обработки в игре нет
             cso.ApplyModifiedPropertiesWithoutUndo();
             UnityEditor.EditorUtility.SetDirty(c);
             cams++;
@@ -320,7 +326,7 @@ else
     }
     UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
     UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
-    Say("SMAA на камерах: " + cams);
+    Say("камеры " + scenePath + ": MSAA, SMAA off — " + cams);
 }
 
 // ---------- 7. Удаление второго (Mobile) набора ассетов ----------

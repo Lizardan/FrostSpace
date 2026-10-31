@@ -131,6 +131,16 @@ namespace FrostSpace.Features.View
         }
 
         /// <summary>
+        /// Ставит рыскание обзора без перехода: нужен сценовым сценам, которые
+        /// сами ведут камеру, а затем возвращают вид за спину игрока.
+        /// </summary>
+        public void SetViewYaw(float yaw)
+        {
+            _yaw = yaw;
+            _snapPose = true;
+        }
+
+        /// <summary>
         /// Кинематографическая блокировка: риг перестаёт писать позу, но курсор
         /// остаётся скрытым — сценовая последовательность сама ведёт камеру.
         /// </summary>
@@ -141,6 +151,10 @@ namespace FrostSpace.Features.View
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = false;
+            }
+            else
+            {
+                LockCursor();
             }
         }
 

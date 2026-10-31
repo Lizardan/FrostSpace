@@ -1,5 +1,6 @@
 using System;
 using FrostSpace.Features.Carry;
+using FrostSpace.Features.Character;
 using FrostSpace.Features.Dialogue;
 using FrostSpace.Features.Progression;
 using UnityEngine;
@@ -7,8 +8,9 @@ using UnityEngine;
 namespace FrostSpace.Features.Quest
 {
     /// <summary>
-    /// Сценовый владелец прогресса: создаёт <see cref="QuestLog"/> и переводит в
-    /// него явные события диалога и слотов. Глобальной шины нет; ссылки заданы
+    /// Сценовый владелец прогресса: создаёт <see cref="QuestLog"/>, восстанавливает
+    /// его из сохранения, переводит в него явные события диалога и слотов и пишет
+    /// прогресс обратно (ADR 0031). Глобальной шины нет; ссылки заданы
     /// в инспекторе (ADR 0027).
     /// </summary>
     [DisallowMultipleComponent]
@@ -30,6 +32,7 @@ namespace FrostSpace.Features.Quest
         [SerializeField] private int _completionExperience = 250;
 
         private QuestLog _log;
+        private bool _restoredCompleted;
 
         /// <summary>Прогресс сцены; <c>null</c>, если ассет не назначен.</summary>
         public QuestLog Log => _log;
@@ -47,6 +50,71 @@ namespace FrostSpace.Features.Quest
                 Debug.LogError("QuestDirector: не назначен QuestAsset", this);
             if (_dialogue == null)
                 Debug.LogError("QuestDirector: не назначен DialogueController", this);
+
+            Restore();
+        }
+
+        /// <summary>
+        /// Завершённый квест из сохранения сообщаем после всех <c>OnEnable</c>:
+        /// финал вагона подписывается на <see cref="QuestCompleted"/> и должен
+        /// услышать событие, иначе «Продолжить» после сдачи квеста ведёт в тупик.
+        /// Опыт при восстановлении не начисляется — он уже был выдан в прошлой сессии.
+        /// </summary>
+        private void Start()
+        {
+            if (!_restoredCompleted)
+                return;
+
+            _restoredCompleted = false;
+            QuestCompleted?.Invoke(_log);
+        }
+
+        /// <summary>
+        /// Поднимает прогресс из ключа `FrostSpace.Save`, если сохранение наше:
+        /// тот же квест и читаемое состояние. Чужие сохранения игнорируются.
+        /// </summary>
+        private void Restore()
+        {
+            if (_log == null || _quest == null)
+                return;
+            if (!ProgressSave.TryLoad(out var data))
+                return;
+            if (!string.Equals(data.questId, _quest.QuestId, StringComparison.Ordinal))
+                return;
+            if (!ProgressSave.TryGetState(data, out var state))
+                return;
+            if (!_log.Restore(new QuestSnapshot(state, data.objective, data.progress)))
+                return;
+
+            _restoredCompleted = _log.IsCompleted;
+
+            // После восстановления сцена стоит в исходной расстановке, а счётчик
+            // уже частично закрыт (ADR 0031): добирать груз игрок начинает с того
+            // места, где остановился, — это допустимое упрощение демо.
+
+            // Финальная цель — разговор: после перезапуска R13 должен получить
+            // диалог похвалы, иначе CompleteQuest из вступления недостижим.
+            if (_log.CurrentObjective != null &&
+                _log.CurrentObjective.Kind == QuestObjectiveKind.Talk &&
+                _log.ObjectiveIndex == _log.ObjectiveCount - 1 &&
+                _speaker != null &&
+                _completedDialogue != null)
+            {
+                _speaker.SetDialogue(_completedDialogue);
+            }
+        }
+
+        /// <summary>Пишет текущий прогресс в сохранение; неактивный квест не пишется.</summary>
+        private void Persist()
+        {
+            if (_log == null || _quest == null || _log.State == QuestState.Inactive)
+                return;
+
+            var characterId = CharacterSelection.Current != null
+                ? CharacterSelection.Current.Id
+                : CharacterSelection.SavedId;
+            var scene = gameObject.scene.name;
+            ProgressSave.Write(scene, characterId, _quest.QuestId, _log.Snapshot());
         }
 
         private void OnEnable()
@@ -95,6 +163,7 @@ namespace FrostSpace.Features.Quest
                     if (!_log.Activate())
                         return;
                     CompleteTalkObjective();
+                    Persist();
                     break;
 
                 case DialogueAction.CompleteQuest:
@@ -145,6 +214,7 @@ namespace FrostSpace.Features.Quest
 
             var wasCompleted = _log.IsCompleted;
             _log.Apply(questEvent);
+            Persist();
             if (wasCompleted || !_log.IsCompleted)
                 return;
 

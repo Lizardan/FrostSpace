@@ -13,8 +13,8 @@
 | Сервер в клиенте | `unityMCP` |
 | Порт | `127.0.0.1:6400` по умолчанию; 2026-10-29 сервер поднялся на `6401`, мост берёт порт из `UNITY_MCP_PORT` |
 | Unity | 6000.6.7f1 |
-| Активная сцена | `Assets/Scenes/Train.unity` (build index 3); поток — `Boot` 0 → `MainMenu` 1 → `CharacterSetup` 2 → `Train` 3 → `Frontier` 4 → `Game` 5 |
-| Состояние | редактор запущен, компиляция завершена, EditMode-тесты 137/137, ошибок в Console нет |
+| Активная сцена | `Assets/Scenes/Frontier.unity` (build index 4); поток — `Boot` 0 → `MainMenu` 1 → `CharacterSetup` 2 → `Train` 3 → `Frontier` 4 → `Game` 5 |
+| Состояние | редактор запущен, компиляция завершена, EditMode-тесты 181/181, ошибок в Console нет |
 
 `manifest.json` ссылается на ветку `#main`, поэтому версия сервера может измениться при
 перерезолве. Hash в lockfile фиксирует текущую; имена инструментов проверяй по схеме,
@@ -33,11 +33,11 @@ MCP отдаёт канонические имена (`read_console`). Клие�
 
 | Вызов | Фактический результат |
 |---|---|
-| `manage_scene(action: "get_active")` | `Train`, `Assets/Scenes/Train.unity`, buildIndex 3 (2026-10-29) |
-| `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 1)` | Train: 16 корней (`Player`, `Main Camera`, `Sun`, `CabinLamp`, `TrainInterior`, 4×`Prop_Battery`, `Prop_GravCart`, `R13_Prospector`, `TrainMotionRig`, `TitleCard`, `TrainSequence`, `SnowfallLeft/Right`); `next_cursor: null` |
+| `manage_scene(action: "get_active")` | `Frontier`, `Assets/Scenes/Frontier.unity`, buildIndex 4 (2026-10-29) |
+| `manage_scene(action: "get_hierarchy", page_size: 50, max_depth: 1)` | Frontier: 22 корня (`Player`, `Main Camera`, `Sun`, `FrontierSnow`, `DepotPlatform`, `PlatformEdge`, 4×`AwningPost_*`, `AwningRoof`, `AwningEdge`, `DepotTrack`, `DepotTrain` с `TrainCar` (внутри `TrainBody`/`TrainSideDoorL/R`), `DepotGate`, `DepotMast`, `R16_Warden_A/B`, `R7_Drifter`, `R8_Bulwark`, `DepotLamp`, `DepotArrival`); `next_cursor: null` |
 | `manage_scene(action: "get_build_settings")` | `Boot` (0), `MainMenu` (1), `CharacterSetup` (2), `Train` (3), `Frontier` (4), `Game` (5), все enabled (2026-10-29) |
 | `read_console(action: "get", types: ["error"], count: 20)` | `Retrieved 0 log entries` после сборки уровня и тестов |
-| `run_tests` + `get_test_job` | 137 EditMode-тестов, `succeeded` (2026-10-29) |
+| `run_tests` + `get_test_job` | 181 EditMode-тест, `succeeded` (2026-10-29) |
 | `execute_code(action: "execute")` | работает, `compiler: roslyn`; видит типы проектных сборок (`FrostSpace.Features`, `FrostSpace.Editor`) |
 | `manage_asset(action: "delete")` | папка `Assets/Screenshots` удаляется после проверки (расходник, STYLE.md); на 2026-10-22 её в проекте нет |
 | `manage_camera(action: "screenshot", capture_source: "game_view")` | работает: PNG в `Assets/Screenshots/`, вид из `view_position` на `view_target`; **значения в файле линейные** — см. «Ловушки» |

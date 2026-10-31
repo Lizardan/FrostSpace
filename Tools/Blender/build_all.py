@@ -119,11 +119,11 @@ PIPELINE: dict[str, dict] = {
     "train": {
         "script": "build_train.py",
         "outputs": [
-            MODELS + "/Train/TrainInterior.fbx",
+            MODELS + "/Train/TrainCar.fbx",
             MODELS + "/Train/Prop_Battery.fbx",
             MODELS + "/Train/Prop_GravCart.fbx",
         ],
-        # Вагон снимается изнутри: снаружи видна только коробка. Пропы —
+        # Один вагон на обе сцены: снимается изнутри и снаружи. Пропы —
         # обычные четыре вида, как у транспорта.
         "previews": [_step("render_train_previews.py", "file",
                            ["--out", PREVIEWS + "/Train"])],

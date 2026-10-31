@@ -2,6 +2,7 @@ using System.Text;
 using FrostSpace.Core;
 using FrostSpace.Features.Quest;
 using FrostSpace.Features.Scan;
+using FrostSpace.Features.Story;
 using FrostSpace.Features.View;
 using TMPro;
 using UnityEngine;
@@ -38,6 +39,8 @@ namespace FrostSpace.Features.Menu
         [SerializeField] private ObjectScanner _scanner;
         [Tooltip("Квест сцены: наполняет журнал; пусто — журнал пуст")]
         [SerializeField] private QuestDirector _questDirector;
+        [Tooltip("Снаряжение игрока: карта и сканер в обзоре; пусто — строка скрыта")]
+        [SerializeField] private PlayerEquipment _equipment;
 
         [Header("Шрифт")]
         [Tooltip("Кириллический TMP-ассет; пусто — шрифт TMP по умолчанию")]
@@ -289,12 +292,37 @@ namespace FrostSpace.Features.Menu
 
         private string BuildQuestText(bool detailed)
         {
+            var builder = new StringBuilder(BuildQuestBody(detailed));
+            AppendEquipment(builder);
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Строка снаряжения живёт в обзоре и журнале: после R7 игрок видит,
+        /// что карта и сканер выданы, даже когда активных заданий нет.
+        /// </summary>
+        private void AppendEquipment(StringBuilder builder)
+        {
+            if (_equipment == null)
+                return;
+
+            builder.AppendLine().AppendLine();
+            builder.Append("СНАРЯЖЕНИЕ: ");
+            builder.Append(_equipment.HasMap ? "КАРТА" : "КАРТА — НЕТ");
+            builder.Append("   ");
+            builder.Append(_equipment.HasScanner ? "СКАНЕР" : "СКАНЕР — НЕТ");
+        }
+
+        private string BuildQuestBody(bool detailed)
+        {
             var log = _questDirector != null ? _questDirector.Log : null;
             if (log == null || log.Quest == null || log.State == QuestState.Inactive)
             {
                 return detailed
                     ? "Журнал пуст.\n\nНовых заданий нет."
-                    : "Активных заданий нет.\n\nПодойдите к R13 и нажмите E.";
+                    : _questDirector != null
+                        ? "Активных заданий нет.\n\nПодойдите к R13 и нажмите E."
+                        : "Активных заданий нет.\n\nОсмотритесь.";
             }
 
             var quest = log.Quest;

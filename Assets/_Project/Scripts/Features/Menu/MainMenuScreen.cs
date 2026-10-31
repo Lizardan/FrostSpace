@@ -1,4 +1,5 @@
 using FrostSpace.Core;
+using FrostSpace.Features.Quest;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -19,6 +20,10 @@ namespace FrostSpace.Features.Menu
     ///
     /// Кнопка «START» отдаёт переход <see cref="SceneController"/>, а не грузит сцену
     /// сама: белый занавес и удержание статуса — его ответственность.
+    ///
+    /// «ПРОДОЛЖИТЬ» (ADR 0031) читает ключ `FrostSpace.Save`: без сохранения
+    /// пункт неактивен, с сохранением грузит его сцену — квест восстановит
+    /// <see cref="QuestDirector"/> на месте. «НАЧАТЬ» стирает сохранение.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(150)]
@@ -125,6 +130,8 @@ namespace FrostSpace.Features.Menu
         private GameObject _settingsPanel;
         private Slider _volume;
         private Button[] _menuButtons;
+        private Button _continueButton;
+        private bool _hasSave;
         private MenuViewCarousel _carousel;
         private CanvasGroup _viewFade;
         private Image _viewFadeLine;
@@ -152,8 +159,11 @@ namespace FrostSpace.Features.Menu
             var busy = controller != null && controller.IsBusy;
             for (var i = 0; i < _menuButtons.Length; i++)
             {
-                if (_menuButtons[i] != null)
-                    _menuButtons[i].interactable = !busy;
+                if (_menuButtons[i] == null)
+                    continue;
+
+                // «Продолжить» гаснет без сохранения, остальные — только на переходе.
+                _menuButtons[i].interactable = !busy && (_menuButtons[i] != _continueButton || _hasSave);
             }
 
             if (busy && _settingsPanel != null && _settingsPanel.activeSelf)
@@ -221,7 +231,27 @@ namespace FrostSpace.Features.Menu
             module.AssignDefaultActions();
         }
 
+        /// <summary>Новая игра: прежнее сохранение стирается, корпус выбирается заново.</summary>
         private void OnStartPressed()
+        {
+            ProgressSave.Clear();
+            _hasSave = false;
+            LoadScene(_gameScene);
+        }
+
+        /// <summary>Возврат в сцену сохранения; прогресс квеста восстановит сцена.</summary>
+        private void OnContinuePressed()
+        {
+            if (!ProgressSave.TryLoad(out var data))
+            {
+                _hasSave = false;
+                return;
+            }
+
+            LoadScene(data.scene);
+        }
+
+        private void LoadScene(string scene)
         {
             var controller = SceneController.Instance;
             if (controller == null)
@@ -230,7 +260,7 @@ namespace FrostSpace.Features.Menu
                 return;
             }
 
-            controller.LoadScene(_gameScene);
+            controller.LoadScene(scene);
         }
 
         private void OnSettingsPressed()
@@ -342,11 +372,16 @@ namespace FrostSpace.Features.Menu
             accentRect.sizeDelta = new Vector2(64f, 3f);
             accentRect.anchoredPosition = new Vector2(96f, -352f);
 
+            _hasSave = ProgressSave.HasSave;
+            _continueButton = NewButton(
+                root, "Continue", "ПРОДОЛЖИТЬ", new Vector2(96f, -424f), OnContinuePressed);
+
             _menuButtons = new[]
             {
-                NewButton(root, "Start", "НАЧАТЬ", new Vector2(96f, -424f), OnStartPressed),
-                NewButton(root, "Settings", "НАСТРОЙКИ", new Vector2(96f, -424f - ButtonStep), OnSettingsPressed),
-                NewButton(root, "Exit", "ВЫХОД", new Vector2(96f, -424f - ButtonStep * 2f), OnExitPressed),
+                _continueButton,
+                NewButton(root, "Start", "НАЧАТЬ", new Vector2(96f, -424f - ButtonStep), OnStartPressed),
+                NewButton(root, "Settings", "НАСТРОЙКИ", new Vector2(96f, -424f - ButtonStep * 2f), OnSettingsPressed),
+                NewButton(root, "Exit", "ВЫХОД", new Vector2(96f, -424f - ButtonStep * 3f), OnExitPressed),
             };
 
             NewText(root, "Hint", _hint, 20f, _dim, TextAlignmentOptions.BottomLeft,
