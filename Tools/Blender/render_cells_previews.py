@@ -1,16 +1,20 @@
-"""Превью клеток: стык двух плиток и край дырки под депо.
+"""Превью клеток: стык двух плиток, выемка под коридором и общий вид карты.
 
 Запуск:
     blender --background --factory-startup --python Tools/Blender/render_cells_previews.py
     ... -- --out AssetSource/Previews/Cells
 
-Клетки собираются тем же билдером, что и FBX (`world_cell_parts`), и ставятся на
-свои места в осях депо — то есть картинка показывает именно стык, а не отдельный
-меш. Три вопроса, на которые числами не ответить:
+Клетки собираются теми же билдерами, что и FBX (`world_cell_parts` плюс
+`transport_parts`), и ставятся на свои места в осях депо — то есть картинка
+показывает сборку, а не отдельный меш. Четыре вопроса, на которые числами не
+ответить:
 
 * `seam` — вдоль общей стороны двух соседних клеток: нет ли просвета и ступеньки;
-* `edge` — с края авторской земли депо наружу: как выглядит граница выреза;
-* `plan` — сверху все клетки разом: где дырки и сходятся ли квадраты в сетку.
+* `corridor` — глаз на бровке там, где линия идёт по склону: путь читается
+  прорезанным в снегу или положенным на стол;
+* `depot` — косой вид на клетку депо: сквозная линия через неё проходит, а не
+  кончается в ней;
+* `map` — план всей карты с рельефом: сеть читается единой, а не лоскутной.
 
 Workbench не знает ни тумана, ни неба `SkyNightStars`, поэтому «красиво ли в
 игре» здесь не решается — это решает кадр из редактора после расстановки.
@@ -31,13 +35,16 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import level_lib  # noqa: E402
+import transport_parts as TP  # noqa: E402
 import world_cell_parts as C  # noqa: E402
 import world_layout as W  # noqa: E402
 
-#: Пара соседних клеток, у которых общая сторона не тронута квадратом депо:
-#: стык меряется именно там. (0:0) и (0:1) — станция и «Реле» по обе стороны
-#: от мировой линии z = 0, обе генерируются.
+#: Пара соседних клеток, у которых общая сторона длинная и идёт через разные
+#: формы рельефа: стык меряется именно там.
 SEAM_PAIR = ((0, 0), (0, 1))
+
+#: Клетка депо: её вид обязан показывать сквозную линию, а не тупик.
+DEPOT_CELL = (-2, -2)
 
 
 def reset() -> None:
@@ -59,6 +66,11 @@ def to_blender(ux: float, uy: float, uz: float) -> Vector:
 def add_camera(name, eye, target, lens=24.0, ortho=None):
     data = bpy.data.cameras.new(name)
     data.lens = lens
+    # Дефолтный `clip_end` камеры Blender — 100 м, а клетка в шесть раз больше.
+    # Без этой строки верхний план выходит однотонным: карта просто отрезана по
+    # дистанции, и выглядит это как «рельефа нет», хотя рельеф на месте.
+    data.clip_start = 0.5
+    data.clip_end = 40000.0
     cam = bpy.data.objects.new(name, data)
     bpy.context.scene.collection.objects.link(cam)
     cam.location = Vector(eye)
@@ -70,50 +82,47 @@ def add_camera(name, eye, target, lens=24.0, ortho=None):
     bpy.context.scene.camera = cam
 
 
-def setup_render() -> None:
+def setup_render(square: bool = False) -> None:
     scene = bpy.context.scene
-    scene.render.resolution_x = 1200
-    scene.render.resolution_y = 800
+    scene.render.resolution_x = 1400 if square else 1200
+    scene.render.resolution_y = 1400 if square else 800
     scene.render.image_settings.file_format = "PNG"
     if scene.world is None:
         scene.world = bpy.data.worlds.new("CellsSky")
     scene.world.color = (0.52, 0.63, 0.72)
     scene.render.engine = "BLENDER_WORKBENCH"
     shading = scene.display.shading
+    # Тот же приём, что у превью наследия: HDRI `paint.sl` даёт направленный
+    # свет, а полсть (`cavity`) поднимает рёбра фасеток. Против однотонного
+    # снега помогает только контраст по краям граней, поэтому полость обязательна.
     shading.light = "STUDIO"
     shading.studio_light = "paint.sl"
     shading.color_type = "MATERIAL"
-    # Свет обязателен: без него план и стык выходят однотонным серым полем, в
-    # котором нельзя ни рельефа, ни дырки. Ровно поэтому у превью наследия солнце
-    # есть, а у первой версии этого скрипта его не было.
     shading.show_shadows = True
+    shading.show_cavity = True
+    shading.cavity_type = "BOTH"
     scene.display.render_aa = "8"
 
 
-def add_sun() -> None:
-    data = bpy.data.lights.new("sun", "SUN")
-    data.energy = 3.0
-    data.angle = math.radians(2.0)
-    sun = bpy.data.objects.new("sun", data)
-    bpy.context.scene.collection.objects.link(sun)
-    sun.rotation_euler = (math.radians(50.0), math.radians(-12.0),
-                          math.radians(30.0))
-
-
 def build_all_cells(materials):
-    """Все генерируемые клетки на своих местах в осях депо."""
+    """Все клетки на своих местах в осях депо: земля плюс транспорт клетки."""
     placed = {}
     for c in W.cells():
-        if not c["content"] or W.depot_cover(c["i"], c["j"]) == "full":
-            continue
-        obj = C.build_cell(materials, c["i"], c["j"])
-        if obj is None:
-            continue
-        (cx, cz) = W.cell_center(c["i"], c["j"])
+        (i, j) = (c["i"], c["j"])
+        pieces = [C.build_cell(materials, i, j)]
+        pieces += TP.build_cell_transport(materials, i, j)
+        (cx, cz) = W.cell_center(i, j)
         pos = to_blender(cx - W.DEPOT[0], 0.0, cz - W.DEPOT[1])
-        obj.location = (pos.x, pos.y, 0.0)
-        placed["%d:%d" % (c["i"], c["j"])] = obj
+        for obj in pieces:
+            obj.location = (pos.x, pos.y, 0.0)
+        placed["%d:%d" % (i, j)] = pieces
     return placed
+
+
+def shoot(out: str, name: str) -> None:
+    bpy.context.scene.render.filepath = os.path.join(out, name + ".png")
+    bpy.ops.render.render(write_still=True)
+    print("КАДР %s" % name)
 
 
 def main() -> int:
@@ -126,12 +135,10 @@ def main() -> int:
     reset()
     materials = level_lib.make_level_materials()
     setup_render()
-    add_sun()
     os.makedirs(out, exist_ok=True)
     placed = build_all_cells(materials)
-    print("КЛЕТОК %d, из них с вырезом %d" % (
-        len(placed), sum(1 for c in W.cells()
-                        if W.depot_cover(c["i"], c["j"]) == "part" and c["content"])))
+    tris = sum(len(o.data.polygons) for pieces in placed.values() for o in pieces)
+    print("КЛЕТОК %d, трис на всей карте %d" % (len(placed), tris))
 
     # Стык двух соседних клеток: глаз на их общей стороне, взгляд вдоль неё.
     (a, b) = SEAM_PAIR
@@ -143,26 +150,37 @@ def main() -> int:
     eye = to_blender(edge_x - W.DEPOT[0], h + 1.7, edge_z - W.DEPOT[1] - 120.0)
     aim = to_blender(edge_x - W.DEPOT[0], h + 1.2, edge_z - W.DEPOT[1] + 240.0)
     add_camera("seam", eye, aim, 35.0)
-    bpy.context.scene.render.filepath = os.path.join(out, "seam.png")
-    bpy.ops.render.render(write_still=True)
+    shoot(out, "seam")
 
-    # Край дырки: с авторской земли депо наружу, вдоль мировой x = -600.
-    gx1 = W.DEPOT_GROUND[1]
-    z = W.DEPOT[1]
-    eye = to_blender(gx1 - W.DEPOT[0] - 40.0, W.world_height(gx1 - 40.0, z) + 1.7,
-                     z - W.DEPOT[1])
-    aim = to_blender(gx1 - W.DEPOT[0] + 260.0, W.world_height(gx1 + 260.0, z) + 1.0,
-                     z - W.DEPOT[1])
-    add_camera("edge", eye, aim, 30.0)
-    bpy.context.scene.render.filepath = os.path.join(out, "edge.png")
-    bpy.ops.render.render(write_still=True)
+    # Выемка: глаз на бровке там, где линия идёт поперёк склона. Если путь
+    # положен на стол, а не прорезан, это видно именно здесь.
+    ln = TP.line_of("rail")
+    s = W.project_to_line(0.0, 400.0, ln["pts"])[1]
+    (ex, ez) = W.point_at_distance(ln["pts"], s)
+    level = W.level_at(ln["table"], s)
+    eye = to_blender(ex - 13.0 - W.DEPOT[0], level + 3.2,
+                     ez - 70.0 - W.DEPOT[1])
+    aim = to_blender(ex + 2.0 - W.DEPOT[0], level + 1.0,
+                     ez + 120.0 - W.DEPOT[1])
+    add_camera("corridor", eye, aim, 35.0)
+    shoot(out, "corridor")
 
-    # План: всё разом, сверху.
-    add_camera("plan", (0.0, 0.0, 5200.0), (0.0, 0.0, 0.0), ortho=6800.0)
-    bpy.context.scene.render.filepath = os.path.join(out, "plan.png")
-    bpy.ops.render.render(write_still=True)
+    # Косой вид на клетку депо: линия через неё идёт насквозь, а не упирается.
+    (di, dj) = DEPOT_CELL
+    (dcx, dcz) = W.cell_center(di, dj)
+    eye = to_blender(dcx - W.DEPOT[0] - 520.0, W.world_height(dcx, dcz) + 260.0,
+                     dcz - W.DEPOT[1] - 520.0)
+    add_camera("depot", eye, to_blender(dcx - W.DEPOT[0], 0.0,
+                                        dcz - W.DEPOT[1] + 200.0), 24.0)
+    shoot(out, "depot")
 
-    print("PREVIEWS 3")
+    # План всей карты с рельефом: сеть читается единой, а не лоскутной.
+    setup_render(square=True)
+    add_camera("map", to_blender(0.0, 6000.0, 0.0), (0.0, 0.0, 0.0),
+               ortho=7000.0)
+    shoot(out, "map")
+
+    print("PREVIEWS 4")
     return 0
 
 

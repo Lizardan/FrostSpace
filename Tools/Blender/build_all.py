@@ -192,6 +192,19 @@ PIPELINE: dict[str, dict] = {
                            ["--out", PREVIEWS + "/Cells"])],
         "checks": [_step("check_frontier.py", "file")],
     },
+    # Транспортный слой клетки: путь и дороги, нарезанные по рёбрам решётки.
+    # Отдельный идентификатор от `cells`, потому что проверка у него своя —
+    # метла относительно стола, стык соседних кусков и фаза шпал. Артефакта в
+    # `Assets/` на этом шаге нет намеренно: геометрия линии ляжет в префаб
+    # клетки вместе с рельефом, и выгружать её дважды означало бы пересобирать
+    # 20 файлов между слоем B и слоем C.
+    "transport": {
+        "script": "build_transport.py",
+        "outputs": [],
+        "previews": [_step("render_transport_previews.py", "none",
+                           ["--out", PREVIEWS + "/Transport"])],
+        "checks": [_step("check_transport.py", "none")],
+    },
     "far": {
         "script": "build_far.py",
         "outputs": [MODELS + "/Level/Far_*.fbx"],

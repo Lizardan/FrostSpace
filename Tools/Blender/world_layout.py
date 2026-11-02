@@ -196,11 +196,19 @@ def in_bounds(x: float, z: float) -> bool:
     return BB[0] <= x <= BB[1] and BB[2] <= z <= BB[3]
 
 
-#: Шаг решётки террейна одного чанка: 600/30 = 20 делений на сторону, то есть
-#: 800 треугольников на клетку. Весь мир — ~97 тыс. трис, а не 1.36 млн, которые
-#: даёт равномерные 8 м на 6.6 км: те не влезут в бюджет ADR 0029 п.4 (1.5 млн
-#: трис в кадре) ни в одной схеме загрузки.
-TERRAIN_STEP = 30.0
+#: Шаг решётки террейна одного чанка: 600/15 = 40 делений на сторону, то есть
+#: 3200 треугольников на клетку и ~387 тыс. на весь мир. Шаг выбран не «чтобы
+#: было красиво», а поперёк главной геометрии: коридор пути с косогорами шире 20 м
+#: требует хотя бы три узла на поперечное сечение, иначе в яму попадает один узел,
+#: поверхность соединяет его с соседями прямыми палками, и разрез превращается в
+#: пологу яму в 60 м, где борта тела пути тонут. 15 м — вдвое чаще, при этом
+#: решётка остаётся равномерной по всей карте: шов чанков держится на том, что
+#: общая сторона двух соседей — один и тот же набор точек, и никакие вставки
+#: локальной детализации этот шов не срывают.
+#:
+#: Бюджет: 387 тыс. трис террейна на карту, 28 800 в памяти при радиусе 1 —
+#: ADR 0029 п.4 (1.5 млн трис в кадре) выдерживается с запасом в 50 раз.
+TERRAIN_STEP = 15.0
 
 
 def cell_tris() -> int:
@@ -594,8 +602,8 @@ def warm_distance(x: float, z: float) -> float:
     позже прочитает механика, и те же числа уйдут в ADR 0036 как границы-холод.
     """
     best = min(_rect_dist(x, z, n["rect"]) for n in NODES if n["rect"])
-    best = min(best, FL.dist_to_polyline(x, z, RAIL) - WARM_RAIL_HALF)
-    for pts in ROADS:
+    best = min(best, FL.dist_to_polyline(x, z, RAIL_LINE) - WARM_RAIL_HALF)
+    for pts in ROAD_LINES:
         best = min(best, FL.dist_to_polyline(x, z, pts) - WARM_ROAD_HALF)
     return best
 
@@ -790,14 +798,38 @@ def world_height(x: float, z: float) -> float:
     волны дают под полом узла десятки сантиметров, и робот, стоящий на плите,
     либо проваливается в неё, либо висит над ней. Внутри границ узла — ровно
     `PAD_LEVEL`, снаружи за юбкой — ровно плита.
+
+    Порядок здесь важен и он ровно тот, к которому пришло депо: сначала плита,
+    потом коридор транспорта, потом площадки узлов. Коридор до площадок, потому
+    что дорога приходит к узлу и должна коснуться его пола, а не перерезать
+    уже плоскую площадь. Площадки после коридора, потому что двор узла — хозяин
+    своей земли: путь, входящий в площадку, кончается на её полу, а не прорезает
+    его обратно до своей отметки.
     """
-    h = plate_height(x, z)
+    h = transport_cut(x, z, plate_height(x, z))
     for (n, level, skirt) in _PADS:
         d = _rect_dist(x, z, n["rect"])
         if d >= skirt:
             continue
         h += (level - h) * (1.0 - smooth01(0.0, skirt, d))
     return h
+
+
+def pad_blend(x: float, z: float) -> float:
+    """Доля, которой площадка узла хозяин в точке: 0 — чистая плита или коридор.
+
+    Отдельная функция нужна не генератору, а проверке: коридор проходит через
+    тёплые узлы, и внутри их площадки пол узла перекрывает стол намеренно
+    (двор обязан быть плоским). Мерить «выемка совпала со столом» надо там, где
+    площадки нет, иначе проверка падала бы на собственном порядке слоёв.
+    """
+    best = 0.0
+    for (n, _level, skirt) in _PADS:
+        d = _rect_dist(x, z, n["rect"])
+        if d >= skirt:
+            continue
+        best = max(best, 1.0 - smooth01(0.0, skirt, d))
+    return best
 
 
 def in_crack(x: float, z: float) -> bool:
@@ -807,13 +839,101 @@ def in_crack(x: float, z: float) -> bool:
 
 # ---------------------------------------------------------------- чанки
 
+#: Шаг, которым ломаная превращается в список клеток. Концы сегментов для
+#: этого не годятся: сегмент депо→станция стоит концами в двух клетках, а
+#: на деле проходит через четыре, и «клетка занята линией» пришлось бы
+#: решать на глаз. Шаг — метр: скруглённый угол заходит в угловую клетку
+#: на пару метров, и при шаге в 5 м такая клетка терялась — кусок линии в
+#: ней есть, а в списке её нет, и длина кусков не сходилась с длиной трассы.
+LINE_SAMPLE = 1.0
+
+
+def line_cells(pts, step: float = LINE_SAMPLE):
+    """Клетки, по которым идёт ломаная, в порядке следования и без повторов."""
+    out = []
+    for (a, b) in zip(pts, pts[1:]):
+        d = math.hypot(b[0] - a[0], b[1] - a[1])
+        n = max(1, int(d / step + 0.5))
+        for k in range(n + 1):
+            t = k / n
+            (i, j) = cell_of(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+            if CELL_MIN <= i <= CELL_MAX and CELL_MIN <= j <= CELL_MAX:
+                if not out or out[-1] != (i, j):
+                    out.append((i, j))
+    return out
+
+
+def _clip_t(a, b, rect):
+    """Liang-Barsky: доля сегмента, лежащая внутри прямоугольника клеток."""
+    (x0, x1, z0, z1) = rect
+    (dx, dz) = (b[0] - a[0], b[1] - a[1])
+    (t0, t1) = (0.0, 1.0)
+    for (p, q) in ((-dx, a[0] - x0), (dx, x1 - a[0]),
+                   (-dz, a[1] - z0), (dz, z1 - a[1])):
+        if p == 0.0:
+            if q < 0.0:
+                return None
+        else:
+            r = q / p
+            if p < 0.0:
+                if r > t1:
+                    return None
+                if r > t0:
+                    t0 = r
+            elif r < t0:
+                return None
+            elif r < t1:
+                t1 = r
+    if t1 < t0:
+        return None
+    return (t0, t1)
+
+
+def _lerp(a, b, t):
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+
+
+def line_spans(pts, i: int, j: int):
+    """Куски ломаной внутри клетки: список полилиний не короче двух точек.
+
+    Куски режутся ровно по рёбрам решётки, поэтому соседняя клетка получает
+    тот же конец: обе стороны держат одну точку, и рельс на стыке не может
+    разойтись «на глаз» — это проверяет инвариант «стыки линии».
+    """
+    rect = cell_bounds(i, j)
+    spans = []
+    cur = []
+    for (a, b) in zip(pts, pts[1:]):
+        cut = _clip_t(a, b, rect)
+        if cut is None:
+            if len(cur) >= 2:
+                spans.append(cur)
+            cur = []
+            continue
+        (pa, pb) = (_lerp(a, b, cut[0]), _lerp(a, b, cut[1]))
+        if cur:
+            gap = math.hypot(pa[0] - cur[-1][0], pa[1] - cur[-1][1])
+            if gap > 1e-6:
+                if len(cur) >= 2:
+                    spans.append(cur)
+                cur = [pa]
+        else:
+            cur = [pa]
+        if math.hypot(pb[0] - cur[-1][0], pb[1] - cur[-1][1]) > 1e-9:
+            cur.append(pb)
+    if len(cur) >= 2:
+        spans.append(cur)
+    return spans
+
+
 def content_cells():
-    """Клетки карты, где что-то стоит: узел, якорь или конец линии.
+    """Клетки карты, где что-то стоит: узел, якорь или кусок линии.
 
     Остальные — пустошь: общая заготовка террейна, а не авторская сцена. Отсюда
-    честное число: 121 клетка — это не 121 сцена в сборке. За краем карты
-    считать нечего: линия приходит из-за границы, и её клетка (+/-6) вне сетки —
-    иначе «клеток с контентом» расходилось бы с тем, что перечисляет `cells()`.
+    честное число: 121 клетка — это не 121 сцена в сборке. Линия учитывается
+    образцами (`line_cells`), а не концами сегментов: иначе клетка, через
+    которую путь проходит насквозь, считалась бы пустой, и наполнение её
+    обошла бы стороной.
     """
     out = set()
 
@@ -828,9 +948,9 @@ def content_cells():
         add(a["x"], a["z"])
     for r in RUINS:
         add(r["x"], r["z"])
-    for pts in (RAIL,) + ROADS:
-        for (x, z) in pts:
-            add(x, z)
+    for pts in (RAIL_LINE,) + tuple(ROAD_LINES):
+        for (i, j) in line_cells(pts):
+            out.add("%d:%d" % (i, j))
     return out
 
 
@@ -867,35 +987,13 @@ def resident_tris(radius: int = 1) -> int:
     return side * side * cell_tris()
 
 
-#: Квадрат авторской земли депо в мировых координатах: (x0, x1, z0, z1). Это
-#: `frontier_layout.GROUND_SIZE` вокруг нуля сцены, то есть 1200 м и ровно
-#: ±600 м от депо. Клетки, которые в него попадают, своей землёй не обзаводятся:
-#: там уже лежит меш с шагом 0,94 м у двора, а не 30 м.
-DEPOT_GROUND = (DEPOT[0] - FL.GROUND_SIZE * 0.5, DEPOT[0] + FL.GROUND_SIZE * 0.5,
-                DEPOT[1] - FL.GROUND_SIZE * 0.5, DEPOT[1] + FL.GROUND_SIZE * 0.5)
-
-
-def depot_cover(i: int, j: int) -> str:
-    """Накрыта ли клетка квадратом депо: `full`, `part` или `none`.
-
-    Различать надо именно так, а не «пересекается/нет»: клетка целиком под
-    авторской землёй не генерируется вовсе, а клетка, у которой квадрат съедает
-    угол, генерируется с дыркой по его границе. Границы квадрата кратны и
-    стороне клетки, и шагу решётки (`BLK/2` и `TERRAIN_STEP`), так что край
-    дырки попадает ровно на узел сетки — резать по нему можно без дробных
-    квадов и без щели.
-    """
-    (x0, x1, z0, z1) = cell_bounds(i, j)
-    (gx0, gx1, gz0, gz1) = DEPOT_GROUND
-    if x0 >= gx1 or x1 <= gx0 or z0 >= gz1 or z1 <= gz0:
-        return "none"
-    if x0 >= gx0 and x1 <= gx1 and z0 >= gz0 and z1 <= gz1:
-        return "full"
-    return "part"
+#: Квадрат авторской земли депо и его «не генерировать клетку под ним» убраны:
+#: с тех пор как депо стало обычным чанком клетки (−2,−2), исключений в сетке
+#: больше нет. История решения — ADR 0036, п. 2.
 
 
 def cell_items(i: int, j: int):
-    """Что стоит в клетке: узлы, руины, якоря и вершины линий, её занятые.
+    """Что стоит в клетке: узлы, руины, якоря и куски линий, её занятые.
 
     Хозяин ищется через `cell_of`, а не «попала ли точка в границы»: границы
     клеток общие, и угловая точка (`far_s` стоит ровно в углу) по инклюзивным
@@ -910,9 +1008,9 @@ def cell_items(i: int, j: int):
            "ruins": [r["k"] for r in RUINS if mine(r["x"], r["z"])],
            "anchors": [a["k"] for a in ANCHORS if mine(a["x"], a["z"])],
            "lines": []}
-    for (name, pts) in [("rail", RAIL)] + [("road %d" % k, p)
-                                           for k, p in enumerate(ROADS)]:
-        if any(mine(x, z) for (x, z) in pts):
+    for (name, pts) in [("rail", RAIL_LINE)] + [("road %d" % k, p)
+                                           for k, p in enumerate(ROAD_LINES)]:
+        if (i, j) in line_cells(pts):
             out["lines"].append(name)
     return out
 
@@ -925,6 +1023,266 @@ def leg(a: tuple[float, float], b: tuple[float, float]) -> float:
 
 def depot_to_station() -> float:
     return leg(DEPOT, (0.0, 0.0))
+
+
+# ---------------------------------------------------------------- транспортный стол
+
+#: Стол — продольная отметка, по которой режется коридор: у линии есть свой
+#: профиль, и рельеф обязан ему уступить, а не наоборот. Порядок стоил одного
+#: найденного дефекта (макрельеф поднял дно уже прорезанной выемки), поэтому он
+#: больше не договорённость, а функция: генератор земли и генератор пути
+#: считают одну и ту же отметку и не могут разойтись.
+GRADE_SAMPLE = 25.0        # шаг продольного профиля вдоль линии, м
+
+#: База сглаживания и предел уклона. Рельсовая линия держит 4 %: при 2 % стол
+#: уходит от плиты на 19 м, и вместо прорезанного в снегу пути получается
+#: каньон со стенами выше роста. Дорогам хватает 6 % — по плите они отклоняются
+#: на метр, и обочина остаётся обочиной, а не подпорной стенкой.
+RAIL_GRADE = (400.0, 0.04)
+ROAD_GRADE = (200.0, 0.06)
+
+#: Ширина выемки: до `flat` — плоское дно стола, от него до `full` — откос, за
+#: ним плита как есть. Рельсовый коридор повторяет принятый двор депо
+#: (4,3 и 6,0 м из `frontier_layout`), чтобы путь на новой карте выглядел тем
+#: же путём, который принят кадром прибытия.
+RAIL_CUT = (12.0, 22.0)
+ROAD_CUT = (14.0, 26.0)
+
+#: Насколько стол имеет право уйти от плиты: глубже шести метров стенка выемки
+#: перестаёт быть заносом и становится забоем, а это уже не та карта.
+CUT_DEV_MAX = 6.0
+
+
+def project_to_line(x: float, z: float, pts):
+    """Ближайшая точка ломаной: (расстояние, путь до неё, направление сегмента)."""
+    best = None
+    s = 0.0
+    for (a, b) in zip(pts, pts[1:]):
+        (dx, dz) = (b[0] - a[0], b[1] - a[1])
+        ln = math.hypot(dx, dz)
+        t = 0.0 if ln == 0.0 else max(0.0, min(1.0,
+                             ((x - a[0]) * dx + (z - a[1]) * dz) / (ln * ln)))
+        d = math.hypot(x - (a[0] + dx * t), z - (a[1] + dz * t))
+        if best is None or d < best[0]:
+            best = (d, s + ln * t, (dx / ln, dz / ln) if ln else (0.0, 1.0))
+        s += ln
+    return best
+
+
+def point_at_distance(pts, s: float):
+    """Точка ломаной на пути `s` от начала."""
+    for (a, b) in zip(pts, pts[1:]):
+        ln = math.hypot(b[0] - a[0], b[1] - a[1])
+        if s <= ln:
+            t = s / ln if ln else 0.0
+            return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        s -= ln
+    return pts[-1]
+
+
+def _smooth_profile(ys, base: float) -> list:
+    """Сглаживание по продольному пути: ядро cos² на базе `base` с обоих концов."""
+    half = base * 0.5
+    out = []
+    for i in range(len(ys)):
+        (ws, acc) = (0.0, 0.0)
+        for j in range(len(ys)):
+            d = abs(ys[j][0] - ys[i][0])
+            if d > half:
+                continue
+            w = math.cos(d / half * math.pi * 0.5) ** 2
+            ws += w
+            acc += w * ys[j][1]
+        out.append(acc / ws)
+    return out
+
+
+def _limit_grade(ys, ds: float, gmax: float, passes: int = 6) -> None:
+    """Уложить профиль в предел уклона: двусторонний проход с ограничением шага.
+
+    Сглаживание убериает короткие волны, но не спорит с длинным склоном плиты:
+    там нужен именно потолок уклона, иначе стол на 5 км даёт 5 % там, где
+    рельсовому пути положено 4. Проход туда и обратно по несколько раз сходится
+    к профилю, который круче предела быть не может.
+    """
+    for _ in range(passes):
+        for i in range(1, len(ys)):
+            ys[i] = min(max(ys[i], ys[i - 1] - gmax * ds), ys[i - 1] + gmax * ds)
+        for i in range(len(ys) - 2, -1, -1):
+            ys[i] = min(max(ys[i], ys[i + 1] - gmax * ds), ys[i + 1] + gmax * ds)
+
+
+def grade_table(pts, base: float, gmax: float, step: float = GRADE_SAMPLE):
+    """Продольный профиль стола: путь от начала и отметка в каждой точке."""
+    acc = [(0.0, plate_height(*pts[0]))]
+    s = 0.0
+    for (a, b) in zip(pts, pts[1:]):
+        ln = math.hypot(b[0] - a[0], b[1] - a[1])
+        n = max(1, int(ln / step + 0.5))
+        for k in range(1, n + 1):
+            t = k / n
+            s += ln / n
+            acc.append((s, plate_height(a[0] + (b[0] - a[0]) * t,
+                                        a[1] + (b[1] - a[1]) * t)))
+    ys = _smooth_profile(acc, base)
+    _limit_grade(ys, acc[1][0] - acc[0][0], gmax)
+    return list(zip([p[0] for p in acc], ys))
+
+
+def level_at(table, s: float) -> float:
+    """Отметка стола на пути `s`: линейная интерполяция по таблице профиля."""
+    if s <= table[0][0]:
+        return table[0][1]
+    if s >= table[-1][0]:
+        return table[-1][1]
+    for i in range(len(table) - 1):
+        (s0, y0) = table[i]
+        (s1, y1) = table[i + 1]
+        if s0 <= s <= s1:
+            t = 0.0 if s1 == s0 else (s - s0) / (s1 - s0)
+            return y0 + (y1 - y0) * t
+    return table[-1][1]
+
+
+#: Скругление углов трассы: расстояние, на котором колено подходит к вершине
+#: ломаной, и число точек дуги. Это не косметика: метла шириной 15,2 м на угле
+#: в 36° даёт клин наружу на 20 м — «клюв», которого у железной дороги быть не
+#: может, потому что у неё повороты имеют радиус, а не вершину.
+RAIL_FILLET = 120.0
+ROAD_FILLET = 80.0
+FILLET_SAMPLES = 8
+
+
+def fillet(pts, dist: float, samples: int = FILLET_SAMPLES):
+    """Центральная линия трассы: вершины ломаной заменены плавными дугами.
+
+    Дуга — квадратичная кривая Безье между касательными точками через саму
+    вершину: касательная непрерывна, радиус получается из угла и длины колена,
+    и ни одного трезубого клина метла не рисует. От вершины отказываться нельзя
+    — она и есть трасса, узлы стоят на ней, — поэтому касательные точки берутся
+    на `dist` вдоль обоих колен, а на коротких коленах урезаются до трети,
+    чтобы дуга не съела соседний угол.
+    """
+    if len(pts) < 3:
+        return list(pts)
+    out = [tuple(pts[0])]
+    for k in range(1, len(pts) - 1):
+        (ax, az) = out[-1]
+        (vx, vz) = pts[k]
+        (bx, bz) = pts[k + 1]
+        la = math.hypot(vx - ax, vz - az) or 1.0
+        lb = math.hypot(bx - vx, bz - vz) or 1.0
+        ta = min(dist, la * 0.35)
+        tb = min(dist, lb * 0.35)
+        a = (vx - (vx - ax) / la * ta, vz - (vz - az) / la * ta)
+        b = (vx + (bx - vx) / lb * tb, vz + (bz - vz) / lb * tb)
+        out.append(a)
+        for n in range(1, samples):
+            t = n / samples
+            out.append(((1 - t) ** 2 * a[0] + 2 * t * (1 - t) * vx + t ** 2 * b[0],
+                        (1 - t) ** 2 * a[1] + 2 * t * (1 - t) * vz + t ** 2 * b[1]))
+        out.append(b)
+    out.append(tuple(pts[-1]))
+    return out
+
+
+#: Центральные линии, по которым считается стол, клетки и тепло. Объявленные
+#: ломаные `RAIL`/`ROADS` остаются проектной трассой: узлы и инварианты говорят
+#: про них, а геометрия строится по скруглённой.
+RAIL_LINE = fillet(list(RAIL), RAIL_FILLET)
+ROAD_LINES = [fillet(list(p), ROAD_FILLET) for p in ROADS]
+
+
+def _transport_lines():
+
+    """Описание транспортных линий: трасса, габарит выемки и свой профиль."""
+    out = [{"k": "rail", "kind": "rail", "pts": list(RAIL_LINE), "cut": RAIL_CUT,
+            "warm": WARM_RAIL_HALF, "grade": RAIL_GRADE}]
+    for (n, pts) in enumerate(ROAD_LINES):
+        out.append({"k": "road %d" % n, "kind": "road", "pts": list(pts),
+                    "cut": ROAD_CUT, "warm": WARM_ROAD_HALF, "grade": ROAD_GRADE})
+    for ln in out:
+        (base, gmax) = ln["grade"]
+        ln["table"] = grade_table(ln["pts"], base, gmax)
+        ln["len"] = ln["table"][-1][0]
+        m = ln["cut"][1] + 1.0
+        xs = [p[0] for p in ln["pts"]]
+        zs = [p[1] for p in ln["pts"]]
+        ln["bbox"] = (min(xs) - m, max(xs) + m, min(zs) - m, max(zs) + m)
+    return out
+
+
+#: Считается один раз при импорте: профиль линии — это производная плиты, и
+#: пересчитывать его на каждую вершину террейна нельзя.
+TRANSPORT = _transport_lines()
+
+
+def transport_floor(x: float, z: float):
+    """Стол под точкой: линия, расстояние до оси, путь, отметка и доля хозяина.
+
+    Хозяин — та линия, чей откос в этой точке круче перехватывает плиту (то есть
+    с максимальной долей), а не ближайшая по оси: там, где дорога входит в
+    путевой коридор, решение должен принимать более широкий коридор.
+    """
+    best = None
+    for ln in TRANSPORT:
+        (x0, x1, z0, z1) = ln["bbox"]
+        if x < x0 or x > x1 or z < z0 or z > z1:
+            continue
+        (d, s, _dir) = project_to_line(x, z, ln["pts"])
+        mask = 1.0 - smooth01(ln["cut"][0], ln["cut"][1], d)
+        if mask <= 0.0:
+            continue
+        if best is None or mask > best[0]:
+            best = (mask, ln, d, s)
+    if best is None:
+        return None
+    (mask, ln, d, s) = best
+    return {"k": ln["k"], "kind": ln["kind"], "dist": d, "s": s,
+            "level": level_at(ln["table"], s), "mask": mask}
+
+
+def transport_cut(x: float, z: float, h: float) -> float:
+    """Высота точки с учётом стола: коридор режет рельеф, а не рельеф коридор."""
+    f = transport_floor(x, z)
+    if f is None:
+        return h
+    return h + (f["level"] - h) * f["mask"]
+
+
+def line_crossings(pts, step: float = 1.0):
+    """Границы решётки, которые линия переходит: (точка, клетка до, клетка после).
+
+    Точка ищется половинным делением, а не «ближайшим образцом»: на 1 м шага
+    погрешность по оси — полметра, а стык двух чанков обязан сойтись до
+    миллиметра, иначе на границе клетки вступит ступенька.
+    """
+    hits = []
+    prev = None
+    for (a, b) in zip(pts, pts[1:]):
+        ln = math.hypot(b[0] - a[0], b[1] - a[1])
+        n = max(1, int(ln / step + 0.5))
+        for k in range(n + 1):
+            t = k / n
+            p = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+            c = cell_of(*p)
+            if prev is not None and prev[1] != c:
+                (p0, c0) = prev
+                (lo, hi) = (0.0, 1.0)
+                for _ in range(60):
+                    mid = 0.5 * (lo + hi)
+                    pm = (p0[0] + (p[0] - p0[0]) * mid,
+                          p0[1] + (p[1] - p0[1]) * mid)
+                    if cell_of(*pm) == c0:
+                        lo = mid
+                    else:
+                        hi = mid
+                pm = (p0[0] + (p[0] - p0[0]) * hi,
+                      p0[1] + (p[1] - p0[1]) * hi)
+                hits.append((pm, c0, c))
+            prev = (p, c)
+    return hits
+
 
 
 # ---------------------------------------------------------------- инварианты
@@ -1164,23 +1522,98 @@ def invariants():
     homeless = ["%s %s" % k for k in expected if k not in owners]
     # Ключи классов пересекаются (станция — и узел, и якорь с одним именем),
     # поэтому «двух хозяев» значит две РАЗНЫЕ клетки у одной записи.
+    # Клетка как контейнер. Раньше сюда входил ещё один пункт — квадрат авторской
+    # земли депо и его «не генерировать клетку под ним». С тех пор как депо стало
+    # обычным чанком, исключения кончились: все 121 клетка генерируются одинаково,
+    # и двух слоёв снега в одной точке больше нет по построению, а не по оговорке.
     doubled = ["%s %s -> %s" % (k[0], k[1], sorted(owners[k]))
                for k in owners if len(owners[k]) > 1]
-    cover = [depot_cover(c["i"], c["j"]) for c in cs]
-    full = sorted("%d:%d" % (c["i"], c["j"]) for c in cs
-                  if depot_cover(c["i"], c["j"]) == "full")
-    part = sorted("%d:%d" % (c["i"], c["j"]) for c in cs
-                  if depot_cover(c["i"], c["j"]) == "part")
-    step = TERRAIN_STEP
-    grid_ok = all(abs(v % step) < 1e-6 for v in DEPOT_GROUND)
-    out.append(("клетки: у каждого объекта есть хозяин, земля не накладывается",
-                not homeless and not doubled and grid_ok and len(full) == 1,
-                "объектов %d, без клетки: %s, с двумя: %s; депо накрывает %d "
-                "клеток целиком (%s) и %d частично; границы квадрата по шагу "
-                "решётки (%.0f м): %s" % (
+    out.append(("клетки: у каждого объекта есть хозяин, у каждой клетки есть земля",
+                not homeless and not doubled,
+                "объектов %d, без клетки: %s, с двумя: %s; клеток генерируется "
+                "%d из %d, исключений нет" % (
                     len(expected), ", ".join(homeless) or "нет",
-                    ", ".join(doubled) or "нет", len(full), ", ".join(full),
-                    len(part), step, "ровные" if grid_ok else "ДРОБНЫЕ")))
+                    ", ".join(doubled) or "нет", len(cs), ncells * ncells)))
+
+    # Линии режутся по клеткам, и это то место, где чанки обязаны сойтись числом,
+    # а не «на глаз по превью». Стык считается отдельно от генератора: точка
+    # перехода ищется половинным делением по самой трассе, а потом проверяется,
+    # что оба куска (у каждой из двух клеток) заканчиваются ровно в ней и что
+    # она лежит на линии решётки. Плюс длина: сумма кусков обязана давать длину
+    # трассы — иначе где-то либо зазор, либо нахлёст, который на 6 км не видно.
+    joints = 0
+    off_grid = []
+    open_joints = []
+    length_gap = []
+    termini = []
+    for ln in TRANSPORT:
+        pts = ln["pts"]
+        for (p, ca, cb) in line_crossings(pts):
+            # Стык на самом конце ломаной — это не стык двух чанков, а обрыв
+            # линии. Требовать от него куска соседней клетки нельзя; зато можно
+            # потребовать, чтобы он стоял ровно на линии решётки: тогда следующий
+            # чанк продолжит трассу без шва, а не начнёт её в тридцати метрах
+            # от конца рельса.
+            last = min(leg(p, pts[0]), leg(p, pts[-1]))
+            if last < 1e-6:
+                termini.append("%s на границе %d:%d" % (ln["k"], ca[0], ca[1]))
+                if _grid_dist(p[0]) > 1e-6 and _grid_dist(p[1]) > 1e-6:
+                    off_grid.append("%s конец (%.0f;%.0f)" % (ln["k"], p[0], p[1]))
+                continue
+            joints += 1
+            if _grid_dist(p[0]) > 1e-6 and _grid_dist(p[1]) > 1e-6:
+                off_grid.append("%s (%.0f;%.0f)" % (ln["k"], p[0], p[1]))
+            for c in (ca, cb):
+                ends = []
+                for sp in line_spans(pts, c[0], c[1]):
+                    ends += [sp[0], sp[-1]]
+                if not any(math.hypot(p[0] - e[0], p[1] - e[1]) < 1e-6
+                           for e in ends):
+                    open_joints.append("%s в %d:%d" % (ln["k"], c[0], c[1]))
+        total = 0.0
+        for (i, j) in line_cells(pts):
+            for sp in line_spans(pts, i, j):
+                total += sum(leg(a, b) for (a, b) in zip(sp, sp[1:]))
+        if abs(total - ln["len"]) > 0.05:
+            length_gap.append("%s: куски %.1f против %.1f" % (ln["k"], total, ln["len"]))
+    out.append(("линия: куски клеток сходятся на рёбрах решётки",
+                not off_grid and not open_joints and not length_gap,
+                "линий %d, стыков %d; не на решётке: %s; без куска клетки: %s; "
+                "длина кусков не сходится: %s; обрывов на границе клетки: %s" % (
+                    len(TRANSPORT), joints, ", ".join(off_grid) or "нет",
+                    ", ".join(open_joints) or "нет",
+                    ", ".join(length_gap) or "нет",
+                    ", ".join(termini) or "нет")))
+
+    # Продольный профиль стола: уклон и то, насколько он уходит от плиты. Это
+    # не эстетика — 19-метровый уход есть ровно там, где рельсовая линия
+    # пересекает долгую волну макрельефа, и без предела уклона путь превратился
+    # бы в каньон со стенами, которые никто не заказывал.
+    over_grade = []
+    over_depth = []
+    gmax_seen = {}
+    for ln in TRANSPORT:
+        tb = ln["table"]
+        ds = tb[1][0] - tb[0][0]
+        g = max(abs(tb[i + 1][1] - tb[i][1]) / ds for i in range(len(tb) - 1))
+        dev = max(abs(plate_height(*point_at_distance(ln["pts"], s)) - y)
+                  for (s, y) in tb)
+        gmax_seen[ln["kind"]] = max(gmax_seen.get(ln["kind"], 0.0), g)
+        if g > ln["grade"][1] + 1e-3:
+            over_grade.append("%s %.1f%%" % (ln["k"], g * 100.0))
+        if dev > CUT_DEV_MAX:
+            over_depth.append("%s %.1f м" % (ln["k"], dev))
+    out.append(("стол: уклон линии и глубина выемки в пределах",
+                not over_grade and not over_depth,
+                "уклон: рельсовая %.2f%% (норма %.1f%%), дороги %.2f%% (норма "
+                "%.1f%%); уход от плиты максимум %.1f м (норма %.1f м); "
+                "превышений: %s" % (
+                    gmax_seen["rail"] * 100.0, RAIL_GRADE[1] * 100.0,
+                    gmax_seen["road"] * 100.0, ROAD_GRADE[1] * 100.0,
+                    max(abs(plate_height(*point_at_distance(ln["pts"], s)) - y)
+                        for ln in TRANSPORT for (s, y) in ln["table"]),
+                    CUT_DEV_MAX,
+                    ", ".join(over_grade + over_depth) or "нет")))
 
     in_bowl = [a["k"] for a in ANCHORS
                if math.hypot(*to_frontier(a["x"], a["z"])) < FL.RIDGE_R
@@ -1357,12 +1790,11 @@ def manifest():
                  "padSkirt": PAD_SKIRT, "levels": dict(PAD_LEVEL)},
         "repers": [{"n": n, "m": m} for (n, m) in SCALE_REPERS],
         "cellsContent": sorted(content_cells()),
-        # Полный разбор по клеткам (`cells()`, `depot_cover`, `cell_items`) в
-        # JSON не едет: рантайму нужна арифметика сетки (WorldGrid) и список
-        # клеток с контентом, а кто где лежит — дело генератора мешей и
-        # инвариантов. Пачка из 121 записи добавила бы 5 КБ в файл только для
-        # того, чтобы сценой никто не воспользовался.
-        "depotGround": list(DEPOT_GROUND),
+        # Полный разбор по клеткам (`cells()`, `cell_items`) и транспортный стол
+        # в JSON не едут: рантайму нужна арифметика сетки (WorldGrid) и список
+        # клеток с контентом, а кто где лежит и на какой отметке — дело
+        # генератора мешей и инвариантов. Пачка из 121 записи добавила бы 5 КБ в
+        # файл только для того, чтобы сценой никто не воспользовался.
     }
 
 

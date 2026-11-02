@@ -182,6 +182,48 @@ namespace FrostSpace.Tests
         /// Python изменит форму записи или порог, разойдётся здесь, а не в кадре,
         /// где «что-то не то с небом» чинят правкой тумана вслепую.
         /// </summary>
+        /// <summary>
+        /// Цепочка, которой живёт резидентность: точка сцены -> мир -> клетка.
+        ///
+        /// Каждый её кусок проверен и сам по себе, но вместе они ломаются молча:
+        /// если забыть перевод осей, игрок во дворе депо попадёт в клетку (0,0)
+        /// вместо (-2,-2), и включатся не те девять клеток — посреди карты будет
+        /// дыра, а в логи нечего читать. Поэтому здесь ровно то, что делает
+        /// <c>WorldResidency</c>, и ровно на тех точках, где ошибка видна.
+        /// </summary>
+        [Test]
+        public void ResidencyChainPutsTheDepotYardInItsOwnCell()
+        {
+            var layout = ParseReal();
+            var grid = layout.Grid;
+
+            var depotCell = grid.CellOf(layout.ToWorld(Vector2.zero));
+            Assert.That(depotCell, Is.EqualTo(new Vector2Int(-2, -2)),
+                "двор депо обязан лежать в клетке (-2,-2), а не в центре мира");
+
+            var cells = new List<Vector2Int>();
+            grid.AddResidentCells(depotCell, 1, cells);
+            Assert.That(cells.Count, Is.EqualTo(9), "радиус 1 = девять клеток");
+
+            var seen = new HashSet<Vector2Int>(cells);
+            for (var i = -3; i <= -1; i++)
+            {
+                for (var j = -3; j <= -1; j++)
+                {
+                    Assert.That(seen, Contains.Item(new Vector2Int(i, j)),
+                        "клетка " + i + ":" + j + " не попала в окрестность депо");
+                }
+            }
+
+            // Три тысячи метров к северу от двора — уже совсем другая окрестность,
+            // и она обязана сдвинуться вместе с игроком, а не остаться депо.
+            var north = grid.CellOf(layout.ToWorld(new Vector2(0f, 3000f)));
+            Assert.That(north, Is.EqualTo(new Vector2Int(-2, 3)),
+                "смещение по осям сцены не переведено в мир");
+            Assert.That(new HashSet<Vector2Int>(cells).Contains(north), Is.False,
+                "окрестность депо не должна включать клетку в 3 км к северу");
+        }
+
         [Test]
         public void FarLayerKeepsAngularSizeAndContrastGate()
         {
