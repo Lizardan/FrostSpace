@@ -12239,11 +12239,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1491490876}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!137 &1631612972 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 2804839555605525824, guid: e998b7f12bba72040aeab8b99e7dec60, type: 3}
-  m_PrefabInstance: {fileID: 2070505281}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1656232488
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13491,7 +13486,6 @@ GameObject:
   - component: {fileID: 1786677825}
   - component: {fileID: 1786677827}
   - component: {fileID: 1786677826}
-  - component: {fileID: 1786677830}
   - component: {fileID: 1786677829}
   - component: {fileID: 1786677828}
   - component: {fileID: 1786677831}
@@ -13607,36 +13601,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.PlayerLocalView
   _rig: {fileID: 1896362467}
   _headBone: {fileID: 246975044}
-  _silhouette: {fileID: 1786677830}
+  _silhouette: {fileID: 0}
   _isLocalPlayer: 1
   _headCollapse: 0.001
---- !u!114 &1786677830
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1786677824}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886bd75b61eaf234dbfeaaf106e2c726, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.PlayerSilhouette
-  _view: {fileID: 1896362462}
-  _target: {fileID: 1786677825}
-  _rig: {fileID: 1896362467}
-  _source: {fileID: 1631612972}
-  _shader: {fileID: 4800000, guid: 6fb969c3b23ea9349908979be03aa530, type: 3}
-  _color: {r: 0.3, g: 0.9, b: 1, a: 0.55}
-  _intensity: 1.6
-  _targetOffset: {x: 0, y: 0.95, z: 0}
-  _bodyRadius: 0.45
-  _occluders:
-    serializedVersion: 2
-    m_Bits: 183
-  _fadeSeconds: 0.16
-  _holdSeconds: 0.1
-  _isLocalPlayer: 1
 --- !u!114 &1786677831
 MonoBehaviour:
   m_ObjectHideFlags: 0

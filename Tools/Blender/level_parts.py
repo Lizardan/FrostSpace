@@ -505,11 +505,33 @@ def _tier(b, z0: float, r0: float, z1: float, mat: str, seed: float,
     b.mb.add_face(tuple(reversed(range(base, base + n))), idx, "cap")
 
 
-def build_pine(materials, seed: float = 0.0, name: str = "Tree_Pine"):
-    """Сосна: ствол с лёгким изгибом, ярусы хвои, снежные чехлы."""
-    b = level_lib.LevelBuilder(materials)
+def place_verts(b, before: int, at=(0.0, 0.0), scale: float = 1.0,
+                yaw: float = 0.0) -> None:
+    """Перемасштабировать, повернуть и сдвинуть вершины, добавленные после `before`.
+
+    Нужен скаттерам: дизайн (`_pine_body`, валун, бочка) пишется один раз в
+    локальных осях с низом на z = 0, а кластер расставляет его копией
+    трансформации, а не вторым дизайном. Иначе на каждую «сосну для дали»
+    появлялась бы своя копия хвои, и правка силуэта уходила бы в два места.
+    """
+    c = math.cos(yaw)
+    s = math.sin(yaw)
+    for v in b.mb.verts[before:]:
+        x = v.x * scale
+        y = v.y * scale
+        v.x = at[0] + x * c - y * s
+        v.y = at[1] + x * s + y * c
+        v.z = v.z * scale
+
+
+def _pine_body(b, seed: float, tiers: int = 0) -> None:
+    """Сосна в локальных осях: низ на z = 0, центр в (0, 0).
+
+    `tiers` > 0 задаёт число ярусов вручную: у дальнего леса их меньше, и это
+    единственная ручка, которая удешевляет дерево, не плодя второй дизайн.
+    """
     height = 5.6 + 0.9 * frac(seed * 0.731 + 0.11)
-    tiers = 4 + int(frac(seed * 0.417 + 0.3) * 3.0)
+    tiers = tiers or 4 + int(frac(seed * 0.417 + 0.3) * 3.0)
     lean_x = 0.28 * (frac(seed * 1.31) - 0.5)
     lean_y = 0.28 * (frac(seed * 2.17 + 4.0) - 0.5)
 
@@ -547,6 +569,20 @@ def build_pine(materials, seed: float = 0.0, name: str = "Tree_Pine"):
     for v in b.mb.verts[before:]:
         v.x += lean_x
         v.y += lean_y
+
+
+def pine(b, seed: float = 0.0, at=(0.0, 0.0), scale: float = 1.0,
+         yaw: float = 0.0, tiers: int = 0) -> None:
+    """Добавить сосну в чужой builder: один дизайн на дерево и на кластер."""
+    before = len(b.mb.verts)
+    _pine_body(b, seed, tiers)
+    place_verts(b, before, at, scale, yaw)
+
+
+def build_pine(materials, seed: float = 0.0, name: str = "Tree_Pine"):
+    """Сосна: ствол с лёгким изгибом, ярусы хвои, снежные чехлы."""
+    b = level_lib.LevelBuilder(materials)
+    pine(b, seed)
     return b.build(name)
 
 

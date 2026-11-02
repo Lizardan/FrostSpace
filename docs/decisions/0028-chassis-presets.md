@@ -68,7 +68,7 @@
    базовые поля, а не заменяют их: базовые значения остаются в сцене и видны дизайнеру.
 
 7. **Перепривязка визуала — публичные методы, а не поиск по сцене.**
-   `PlayerCameraRig`, `PlayerLocalView`, `PlayerSilhouette`, `PlayerAimPose` получают
+   `PlayerCameraRig`, `PlayerLocalView`, `PlayerAimPose` получают
    `Rebind(Animator animator, Transform head)`. Порядок: визуал создан → `Rebind`
    вызван → камера и HUD включаются. Без этого смена префаба оставила бы камеру на
    старом Animator.

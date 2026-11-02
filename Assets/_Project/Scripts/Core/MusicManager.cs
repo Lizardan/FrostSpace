@@ -43,6 +43,11 @@ namespace FrostSpace.Core
 
         private AudioSource _source;
         private float _fadeTime;
+        private float _duck = 1f;
+        private float _duckFrom = 1f;
+        private float _duckTarget = 1f;
+        private float _duckTime = 1f;
+        private float _duckDuration;
 
         /// <summary>
         /// Domain reload выключен, поэтому статика живёт между запусками игры и сбрасывается
@@ -102,10 +107,11 @@ namespace FrostSpace.Core
             _source.loop = true;
             _source.playOnAwake = false;
             _source.spatialBlend = 0f;
-            _source.volume = _fadeInSeconds > 0f ? 0f : _volume;
+            _source.volume = 0f;
             _fadeTime = _fadeInSeconds > 0f ? 0f : 1f;
             ApplySettings();
             _source.Play();
+            ApplyVolume();
         }
 
         private void OnDestroy()
@@ -127,25 +133,69 @@ namespace FrostSpace.Core
         /// <summary>Музыка сейчас заглушена настройкой.</summary>
         public bool Muted => _source != null ? _source.mute : !GameSettings.MusicEnabled;
 
-        private void Update()
+        /// <summary>
+        /// Приглушает тему множителем поверх пользовательской громкости и плавно
+        /// возвращает: <c>_volume</c> не меняется, поэтому ползунок в меню не сбивается.
+        /// Нужно сценовым сценам: прибытие в депо идёт без музыки, тема вступает
+        /// ровно в момент передачи управления.
+        /// </summary>
+        public void SetDuck(float factor, float seconds)
         {
-            if (_source == null || _fadeTime >= 1f)
-                return;
+            _duckFrom = _duck;
+            _duckTarget = Mathf.Clamp01(factor);
+            _duckTime = 0f;
+            _duckDuration = Mathf.Max(0f, seconds);
 
-            _fadeTime = Mathf.Clamp01(_fadeTime + Time.unscaledDeltaTime / Mathf.Max(_fadeInSeconds, 0.0001f));
-            _source.volume = Mathf.Lerp(0f, _volume, _fadeTime);
+            if (_duckDuration <= 0f)
+            {
+                _duck = _duckTarget;
+                _duckTime = 1f;
+            }
+
+            ApplyVolume();
         }
 
-        /// <summary>Громкость музыки 0..1; установка значения прекращает плавное появление.</summary>
+        private void Update()
+        {
+            var changed = false;
+
+            if (_fadeTime < 1f)
+            {
+                _fadeTime = Mathf.Clamp01(
+                    _fadeTime + Time.unscaledDeltaTime / Mathf.Max(_fadeInSeconds, 0.0001f));
+                changed = true;
+            }
+
+            if (_duckTime < 1f)
+            {
+                _duckTime = Mathf.Clamp01(
+                    _duckTime + Time.unscaledDeltaTime / Mathf.Max(_duckDuration, 0.0001f));
+                _duck = Mathf.Lerp(_duckFrom, _duckTarget, Mathf.SmoothStep(0f, 1f, _duckTime));
+                changed = true;
+            }
+
+            if (changed)
+                ApplyVolume();
+        }
+
+        private void ApplyVolume()
+        {
+            if (_source != null)
+                _source.volume = Mathf.Lerp(0f, _volume, _fadeTime) * _duck;
+        }
+
+        /// <summary>
+        /// Громкость музыки 0..1 — настройка, без учёта сценового приглушения.
+        /// Установка значения прекращает плавное появление.
+        /// </summary>
         public float Volume
         {
-            get => _source != null ? _source.volume : _volume;
+            get => _volume;
             set
             {
                 _volume = Mathf.Clamp01(value);
                 _fadeTime = 1f;
-                if (_source != null)
-                    _source.volume = _volume;
+                ApplyVolume();
             }
         }
     }

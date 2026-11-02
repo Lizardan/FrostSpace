@@ -1,5 +1,6 @@
 using System.Text;
 using FrostSpace.Core;
+using FrostSpace.Features.Inventory;
 using FrostSpace.Features.Quest;
 using FrostSpace.Features.Scan;
 using FrostSpace.Features.Story;
@@ -300,6 +301,9 @@ namespace FrostSpace.Features.Menu
         /// <summary>
         /// Строка снаряжения живёт в обзоре и журнале: после R7 игрок видит,
         /// что карта и сканер выданы, даже когда активных заданий нет.
+        ///
+        /// Показывается надетое состояние, а не только факт выдачи: со снятой картой
+        /// миникарты нет, и писать «КАРТА» в этом случае значит врать игроку.
         /// </summary>
         private void AppendEquipment(StringBuilder builder)
         {
@@ -308,9 +312,17 @@ namespace FrostSpace.Features.Menu
 
             builder.AppendLine().AppendLine();
             builder.Append("СНАРЯЖЕНИЕ: ");
-            builder.Append(_equipment.HasMap ? "КАРТА" : "КАРТА — НЕТ");
+            builder.Append(EquipmentState(EquipmentKind.Map, "КАРТА"));
             builder.Append("   ");
-            builder.Append(_equipment.HasScanner ? "СКАНЕР" : "СКАНЕР — НЕТ");
+            builder.Append(EquipmentState(EquipmentKind.Scanner, "СКАНЕР"));
+        }
+
+        private string EquipmentState(EquipmentKind kind, string label)
+        {
+            if (!_equipment.Has(kind))
+                return label + " — НЕТ";
+
+            return _equipment.IsEquipped(kind) ? label : label + " · СНЯТО";
         }
 
         private string BuildQuestBody(bool detailed)

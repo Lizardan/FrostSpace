@@ -7,9 +7,13 @@ using UnityEngine.UI;
 namespace FrostSpace.Features.Story
 {
     /// <summary>
-    /// Белый титульный экран между поездом и депо: имя игры и строка рейса.
-    /// Живёт поверх занавеса <see cref="Core.SceneController"/> и переживает
-    /// загрузку сцены, поэтому создаётся один раз и уничтожается после fade.
+    /// Титульный слой между поездом и депо: имя игры, строка рейса, процедурный снег
+    /// и низкий гул. Чёрным владеет <see cref="Core.SceneController"/> — у титула
+    /// собственной подложки нет, иначе два независимых затемнения накладываются и
+    /// переход начинает «уходить долго, а выходить резко».
+    ///
+    /// Живёт поверх занавеса и переживает загрузку сцены, поэтому создаётся один раз
+    /// и уничтожается после гашения.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TitleCardScreen : MonoBehaviour
@@ -24,11 +28,18 @@ namespace FrostSpace.Features.Story
         [SerializeField] private string _subtitle = "СЕВЕРНЫЙ РЕЙС  ·  ДЕПО";
 
         [Header("Палитра")]
-        [SerializeField] private Color _ink = new(0.025f, 0.060f, 0.085f, 1f);
+        [Tooltip("Цвет названия: светлый, потому что под ним чёрный занавес")]
+        [SerializeField] private Color _titleColor = new(0.8627f, 0.9137f, 0.949f, 1f);
         [SerializeField] private Color _dim = new(0.22f, 0.38f, 0.45f, 1f);
         [SerializeField] private Color _accent = new(0.302f, 0.902f, 1f, 1f);
 
+        [Header("Звук")]
+        [Tooltip("Низкий гул титра; гаснет вместе с экраном")]
+        [SerializeField] private AudioClip _drone;
+        [SerializeField, Range(0f, 1f)] private float _droneVolume = 0.4f;
+
         private CanvasGroup _group;
+        private AudioSource _audio;
         private bool _playing;
 
         /// <summary>Экран уже показан; повторный вызов игнорируется.</summary>
@@ -60,17 +71,18 @@ namespace FrostSpace.Features.Story
         }
 
         /// <summary>
-        /// Показывает белый экран и держит его, пока режиссёр не погасит: белый
-        /// обязан остаться до подмены сцены, иначе переход в депо короче, чем
-        /// занавес <see cref="Core.SceneController"/> в переходе `Boot → MainMenu`.
+        /// Показывает титул поверх занавеса и держит его, пока режиссёр не погасит:
+        /// собственного фона у титула нет, поэтому длительность темноты задаёт один
+        /// <see cref="Core.SceneController"/> и вход в неё равняется выходу.
         /// </summary>
-        public void Play(float fadeIn = 0.8f)
+        public void Play(float fadeIn = 0.35f)
         {
             if (_playing)
                 return;
 
             _playing = true;
             StartCoroutine(Show(fadeIn));
+            StartDrone(fadeIn);
         }
 
         /// <summary>
@@ -107,8 +119,49 @@ namespace FrostSpace.Features.Story
 
         private IEnumerator Hide(float seconds)
         {
-            yield return Fade(_group.alpha, 0f, seconds);
+            var fade = StartCoroutine(Fade(_group.alpha, 0f, seconds));
+            yield return FadeDrone(seconds, 0f);
+            yield return fade;
             Destroy(gameObject);
+        }
+
+        private void StartDrone(float seconds)
+        {
+            if (_drone == null)
+                return;
+
+            _audio = gameObject.AddComponent<AudioSource>();
+            _audio.clip = _drone;
+            _audio.loop = true;
+            _audio.playOnAwake = false;
+            _audio.spatialBlend = 0f;
+            _audio.volume = 0f;
+            _audio.Play();
+
+            StartCoroutine(FadeDrone(seconds, _droneVolume));
+        }
+
+        private IEnumerator FadeDrone(float seconds, float to)
+        {
+            if (_audio == null)
+                yield break;
+
+            var from = _audio.volume;
+            if (seconds <= 0f)
+            {
+                _audio.volume = to;
+                yield break;
+            }
+
+            var elapsed = 0f;
+            while (elapsed < seconds)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                _audio.volume = Mathf.Lerp(from, to, Mathf.SmoothStep(0f, 1f, elapsed / seconds));
+                yield return null;
+            }
+
+            _audio.volume = to;
         }
 
         private IEnumerator Fade(float from, float to, float seconds)
@@ -150,18 +203,9 @@ namespace FrostSpace.Features.Story
             _group.blocksRaycasts = false;
             _group.interactable = false;
 
-            var background = new GameObject("White", typeof(RectTransform));
-            background.transform.SetParent(root.transform, false);
-            var backgroundRect = (RectTransform)background.transform;
-            backgroundRect.anchorMin = Vector2.zero;
-            backgroundRect.anchorMax = Vector2.one;
-            backgroundRect.offsetMin = Vector2.zero;
-            backgroundRect.offsetMax = Vector2.zero;
-            var image = background.AddComponent<Image>();
-            image.color = Color.white;
-            image.raycastTarget = false;
+            BuildSnow(root.transform);
 
-            var title = NewText(root.transform, "Title", _title, 112f, _ink,
+            var title = NewText(root.transform, "Title", _title, 112f, _titleColor,
                 TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f),
                 new Vector2(0f, 46f), new Vector2(1400f, 150f), 12f);
             title.fontStyle = FontStyles.Bold;
@@ -181,6 +225,21 @@ namespace FrostSpace.Features.Story
             NewText(root.transform, "Subtitle", _subtitle, 24f, _dim,
                 TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f),
                 new Vector2(0f, -86f), new Vector2(1200f, 36f), 10f);
+        }
+
+        private void BuildSnow(Transform parent)
+        {
+            var go = new GameObject("Snow", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            var snow = go.AddComponent<TitleSnow>();
+            snow.raycastTarget = false;
         }
 
         private TextMeshProUGUI NewText(

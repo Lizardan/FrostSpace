@@ -17,7 +17,7 @@ namespace FrostSpace.Features.Dialogue
     /// разные: смотреть можно издалека, но подойти надо ближе.
     ///
     /// Пока диалог открыт, игра не встаёт на паузу: мир и анимации идут. Стоят игрок
-    /// (<see cref="RobotLocomotion.SetConversationLock"/>), камера
+    /// (<see cref="RobotLocomotion.SetControlLock"/>), камера
     /// (<see cref="PlayerCameraRig.SetPaused"/>) и ввод карты Player; пауза на Esc
     /// временно выключена, иначе тот же Esc закрыл бы диалог и открыл меню паузы.
     /// </summary>
@@ -217,7 +217,7 @@ namespace FrostSpace.Features.Dialogue
             if (_scanner != null)
                 _scanner.enabled = false;
 
-            _locomotion?.SetConversationLock(true);
+            _locomotion?.SetControlLock(true);
             _rig.SetPaused(true);
             _playerMap?.Disable();
 
@@ -264,7 +264,7 @@ namespace FrostSpace.Features.Dialogue
             _speaker?.EndConversation();
             _speaker = null;
 
-            _locomotion?.SetConversationLock(false);
+            _locomotion?.SetControlLock(false);
             _rig?.SetPaused(false);
             _playerMap?.Enable();
 

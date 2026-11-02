@@ -19,10 +19,9 @@
   (`ThirdPerson`/`FirstPerson`/`Ride`/`RideOrbit`), блендинг поз, mouse-look, курсор, отвод от стен;
   `Camera/CameraMode.cs` — `enum CameraMode`, `CameraPose` и чистая `ViewBlend`;
   `Camera/InteriorZone.cs` — объём интерьера на `BoxCollider`-триггере;
-  `Camera/PlayerSilhouette.cs` — x-ray силуэт локального игрока (`ZTest Greater`);
   `Camera/PlayerLocalView.cs` — скрытие головы в 1-м лице (только у своей модели);
   `Camera/CameraOcclusionFader.cs` — круговой вырез в геометрии в режиме прицела
-  (шейдеры `Content/VFX/Shaders/OcclusionReveal.shader` и `OcclusionSilhouette.shader`,
+  (шейдер `Content/VFX/Shaders/OcclusionReveal.shader`,
   осколки `Camera/OcclusionRevealDebris.cs`; `CameraOcclusionFadeGroup.cs` — части
   составного объекта, получающие вырез вместе),
   `Npc/NpcController.cs` — NPC по маршруту: точка → пауза 2–10 с → следующая;
@@ -101,8 +100,9 @@
   `NpcController` (наземные) или `AirPatrolController` (орёл, пиранья), клипы `Idle`/`Move`
   in-place, движение кинематическое.
 - **Что не видно из-за геометрии, решает камера, а не триггеры.** В спокойном режиме
-  перекрытие не вырезается: силуэт игрока рисуется сквозь геометрию (`ZTest Greater`),
-  поэтому крыша дома остаётся целой. Круговой вырез (`OcclusionReveal`) работает только
+  перекрытие ни не вырезается, ни не подсвечивается: игрок за столбом закрыт им, а
+  камеру отводит игрок (ADR 0037 — x-ray силуэт убран). Круговой вырез
+  (`OcclusionReveal`) работает только
   в прицеле — центром в перекрестии сквозь объекты — и по-прежнему оставляет ближние
   к камере пиксели; части составных объектов связаны `CameraOcclusionFadeGroup`.
   Внутри `InteriorZone` камера уходит в 1-е лицо, корпус доворачивается по её рысканью;
@@ -160,7 +160,9 @@ ScriptableObject-конфиг — `DialogueAsset` (авторские репли
 `Boot → MainMenu → CharacterSetup → Train → Frontier`; `Train` — интерьер вагона,
 переноска, квест «Погрузка», диалоги R13, трекер и финал с титулом; `Frontier` —
 прибытие поезда того же масштаба, выход R13 и тележки через боковой проём, охрана,
-R7 и выдача карты со сканером. `SceneController` и белая накладка при этом не меняются.
+R7 и выдача карты со сканером. `SceneController` и накладка при этом не меняются по
+роли: занавес по-прежнему закрывает подмену сцены, но на переходе в депо он может
+быть чёрным (цвет и строка задаются на один переход).
 
 ## Фичи первого среза
 
@@ -180,8 +182,9 @@ R7 и выдача карты со сканером. `SceneController` и бел
 | Carry | `Features/Carry/` | подбор по E, перенос с `CarryWalk`, слоты тележки | Locomotion, Hud |
 | Quest | `Features/Quest/`, `Features/Hud/QuestTracker.cs` | данные квеста, `QuestLog` без Unity, сценовый `QuestDirector`, HUD-трекер, сохранение прогресса в `FrostSpace.Save` | Dialogue (подписка), Carry (подписка), Character (id корпуса для записи) |
 | Progression | `Features/Progression/`, `Features/Hud/ExperienceBar.cs` | уровень, опыт, кривая до следующего уровня, начисление награды | Quest |
-| Story | `Features/Story/` | финал поезда, титульный экран, прибытие поезда и выход в депо, выдача карты и сканера, параллакс за окнами | Core/SceneController, Quest, Dialogue, Scan |
-| Map | `Features/Map/` (Stage 3) | миникарта и маркеры | — |
+| Story | `Features/Story/` | финал поезда (камера стоит, уходит груз), титульный слой поверх чужого чёрного, прибытие поезда одним проездом камеры по длине дуги с бесшовной передачей управления, очередь выхода через проём, выдача карты и сканера, параллакс за окнами | Core/SceneController, Quest, Dialogue, Scan, Camera, Inventory (доска снаряжения) |
+| Inventory | `Features/Inventory/` | доска экипировки (`EquipmentBoard`: слот или ячейка, отказ, обмен), окно по `I` с превью корпуса, описанием предмета и перетаскиванием, блокировка управления и камеры на время окна | Story (снаряжение), Character (превью), Locomotion, Camera, Menu (пауза) |
+| Map | `Features/Map/` (Stage 3) | миникарта и маркеры | Story (снаряжение), Locomotion |
 
 Направление зависимостей внутри фич:
 

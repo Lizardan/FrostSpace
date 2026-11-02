@@ -158,6 +158,51 @@ namespace FrostSpace.Features.View
             }
         }
 
+        /// <summary>
+        /// Снимает кинематографическую блокировку и перетекает от фактической позы
+        /// камеры к геймплейной за <paramref name="seconds"/>. В отличие от
+        /// <see cref="SetCinematic"/>, не взводит <c>_snapPose</c>: без этого камера
+        /// прыгала в позу третьего лица одним кадром.
+        /// </summary>
+        public void ReleaseCinematic(float yaw, float pitch, float seconds)
+        {
+            _yaw = yaw;
+            _pitch = Mathf.Clamp(pitch, _minPitch, _maxPitch);
+            _snapPose = false;
+
+            _blendFrom = _camera != null
+                ? new CameraPose(_camera.transform.position, _camera.transform.rotation)
+                : GetThirdPersonPose(_yaw, _pitch);
+            _blendDuration = Mathf.Max(0f, seconds);
+            _blendTime = 0f;
+            _paused = false;
+            LockCursor();
+        }
+
+        /// <summary>
+        /// Поза третьего лица для заданного обзора, без изменения состояния рига.
+        /// Нужна сценовым сценам: последний кадр катсцены обязан прийти ровно туда,
+        /// куда потом встанет геймплейная камера, — включая коррекцию сферокастом.
+        /// </summary>
+        public CameraPose GetThirdPersonPose(float yaw, float pitch)
+        {
+            if (_target == null)
+            {
+                return _camera != null
+                    ? new CameraPose(_camera.transform.position, _camera.transform.rotation)
+                    : new CameraPose(Vector3.zero, Quaternion.identity);
+            }
+
+            var pivot = _target.position + Vector3.up * _aimLookHeight;
+            var rotation = Quaternion.Euler(pitch, yaw, 0f);
+            var offset = rotation * _aimOffset;
+            var position = pivot + offset * Correction(offset, pivot);
+            return new CameraPose(position, rotation);
+        }
+
+        /// <summary>Тангаж геймплейной позы: режиссёр считает ту же позу, что и риг.</summary>
+        public float StartPitch => _startPitch;
+
         /// <summary>Правая кнопка мыши удерживается: включаются эффекты выбранного модуля.</summary>
         public bool IsAiming => !_paused && Mode == CameraMode.ThirdPerson &&
                                 _aimAction != null && _aimAction.IsPressed();
@@ -413,11 +458,7 @@ namespace FrostSpace.Features.View
         /// </summary>
         private CameraPose ThirdPersonPose()
         {
-            var pivot = _target.position + Vector3.up * _aimLookHeight;
-            var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
-            var offset = rotation * _aimOffset;
-            var position = pivot + offset * Correction(offset, pivot);
-            return new CameraPose(position, rotation);
+            return GetThirdPersonPose(_yaw, _pitch);
         }
 
         /// <summary>

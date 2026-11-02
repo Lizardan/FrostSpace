@@ -57,6 +57,11 @@ namespace FrostSpace.Features.Interior
             if (_screen == null)
                 return;
 
+            // Awake мог не выполниться у объекта, включённого позже; без блока
+            // Renderer.GetPropertyBlock падает с ArgumentNullException.
+            if (_block == null)
+                _block = new MaterialPropertyBlock();
+
             _scan = Mathf.Repeat(_scan + _scanSpeed * Time.deltaTime, 1f);
             _line = Mathf.Repeat(_line + _lineSpeed * Time.deltaTime, 1f);
 

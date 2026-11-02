@@ -1,3 +1,4 @@
+using System.Collections;
 using FrostSpace.Features.Progression;
 using TMPro;
 using UnityEngine;
@@ -34,6 +35,8 @@ namespace FrostSpace.Features.Hud
         [SerializeField] private Color _segmentOff = new(0.302f, 0.902f, 1f, 0.12f);
 
         private GameObject _root;
+        private CanvasGroup _group;
+        private Coroutine _fade;
         private TextMeshProUGUI _level;
         private TextMeshProUGUI _nextLevel;
         private TextMeshProUGUI _progress;
@@ -106,6 +109,43 @@ namespace FrostSpace.Features.Hud
                 Destroy(_root);
         }
 
+        /// <summary>
+        /// Плавно скрывает или показывает полосу. Нужно сценовым сценам: во время
+        /// прибытия поезда интерфейс не должен висеть поверх кадра.
+        /// </summary>
+        public void SetVisible(bool visible, float seconds = 0f)
+        {
+            if (_group == null)
+                return;
+
+            if (_fade != null)
+                StopCoroutine(_fade);
+
+            _fade = StartCoroutine(FadeTo(visible ? 1f : 0f, seconds));
+        }
+
+        private IEnumerator FadeTo(float to, float seconds)
+        {
+            var from = _group.alpha;
+            if (seconds <= 0f)
+            {
+                _group.alpha = to;
+                _fade = null;
+                yield break;
+            }
+
+            var elapsed = 0f;
+            while (elapsed < seconds)
+            {
+                elapsed += Time.deltaTime;
+                _group.alpha = Mathf.Lerp(from, to, Mathf.SmoothStep(0f, 1f, elapsed / seconds));
+                yield return null;
+            }
+
+            _group.alpha = to;
+            _fade = null;
+        }
+
         private void Build()
         {
             _root = new GameObject("Experience Canvas", typeof(RectTransform));
@@ -120,6 +160,10 @@ namespace FrostSpace.Features.Hud
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
+
+            _group = _root.AddComponent<CanvasGroup>();
+            _group.interactable = false;
+            _group.blocksRaycasts = false;
 
             var parent = (RectTransform)_root.transform;
 

@@ -32,7 +32,7 @@ FrostSpace/
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
    │  │  ├─ Features/            # сборка FrostSpace.Features
    │  │  │  ├─ Boot/             # BootScreen — консоль загрузки сервисов на старте
-   │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, CameraPose, InteriorZone, PlayerSilhouette,
+   │  │  │  ├─ Camera/           # PlayerCameraRig, CameraMode, CameraPose, InteriorZone,
    │  │  │  │                    # PlayerLocalView, CameraOcclusionFader/Debris/Group, ScreenAperture.
    │  │  │  │                    # Namespace папки — FrostSpace.Features.View (ADR 0010)
    │  │  │  ├─ Carry/            # Carryable (предмет), CarrySlot (гнездо), CarryController (E:
@@ -71,8 +71,11 @@ FrostSpace/
    │  │  │  │                    # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
    │  │  │  │                    # ScanMath (чистая математика)
    │  │  │  └─ Story/            # TrainMotionRig (параллакс и снег), TrainSequenceDirector
-   │  │  │                       # (отъезд камеры и переход), TitleCardScreen (белый титул),
-   │  │  │                       # DepotArrivalDirector (прибытие поезда, створки, выход),
+   │  │  │                       # (финал рейса без отъезда к окну), TitleCardScreen (текст,
+   │  │  │                       # снег и гул поверх чужого чёрного), TitleSnow (снег титра),
+   │  │  │                       # CutsceneMover (проводка актёра по кривой), DepotArrivalDirector
+   │  │  │                       # (прибытие, створки, очередь выхода), CameraKey/CameraTrack +
+   │  │  │                       # PathCurve (проезд камеры по длине дуги в Features/Camera),
    │  │  │                       # PlayerEquipment (карта и сканер из диалога)
    │  │  └─ Core/                # сборка FrostSpace.Core: SceneController (персистентный владелец
    │  │                          # перехода и единственный вызывающий SceneManager),
@@ -116,7 +119,7 @@ FrostSpace/
    │     ├─ Materials/Level/        # материалы уровня Level_*
    │     ├─ Materials/Menu/         # материалы диорамы меню
    │     ├─ Materials/VFX/          # материалы эффектов
-   │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionSilhouette, OcclusionDebris
+   │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionDebris, SkyNightStars
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
    │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню;
    │     │                          # Dialogues/*.asset — графы диалогов роботов (ADR 0025);
@@ -142,6 +145,7 @@ FrostSpace/
 | Путь | Что появится |
 |---|---|
 | `Assets/_Project/Scripts/Features/Map/` | миникарта и маркеры (Stage 3) |
+| `Assets/_Project/Scripts/Features/Inventory/` | доска экипировки и окно по `I` (`DP-06`) |
 
 ## С чего начинается выполнение
 
@@ -167,14 +171,17 @@ FrostSpace/
    `Player` с `PlayerVisualBinder`, `CarryController`, `DialogueController`/`DialogueScreen`,
    `QuestDirector` и `QuestTracker`, четыре аккумулятора и тележка с четырьмя слотами,
    `R13_Prospector` с `DialogueSpeaker`/`DialogueMarker`, `TrainMotionRig` с параллаксом
-   и снегом, `Main Camera` с `PlayerCameraRig`; `TrainSequence` + `TitleCard` дают
-   отъезд камеры и белый титул перед `Frontier`.
+   и снегом, `Main Camera` с `PlayerCameraRig`; `TrainSequence` + `TitleCard` дают финал
+   рейса (камера стоит и наезжает на полметра, R13 уходит к проёму, провал света кабины,
+   дальние тормоза заранее) и титул со снегом перед `Frontier`.
 5. `Assets/Scenes/Frontier.unity` (build index 4) — депо: снежная земля, платформа,
    навес, поезд `TrainCar` (8×24) с путём, ворота, мачта, `Player`, `R16_Warden` ×2,
-   `R8_Bulwark` и `R7_Drifter`. `DepotArrival` проигрывает прибытие поезда, плавный
-   раздвиг створок и выход R13 с тележкой через боковой проём; управление возвращается
-   игроку в вагоне, на платформу он выходит сам. R7 выдаёт карту и сканер, ворота ведут
-   к будущей дороге.
+   `R8_Bulwark` и `R7_Drifter`. `DepotArrival` ведёт прибытие одним непрерывным
+   проездом камеры (~16.6 с) по длине дуги: встречаем состав, набирая ход, и в конце
+   закручиваемся вокруг уже вышедшего игрока, встаём за спину. Очередь через один
+   проём: R13 вперёд-налево и разворот вдоль состава, тележка по прямой дальше,
+   игрок последним пару шагов прямо; управление возвращается ровно в позе рига. R7 выдаёт карту и
+   сканер, ворота ведут к будущей дороге.
 6. Сцена `Game` (build index 5, вне потока) — обычный сохранённый ассет: рельеф,
    дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
    камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
@@ -213,9 +220,16 @@ FrostSpace/
 | Происхождение ригов животных | `Content/Models/RobotAnimals/SOURCE.md` |
 | Модели уровня (FBX) | `Content/Models/Level/`, палитра — `Content/Materials/Level/` |
 | Сборка уровня (Blender) | `Tools/Blender/build_level.py` + `level_layout.py` (позиции), `level_lib.py` (материалы и палитра), `level_parts.py` (геометрия); превью — `AssetSource/Previews/Level/` |
+| Край мира у депо (Blender) | `Tools/Blender/build_frontier.py` (секции `ground/track/grove/prop`) + `frontier_layout.py` (координаты, стек пути, `SCENE_INSTANCES`), `frontier_parts.py` (геометрия); проверка — `check_frontier.py`, превью — `render_frontier_previews.py` → `AssetSource/Previews/Frontier/`; FBX — `Content/Models/Level/Frontier_*.fbx` (ADR 0035) |
+| Дальний слой | `Tools/Blender/far_parts.py` — профиль силуэта по долям высоты (`STEPS`, `RINGS`, `tier_width`), нормировка габарита `_fit`; `build_far.py` — сборка `Far_*.fbx` со сверкой ширины и высоты с `far_layer()` в допуске 1 см; `render_far_previews.py` — кадры со двора и форма каждой карточки → `AssetSource/Previews/Far/`; в Unity — `Content/Models/Level/Far_*.fbx` и корень `FarLayer` во `Frontier`, который переставляет их за игроком (`Features/Map/FarLayer.cs`), страховка — `Tests/EditMode/FrontierFarLayerTests.cs` (ADR 0036 п.6) |
+| Раскладка мира Stage 3 | `Tools/Blender/world_layout.py` — единственные числа (клетки 600 м, 121 клетка −5…+5, якоря, руины, узлы, линии, тёплый каркас, туман, `ANOMALY`, `far_layer`) и 16 инвариантов; сборка JSON — `build_world.py`, проверка — `check_world.py`, план и высоты — `render_world_previews.py` → `AssetSource/Previews/World/`; выход в Unity — `Content/Data/World/world_layout.json` как `TextAsset` (ADR 0036) |
+| Наследие и руины (Blender) | `Tools/Blender/heritage_parts.py` (`slide/pylon/crane/span/hangar/tanks/bridge/yard`, общие `_railing`/`_ladder`/`_lamp`/`_drifts`) + `build_heritage.py` (вершина меша сверяется с `world_layout`), проверка — `check_frontier.py` по файлу, превью — `render_heritage_previews.py` → `AssetSource/Previews/Heritage/`; FBX — `Content/Models/Level/Heritage_*.fbx` |
+| Миникарта | `Assets/_Project/Scripts/Features/Map/{MiniMap,MiniMapProjection}.cs`: кодостроенный canvas `sortingOrder = 25` (между трекером 20 и диалогом 40) в правом верхнем углу — левый занят трекером; фон — тёмный диск-«радар» из процедурной `Texture2D` (спрайтов в проекте нет, на снегу прибор без него не читается), обод из насечек, линии и узлы из `world_layout.json` с отсечением по кругу, маркер цели прижат к ободу вне дальности; гейт — `PlayerEquipment.IsEquipped(EquipmentKind.Map)` (`DP-03`, `DP-06`: выданная, но снятая карта миникарты не даёт), бит `RD-05`. Висит на `Player` в сцене `Frontier`; сцена набрана в осях депо, перевод делает `WorldLayout.ToWorld` |
+| Окно экипировки | `Assets/_Project/Scripts/Features/Inventory/{EquipmentKind,EquipmentBoard,EquipmentInfo,EquipmentTarget,EquipmentScreen}.cs`: доска `EquipmentBoard` держит «где предмет» (свой слот или ячейка) и единственная решает, проходить ходу или нет — обмен возможен только ячейка↔ячейка, потому что вытесненный в чужой слот предмет некуда деть; окно — кодостроенный canvas `sortingOrder = 45` (между диалогом 40 и паузой 50), слева превью корпуса через `CharacterCardPreview`, внизу два слота 72 px, справа сверху описание, снизу сетка 8 колонок по 56 px с зазором 6; перетаскивание — `IBeginDrag/IDrag/IEndDrag/IDrop` на `EquipmentTarget`; блокировка та же тройка, что у диалога (`SetControlLock`, `SetPaused`, `Player` map off), и снимается в обратном порядке; `I` и `Esc` читаются `Keyboard.current`, как `Esc` паузы. Висит на `Player` в `Frontier` — в `Train` и `Game` `PlayerEquipment` нет, вешать окно не на что. Бит `DP-06` |
+| Небо колонии | шейдер `Content/VFX/Shaders/SkyNightStars.shader` (полоса мглы, редкие яркие звёзды, одна аномалия) + материал `Content/Materials/Level/Level_SkyStars.mat`, назначенный скайбоксом сцены `Frontier`; направление аномалии задаёт `world_layout.ANOMALY`, страховка — `FrontierSceneSyncTests.SkyIsNightAndCameraDrawsIt` (`STYLE.md` §«Небо», ADR 0036) |
 | Параметры игрока | компонент `RobotLocomotion` на `Player` (сцена `Game`): скорости, прыжок (буфер, coyote time, присед) |
 | Маршрут NPC и животных | вейпоинты в `NpcController` на `NPC_R*` и `AN_<Species>`; у `AN_Eagle`/`AN_Piranha` — `AirPatrolController` с высотой; точки — дочерние `WP_*` |
-| Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); силуэт — `PlayerSilhouette`, голова — `PlayerLocalView` (ADR 0010, 0012) |
+| Режимы камеры | `PlayerCameraRig` + `CameraMode` на `Main Camera`; интерьер — `InteriorZone` на корне здания (гистерезис выхода `_interiorExitMargin`); голова в 1-м лице — `PlayerLocalView` (ADR 0010, 0012; x-ray силуэт убран — ADR 0037) |
 | Сканирование | `ObjectScanner` на `Main Camera` (Q-сонар, ближайшая и прицельная детекция) + `ScanTarget` на целях (реестр `ScanTarget.All`), кольцо — `ScanPulse`, математика — `ScanMath`, показ — `PlayerHud` + `ScanLabelView` (ADR 0020) |
 | Меню паузы и настройки | `PauseMenuScreen` на `Player`/`GameFlow` (Esc): обзор, журнал квеста, настройки-шестерёнка, продолжение и выход в меню; значения — `GameSettings` (`PlayerPrefs`: музыка, детекция ближайшего, детекция по прицелу) (ADR 0020, 0027) |
 | Опыт и уровни | `PlayerExperience` на `Player`: уровень, опыт, кривая до следующего; `ExperienceBar` внизу экрана показывает `УР. N` / `опыт / требование (проценты)` / `УР. N+1`; квест даёт 250 XP |
@@ -233,6 +247,7 @@ FrostSpace/
 | Blender-тулинг | `Tools/Blender/`, документация — `BLENDER.md` |
 | Пайплайн ассетов | `Tools/Blender/build_all.py` — единый вход: сборка → проверки → превью; реестр `PIPELINE` внутри файла, логи — `Tools/Blender/logs/` (ADR 0017) |
 | Unity-мост | `Tools/Unity/unity_bridge.py`, документация — `UNITY_MCP.md` |
+| Звук прибытия | `Tools/Audio/build_sfx.py` — генератор WAV (ветер, рельсы, тормоза, створки, шаги, удар, тележка, дрон), `--check`; выход — `Assets/_Project/Content/Audio/Arrival/`, импорт — `Editor/AudioArrivalImportPostprocessor.cs` |
 | Исходные архивы | `AssetSource/` (в git не входит) |
 | Импортированные паки | `Assets/ThirdParty/<Pack>/` + `SOURCE.md` (каталога пока нет) |
 

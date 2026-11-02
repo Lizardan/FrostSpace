@@ -33,15 +33,18 @@
 | [0023](0023-no-animal-root-motion.md) | Root motion у животных не включаем: ход на кости, а не на корне модели (`deltaPosition = 0`) | Accepted |
 | [0024](0024-mech-walkers.md) | Ездовые ходуны (4): наш корпус на риге пака, авторская походка `author_gait`, кабина в груди, сиденье за костью `Chest`, облёт камерой | Accepted |
 | [0025](0025-dialogue-system.md) | Диалоги: ScriptableObject-граф, кастомный Inspector, отдельный экран, кириллический TMP-шрифт | Accepted |
-| [0026](0026-story-scene-flow.md) | Сюжетный поток сцен: Boot → MainMenu → CharacterSetup → Train → Frontier; титул — оверлей сцены поезда | Accepted |
+| [0026](0026-story-scene-flow.md) | Сюжетный поток сцен: Boot → MainMenu → CharacterSetup → Train → Frontier; титул — оверлей сцены поезда | Accepted, поправки 2026-11-01 (чёрный титул; затем — один владелец чёрного) |
 | [0027](0027-quest-system.md) | Квесты: ScriptableObject-данные, `QuestLog` без Unity, сценовый `QuestDirector`, действия в узлах диалога | Accepted |
 | [0028](0028-chassis-presets.md) | Три выбираемых корпуса; carry и jump у всех трёх; модульная сборка отложена | Accepted |
-| [0029](0029-frontier-scene.md) | `Frontier` — одна открытая сцена без стриминга; бюджет WebGL и LOD | Accepted |
-| [0030](0030-frontier-map.md) | Карта `Frontier`: 2.4×2.4 км, четыре узла, свободное исследование после финала | Accepted |
+| [0029](0029-frontier-scene.md) | `Frontier` — одна открытая сцена без стриминга; бюджет WebGL и LOD | Accepted; п.1 отменён 0036 |
+| [0030](0030-frontier-map.md) | Карта `Frontier`: 2.4×2.4 км, четыре узла, свободное исследование после финала | Accepted; п.1–2 отменены 0036 |
 | [0031](0031-save-progress.md) | Сохранение прогресса демо: один ключ `PlayerPrefs`, «Продолжить» в меню | Accepted |
 | [0032](0032-single-train-car-asset.md) | Один ассет вагона `TrainCar`: оболочка строится один раз, нос-кабина, створки отдельно | Accepted |
 | [0033](0033-cabin-autodoor-holopanel.md) | Кабина 2,8 м, две створки с автодверью, водитель и голопанель | Accepted |
 | [0034](0034-cockpit-and-render-depth.md) | Кокпит в кабине 4,2 м, читаемая голопанель, тени и bloom в поезде | Accepted |
+| [0035](0035-scene-placement-is-manual.md) | Край мира набирается таблицей и ставится руками; `LODGroup` не заводим | Accepted |
+| [0036](0036-world-grid-and-residency.md) | Мир 6,6×6,6 км из клеток 600 м; residency внутри одной сцены; числа — в `world_layout.py` | Accepted |
+| [0037](0037-no-player-xray.md) | X-ray силуэт игрока убран: скрипт и шейдер удалены, вырез прицела остаётся | Accepted |
 
 ## Когда создавать ADR
 

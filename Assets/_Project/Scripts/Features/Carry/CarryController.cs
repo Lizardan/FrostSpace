@@ -259,7 +259,7 @@ namespace FrostSpace.Features.Carry
 
         private CarrySlot FindNearestSlot()
         {
-            var slots = FindObjectsByType<CarrySlot>(FindObjectsSortMode.None);
+            var slots = FindObjectsByType<CarrySlot>();
             CarrySlot best = null;
             var bestDistance = float.MaxValue;
             for (var i = 0; i < slots.Length; i++)

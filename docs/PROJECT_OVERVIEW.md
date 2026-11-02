@@ -40,7 +40,7 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (15 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (181 тест) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (17 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Inventory, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story, Map), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (245 тестов) | `Assets/_Project/`, `run_tests` |
 | Поезд среза | один вагон `TrainCar.fbx` 8×24 м на обе сцены (ADR 0032, 0033, 0034): интерьер, кабина 4,2 м с кокпитом, водителем и голопанелью, боковой проём, автодверь, раздвижные створки, тележки, фары | `Assets/_Project/Content/Models/Train/`, `Tools/Blender/build_train.py` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
@@ -57,19 +57,20 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Unity MCP | пакет установлен; сервер слушает 6400 или следующий свободный (2026-10-29 — 6401), мост `Tools/Unity/unity_bridge.py` работает | live-проверка 2026-10-29 |
 | Blender | 5.2.3 LTS, аддон `blender_mcp` (протокол 14, сервер 2.2.2) установлен | `--version` и `install-addon` |
 | Пайплайн ассетов | единый вход `Tools/Blender/build_all.py`: сборка → проверки → превью (ADR 0017) | прогон 2026-10-22 |
+| Мир Stage 3 | раскладка 6,6×6,6 км из 121 клетки по 600 м, якоря 320/260 м, восемь руин 15–60 м, тёплый каркас 0,7 % карты и запас остывания 90 с — всё числами в `world_layout.py` (16 инвариантов), в Unity приходит `world_layout.json` как `TextAsset`. Небо — почти чёрное, редкие яркие звёзды и одна аномалия (`SkyNightStars`) | `Tools/Blender/world_layout.py`, `Content/Data/World/`, `Content/Models/Level/Heritage_*.fbx`, ADR 0036 |
 | Скиллы | 34 скилла Unity + 2 проектных (`plans`, `frostspace-3d-assets`), мосты для всех агентов | `.Aura/Skills/`, `Tools/Agent/LinkAgentSkills.ps1` |
 
 ## Чего в проекте нет
 
 - Продолжения на карте: финал `Train` (`TR-09`, `TR-10`), сюжет депо
   `DP-01`…`DP-04` и сохранение прогресса квеста (`FrostSpace.Save`, ADR 0031)
-  реализованы; миникарта, прицеп, дорога и станция в коде отсутствуют. Выбор корпуса,
+  реализованы; миникарта читает раскладку мира и стоит в сцене (`Features/Map`, `RD-05`), прицеп, дорога и станция в коде отсутствуют. Выбор корпуса,
   переноска, квест «Погрузка», диалоги R13, HUD-трекер и опыт реализованы.
 - Сети. Ни серверной части, ни мультиплеера, ни облачных сервисов.
 - Собственного баланса и игровых правил: дизайн-параметры живут в `[SerializeField]`
   прямо на компонентах. Исключение — авторские данные: `DialogueAsset` и `QuestAsset`
   (ScriptableObject), потому что это данные, а не состояние.
-- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 181 шт.).
+- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 243 шт.).
 - Локализации: подписи меню и HUD намеренно латинские, `com.unity.localization`
   не подключён; реплики диалогов — русские и лежат прямо в ассетах.
 - Импортированных сторонних моделей: каталога `Assets/ThirdParty/` нет, исходники —

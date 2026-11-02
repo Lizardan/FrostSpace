@@ -25,7 +25,6 @@ namespace FrostSpace.Features.Character
         [SerializeField] private RobotLocomotion _locomotion;
         [SerializeField] private PlayerCameraRig _rig;
         [SerializeField] private PlayerLocalView _localView;
-        [SerializeField] private PlayerSilhouette _silhouette;
         [SerializeField] private PlayerAimPose _aimPose;
 
         [Tooltip("Куда кладётся визуал; пусто — сам актёр")]
@@ -95,7 +94,6 @@ namespace FrostSpace.Features.Character
             _rig?.RebindHead(head);
             _localView?.RebindHead(head);
             _aimPose?.Rebind(neck, head);
-            _silhouette?.RebindSource(skin);
 
             Profile = profile;
             Debug.Log($"[PlayerVisualBinder] корпус {profile.Id}", this);
@@ -136,8 +134,6 @@ namespace FrostSpace.Features.Character
                 _rig = GetComponent<PlayerCameraRig>();
             if (_localView == null)
                 _localView = GetComponent<PlayerLocalView>();
-            if (_silhouette == null)
-                _silhouette = GetComponent<PlayerSilhouette>();
             if (_aimPose == null)
                 _aimPose = GetComponent<PlayerAimPose>();
         }

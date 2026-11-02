@@ -10,8 +10,6 @@ namespace FrostSpace.Features.View
     /// поэтому голова исчезает только у этого игрока — сама модель и её материалы
     /// не меняются, а чужие игроки видят робота целиком.
     ///
-    /// Силуэт перекрытий тоже локальный (<see cref="PlayerSilhouette"/>): у удалённых
-    /// моделей он выключается, чтобы в мультиплеере у других ничего не пропадало.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(320)]
@@ -22,9 +20,6 @@ namespace FrostSpace.Features.View
         [SerializeField] private PlayerCameraRig _rig;
         [Tooltip("Кость головы собственной модели")]
         [SerializeField] private Transform _headBone;
-        [Tooltip("Силуэт перекрытий этого же игрока")]
-        [SerializeField] private PlayerSilhouette _silhouette;
-
         [Header("Локальность")]
         [Tooltip("Модель принадлежит локальному игроку: только ему можно что-то скрывать")]
         [SerializeField] private bool _isLocalPlayer = true;
@@ -46,11 +41,7 @@ namespace FrostSpace.Features.View
         {
             _isLocalPlayer = isLocal;
             if (!isLocal)
-            {
                 ShowHead();
-                if (_silhouette != null)
-                    _silhouette.SetLocalPlayer(false);
-            }
         }
 
         /// <summary>
@@ -69,17 +60,11 @@ namespace FrostSpace.Features.View
         {
             if (_rig == null)
                 _rig = FindAnyObjectByType<PlayerCameraRig>();
-            if (_silhouette == null)
-                _silhouette = GetComponent<PlayerSilhouette>();
             if (_headBone == null)
                 _headBone = FindHeadBone();
 
             if (!_isLocalPlayer)
-            {
-                if (_silhouette != null)
-                    _silhouette.SetLocalPlayer(false);
                 enabled = false;
-            }
         }
 
         private void LateUpdate()

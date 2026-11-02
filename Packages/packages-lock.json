@@ -32,7 +32,7 @@
         "com.unity.inputsystem": "1.1.1",
         "com.unity.cloud.gltfast": "6.12.1"
       },
-      "hash": "f885fe91a897de24715f219c196f6c92f81b867d"
+      "hash": "03e0b4533fe1fcf25ab03ed7691145dbc62efc16"
     },
     "com.ramenvr.autopilot": {
       "version": "file:com.ramenvr.autopilot-1.0.1.tgz",
@@ -261,12 +261,10 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.28",
+      "version": "2.0.29",
       "depth": 0,
       "source": "registry",
-      "dependencies": {
-        "com.unity.test-framework": "1.1.33"
-      },
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.inputsystem": {

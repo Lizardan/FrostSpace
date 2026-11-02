@@ -23,11 +23,13 @@ namespace FrostSpace.Core
     public sealed class SceneController : MonoBehaviour
     {
         [Header("Фазы перехода, с")]
-        [Tooltip("Сколько новая сцена проявляется из белого в начале")]
-        [SerializeField, Min(0f)] private float _fadeInSeconds = 0.9f;
+        [Tooltip("Сколько новая сцена проявляется из занавеса. Равна уходу под занавес: " +
+                 "засвет в чёрный и выход из него обязаны быть одинаковыми, иначе переход " +
+                 "выглядит рвано — долго уходит и резко выходит")]
+        [SerializeField, Min(0f)] private float _fadeInSeconds = 1f;
 
-        [Tooltip("Сколько текущая сцена уходит в белый перед загрузкой")]
-        [SerializeField, Min(0f)] private float _fadeOutSeconds = 0.8f;
+        [Tooltip("Сколько текущая сцена уходит под занавес перед загрузкой")]
+        [SerializeField, Min(0f)] private float _fadeOutSeconds = 1f;
 
         [Tooltip("За сколько до полного белого строка начинает проявляться. 0 — строка стартует на полном белом, 0.8 — вместе с осветлением")]
         [SerializeField, Min(0f)] private float _statusLeadInSeconds = 0.35f;
@@ -83,6 +85,12 @@ namespace FrostSpace.Core
         public bool IsBusy { get; private set; }
 
         /// <summary>
+        /// Длительность ухода в занавес: титульный слой синхронизирует с ней свой
+        /// вход, чтобы чёрным владел один объект, а не два независимых фейда.
+        /// </summary>
+        public float FadeOutSeconds => _fadeOutSeconds;
+
+        /// <summary>
         /// Идёт стартовое проявление из белого: под занавесом сцену не видно, поэтому
         /// счётчики самой сцены (например, отсчёт <c>BootScreen</c>) ждут его конца.
         /// </summary>
@@ -91,6 +99,8 @@ namespace FrostSpace.Core
         private Canvas _canvas;
         private CanvasGroup _group;
         private CanvasGroup _statusGroup;
+        private Image _fill;
+        private TextMeshProUGUI _statusLabel;
 
         /// <summary>
         /// Domain reload выключен, поэтому статика живёт между запусками игры и сбрасывается
@@ -162,6 +172,16 @@ namespace FrostSpace.Core
         /// </summary>
         public void LoadScene(string sceneName)
         {
+            LoadScene(sceneName, _curtainColor, _statusText);
+        }
+
+        /// <summary>
+        /// Тот же переход, но с цветом занавеса и строкой на один раз. Нужен сюжетным
+        /// сценам: чёрный титр требует чёрного занавеса, иначе на стыке вспыхивает белый.
+        /// Пустая строка — без текста; значения по умолчанию возвращаются после перехода.
+        /// </summary>
+        public void LoadScene(string sceneName, Color curtainColor, string statusText)
+        {
             if (IsBusy)
                 return;
             if (string.IsNullOrEmpty(sceneName))
@@ -169,6 +189,11 @@ namespace FrostSpace.Core
                 Debug.LogError("SceneController: пустое имя сцены", this);
                 return;
             }
+
+            if (_fill != null)
+                _fill.color = curtainColor;
+            if (_statusLabel != null)
+                _statusLabel.text = string.IsNullOrEmpty(statusText) ? string.Empty : statusText;
 
             StartCoroutine(LoadRoutine(sceneName));
         }
@@ -188,6 +213,7 @@ namespace FrostSpace.Core
             if (operation == null)
             {
                 Debug.LogError("SceneController: сцена '" + sceneName + "' не добавлена в Build Settings", this);
+                RestoreCurtainDefaults();
                 IsBusy = false;
                 yield break;
             }
@@ -235,7 +261,20 @@ namespace FrostSpace.Core
 
             yield return FadeRoutine(1f, 0f, _fadeInSeconds);
 
+            RestoreCurtainDefaults();
             IsBusy = false;
+        }
+
+        /// <summary>
+        /// Возвращает занавес к сериализованным цвету и строке: следующий переход
+        /// должен быть прежним, даже если этот шёл в чёрном.
+        /// </summary>
+        private void RestoreCurtainDefaults()
+        {
+            if (_fill != null)
+                _fill.color = _curtainColor;
+            if (_statusLabel != null)
+                _statusLabel.text = _statusText;
         }
 
         /// <summary>
@@ -244,7 +283,7 @@ namespace FrostSpace.Core
         /// </summary>
         private IEnumerator StatusRoutine()
         {
-            if (string.IsNullOrEmpty(_statusText))
+            if (_statusLabel == null || string.IsNullOrEmpty(_statusLabel.text))
                 yield break;
 
             var delay = Mathf.Max(0f, _fadeOutSeconds - _statusLeadInSeconds);
@@ -288,7 +327,7 @@ namespace FrostSpace.Core
 
         private IEnumerator FadeStatusRoutine(float from, float to, float duration)
         {
-            if (string.IsNullOrEmpty(_statusText))
+            if (_statusLabel == null || string.IsNullOrEmpty(_statusLabel.text))
                 yield break;
 
             _canvas.enabled = true;
@@ -354,6 +393,7 @@ namespace FrostSpace.Core
             var image = fill.GetComponent<Image>();
             image.color = _curtainColor;
             image.raycastTarget = false;
+            _fill = image;
 
             var label = new GameObject("Status", typeof(RectTransform), typeof(TextMeshProUGUI));
             var labelRect = label.GetComponent<RectTransform>();
@@ -381,6 +421,7 @@ namespace FrostSpace.Core
             text.alignment = TextAlignmentOptions.Center;
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.raycastTarget = false;
+            _statusLabel = text;
 
             SetAlpha(_fadeInOnStart ? 1f : 0f);
             _canvas.enabled = _fadeInOnStart;

@@ -47,6 +47,7 @@ LOGS = os.path.join(HERE, "logs")
 
 #: Каталоги вывода ассетов: всё, что скрипт обязан создать.
 MODELS = "Assets/_Project/Content/Models"
+DATA = "Assets/_Project/Content/Data"
 PREVIEWS = "AssetSource/Previews"
 
 #: Таймауты по умолчанию (секунды). Переопределяются `--timeout`.
@@ -129,6 +130,75 @@ PIPELINE: dict[str, dict] = {
                            ["--out", PREVIEWS + "/Train"])],
         "checks": [_step("check_train.py", "file")],
     },
+    # Край открытого мира у депо: рельеф, путь с терминусом, лес, пропы.
+    # Один идентификатор на четыре генератора — как у `level`: секции
+    # передаются через `--ids` (ground / track / grove / prop), и те же токены
+    # фильтруют per-file шаги, потому что файлы названы `Frontier_<секция>_*`.
+    # Иначе `--ids` приходится писать и как имя секции, и как имя файла сразу:
+    # аргумент идёт и в скрипт сборки, и в `filter_by_ids`.
+    # Превью одно и не per-file: оценивать надо кадр с платформы, а не
+    # четыре меша по отдельности, поэтому скрипт импортирует весь комплект.
+    "frontier": {
+        "script": "build_frontier.py",
+        "outputs": [MODELS + "/Level/Frontier_*.fbx"],
+        "previews": [_step("render_frontier_previews.py", "none",
+                           ["--out", PREVIEWS + "/Frontier"])],
+        "checks": [_step("check_frontier.py", "file")],
+    },
+    # Раскладка мира: не меши, а числа. Тот же принцип, что у `frontier` с
+    # `frontier_layout.py` (ADR 0035 п.1): один источник, который читают
+    # генераторы, проверка, превью и C#. Только выход — TextAsset внутри Assets/,
+    # а не манифест в `Tools/`: в сборку WebGL файлы вне `Assets/` не едут, а
+    # миникарте узлы, линии и чанки нужны в рантайме (ADR 0036).
+    # Blender для этого ассета не нужен: `runner` = python, иначе прогон
+    # заведомо тяжёлого процесса ради записи 9 КБ.
+    "world": {
+        "script": "build_world.py",
+        "runner": "python",
+        "outputs": [DATA + "/World/world_layout.json"],
+        "previews": [_step("render_world_previews.py", "none",
+                           ["--out", PREVIEWS + "/World"], runner="python")],
+        "checks": [_step("check_world.py", "none", runner="python")],
+    },
+    # Наследие: руины и якоря Пояса. Отдельный идентификатор от `frontier`,
+    # потому что класс контента другой: не быт края депо, а то, что осталось от
+    # ушедших. Проверку ведёт `check_frontier.py` — общие правила те же (ничего
+    # тоньше 6 см, копланарность разных материалов, непустой меш), а высота
+    # сверяется с раскладкой уже на сборке: `build_heritage.py` не отдаст файл,
+    # если вершина меша не равна обещанным в `world_layout.py` метрам.
+    "heritage": {
+        "script": "build_heritage.py",
+        "outputs": [MODELS + "/Level/Heritage_*.fbx"],
+        "previews": [_step("render_heritage_previews.py", "none",
+                           ["--out", PREVIEWS + "/Heritage"])],
+        "checks": [_step("check_frontier.py", "file")],
+    },
+    # Дальний слой: силуэты якорей на 380 м. Отдельный идентификатор от
+    # `heritage`, потому что класс другой: руину можно потрогать, а карточку
+    # нельзя — она обман оптики и в сцене живёт слоем, следующим за
+    # наблюдателем (ADR 0036 п.6). Числа те же, что у раскладки: сборка сверяет
+    # с `far_layer()` и высоту, и ширину, потому что оба сошли с углового
+    # размера настоящего якоря.
+    # Земля клеток мира. Отдельный идентификатор от `frontier`, потому что это
+    # другой класс носителя: `frontier` печает один большой кусок вокруг депо с
+    # неровномерной сеткой (0,94 м у двора), а `cells` печает одинаковые плитки
+    # 600 м с шагом 30 м, и каждая живёт своим префабом. Сборка сверяет каждую
+    # вершину с мировым полем: сетка обязана лежать на своём рельефе, а не
+    # «примерно на нём».
+    "cells": {
+        "script": "build_world_cells.py",
+        "outputs": [MODELS + "/Level/WorldCell_*.fbx"],
+        "previews": [_step("render_cells_previews.py", "none",
+                           ["--out", PREVIEWS + "/Cells"])],
+        "checks": [_step("check_frontier.py", "file")],
+    },
+    "far": {
+        "script": "build_far.py",
+        "outputs": [MODELS + "/Level/Far_*.fbx"],
+        "previews": [_step("render_far_previews.py", "none",
+                           ["--out", PREVIEWS + "/Far"])],
+        "checks": [_step("check_frontier.py", "file")],
+    },
     "hoverbike": {
         "script": "build_hoverbike.py",
         "outputs": [MODELS + "/Level/Hoverbike.fbx"],
@@ -206,7 +276,11 @@ PIPELINE: dict[str, dict] = {
 GLOBAL_CHECKS = [
     {"script": "selftest.py", "per": "none", "args": [], "runner": "blender"},
     # Единица внутри FBX: быстрый разбор бинарного файла, bpy не нужен.
-    {"script": "fbx_units.py", "per": "output", "args": [], "runner": "python"},
+    # `only` обязателен с появлением ассетов-данных: `world` пишет JSON, он
+    # попадает в `produced`, и разбирать JSON как меш — не проверка, а падение
+    # всего пайплайна на ровном месте.
+    {"script": "fbx_units.py", "per": "output", "args": [], "runner": "python",
+     "only": ".fbx"},
 ]
 
 
@@ -308,6 +382,13 @@ def run_step(label: str, cmd: list[str], timeout: int, log) -> tuple[bool, str]:
     if proc.returncode != 0:
         print("     FAIL код=%d за %.1f с" % (proc.returncode, elapsed))
         return False, "код %d" % proc.returncode
+    # Blender в --background не отдаёт ненулевой код, когда скрипт в `--python`
+    # падает: он печатает traceback и выходит с нулём. Без этой строки любой
+    # шаг пайплайна — сборка, проверка, превью — светился бы PASS на мёртвом
+    # скрипте, а `sys.exit(1)` в обработчике не помогает.
+    if "Traceback (most recent call last)" in output:
+        print("     FAIL исключение в шаге за %.1f с" % elapsed)
+        return False, "исключение в скрипте"
     print("     OK за %.1f с" % elapsed)
     return True, "%.1f с" % elapsed
 
@@ -448,7 +529,10 @@ def main() -> int:
                 extra.insert(0, "--carry-idle")
 
             print("[%s] сборка" % name)
-            cmd = _command(blender, {"script": asset["script"], "runner": "blender"},
+            # По умолчанию — Blender, как всегда. `runner: "python"` у ассета
+            # нужен только для данных: раскладка мира пишется без bpy.
+            cmd = _command(blender, {"script": asset["script"],
+                                     "runner": asset.get("runner", "blender")},
                            extra, None, python)
             if args.skip_build:
                 print("  -> пропущено (--skip-build)")
@@ -505,6 +589,10 @@ def main() -> int:
             print("[global] проверки пайплайна")
             for step in GLOBAL_CHECKS:
                 targets = produced if step["per"] == "output" else [None]
+                only = step.get("only")
+                if only:
+                    targets = [p for p in targets
+                               if p.lower().endswith(only)]
                 if step["per"] == "output" and not targets:
                     continue
                 cmd = _command(blender, step, step["args"], None, python)

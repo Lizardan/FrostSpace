@@ -78,7 +78,7 @@ namespace FrostSpace.Features.Locomotion
         private Vector2 _overrideMove;
         private bool _overrideSprint;
         private bool _rideOverride;
-        private bool _conversationLock;
+        private bool _controlLock;
         private float _loggedBasisYaw = float.NaN;
         private float _lastGroundedAt = -999f;
         private float _jumpBufferedAt = -999f;
@@ -219,16 +219,20 @@ namespace FrostSpace.Features.Locomotion
         }
 
         /// <summary>
-        /// На время диалога игрок стоит: план. скорость гасится, прыжок отменяется,
+        /// Пока игроку нечем управлять — диалог, заставка или открытое окно
+        /// экипировки — он стоит: планарная скорость гасится, прыжок отменяется,
         /// ввод не читается. Гравитация остаётся, чтобы персонаж не завис, если
-        /// разговор открыли в прыжке.
+        /// блокировку включили в прыжке.
+        ///
+        /// Название общее, а не «диалог»: держат этот замок три разных хозяина, и
+        /// лог про диалог врал бы, когда окно снаряжения останавливало героя.
         /// </summary>
-        public void SetConversationLock(bool locked)
+        public void SetControlLock(bool locked)
         {
-            if (_conversationLock == locked)
+            if (_controlLock == locked)
                 return;
 
-            _conversationLock = locked;
+            _controlLock = locked;
             _planarVelocity = Vector3.zero;
             _jumpPending = false;
             _jumpBufferedAt = -999f;
@@ -242,8 +246,8 @@ namespace FrostSpace.Features.Locomotion
 
             Debug.Log(
                 locked
-                    ? "[RobotLocomotion] диалог: игрок остановлен"
-                    : "[RobotLocomotion] диалог: управление возвращено",
+                    ? "[RobotLocomotion] управление заблокировано"
+                    : "[RobotLocomotion] управление возвращено",
                 this);
         }
 
@@ -295,7 +299,7 @@ namespace FrostSpace.Features.Locomotion
             if (_rideOverride)
                 return;
 
-            if (_conversationLock)
+            if (_controlLock)
             {
                 RestWhileConversing();
                 return;
