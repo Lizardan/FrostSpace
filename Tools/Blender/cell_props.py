@@ -34,7 +34,11 @@ def merge(b, obj, lx: float, lz: float, ground: float, sink: float = 0.0,
         b.mb.verts.append(Vector((x + lx, -y + lz, v.co.z + ground + sink)))
     for poly in obj.data.polygons:
         name = mats[poly.material_index] if poly.material_index < len(mats) else "?"
-        b.mb.add_face([base + i for i in poly.vertices], b._index(name), "surface")
+        # Y переносится с отрицанием (Blender-Y = −z мира), а это зеркало:
+        # обход граней обязан развернуться, иначе весь влитый предмет
+        # оказывается вывернутым — снаружи просвечивает, изнутри виден.
+        b.mb.add_face([base + i for i in reversed(poly.vertices)],
+                      b._index(name), "surface")
 
 
 def drift(b, lx: float, lz: float, ground: float, rx: float, ry: float,

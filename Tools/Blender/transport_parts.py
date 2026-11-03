@@ -234,6 +234,7 @@ def _sweep(b, fine, profile, mat, center, z_level):
     """
     (cx, cz) = center
     path = [(x - cx, -(z - cz), level + z_level) for (x, z, level) in fine]
+    profile = level_lib.outward_profile(profile)
     b.tube(path, [(1.0, 1.0)] * len(path), mat, n=4, profile=profile,
            ref=(0.0, 0.0, 1.0), fan_caps=True)
 

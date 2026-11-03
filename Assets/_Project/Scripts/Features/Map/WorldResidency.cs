@@ -42,6 +42,9 @@ namespace FrostSpace.Features.Map
         private WorldLayout _world;
         private Vector2Int _current = new(int.MinValue, int.MinValue);
 
+        /// <summary>О какой клетке уже предупредили: не спамить каждый кадр.</summary>
+        private Vector2Int _guardReported = new(int.MinValue, int.MinValue);
+
         /// <summary>Сколько клеток включено прямо сейчас — для замера и теста.</summary>
         public int ActiveCount
         {
@@ -62,6 +65,20 @@ namespace FrostSpace.Features.Map
         {
             _cells.Clear();
             GetComponentsInChildren(true, _cells);
+
+            // Один индекс на две клетки — это не «последняя победила», а
+            // сломанная сцена: вторая клетка никогда не включится, и
+            // молчать об этом нельзя.
+            var seen = new System.Collections.Generic.HashSet<Vector2Int>();
+            for (var i = 0; i < _cells.Count; i++)
+            {
+                if (!seen.Add(_cells[i].Cell))
+                {
+                    Debug.LogError(
+                        "WorldResidency: две клетки с индексом " + _cells[i].Cell +
+                        " — вторая не будет включаться", _cells[i]);
+                }
+            }
 
             if (_player == null)
             {
@@ -110,7 +127,27 @@ namespace FrostSpace.Features.Map
             for (var i = 0; i < _cells.Count; i++)
             {
                 var cell = _cells[i];
-                cell.gameObject.SetActive(_resident.Contains(cell.Cell));
+                var resident = _resident.Contains(cell.Cell);
+
+                // Игрок может оказаться ребёнком клетки: на время прибытия он
+                // едет в вагоне, а вагон лежит в префабе депо. Гасить такую
+                // клетку нельзя — вместе с ней выключится и герой. Штатно этого
+                // не случается (клетка игрока резидентна по определению), но
+                // цена ошибки — исчезнувший игрок, поэтому проверка дешёвая.
+                if (!resident && _player != null && _player.IsChildOf(cell.transform))
+                {
+                    if (_guardReported != cell.Cell)
+                    {
+                        _guardReported = cell.Cell;
+                        Debug.LogWarning(
+                            "WorldResidency: игрок внутри клетки " + cell.Cell +
+                            " — клетка оставлена включённой", cell);
+                    }
+
+                    continue;
+                }
+
+                cell.gameObject.SetActive(resident);
             }
         }
     }

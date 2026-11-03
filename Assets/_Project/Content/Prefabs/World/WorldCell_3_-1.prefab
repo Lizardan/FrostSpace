@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3552194036123882049}
   - component: {fileID: 6917240874334202765}
   - component: {fileID: 8811392105013338557}
+  - component: {fileID: 5179059734219539037}
   m_Layer: 0
   m_Name: WorldCell_3_-1
   m_TagString: Untagged
@@ -127,3 +128,15 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8690691872117849830, guid: a44fa9de7421e3c4d926c6bb00d48991, type: 3}
+--- !u!114 &5179059734219539037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5913571057513534163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.CellMesh

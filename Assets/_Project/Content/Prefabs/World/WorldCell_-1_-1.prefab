@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8660287098500249438}
   - component: {fileID: 8031956233694321572}
   - component: {fileID: 3771719437770091659}
+  - component: {fileID: 29948555374450318}
   m_Layer: 0
   m_Name: Signs_-1_-1
   m_TagString: Untagged
@@ -114,6 +115,18 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1803068999486166387, guid: cec98aa019117994aa6f25dbc4319f2c, type: 3}
+--- !u!114 &29948555374450318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3435464887162717188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.CellMesh
 --- !u!1 &3747058127762110093
 GameObject:
   m_ObjectHideFlags: 0
@@ -126,6 +139,7 @@ GameObject:
   - component: {fileID: 3012120018219097304}
   - component: {fileID: 1110955010688862116}
   - component: {fileID: 8473582642572822771}
+  - component: {fileID: 3025853103360196737}
   m_Layer: 0
   m_Name: Rail_-1_-1
   m_TagString: Untagged
@@ -228,6 +242,18 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4151849535683489070, guid: cec98aa019117994aa6f25dbc4319f2c, type: 3}
+--- !u!114 &3025853103360196737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3747058127762110093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.CellMesh
 --- !u!1 &3959894540506168027
 GameObject:
   m_ObjectHideFlags: 0
@@ -240,6 +266,7 @@ GameObject:
   - component: {fileID: 1434650521090908552}
   - component: {fileID: 5062889715713566908}
   - component: {fileID: 1590253857513896862}
+  - component: {fileID: 3058042357333249237}
   m_Layer: 0
   m_Name: Ties_-1_-1
   m_TagString: Untagged
@@ -342,6 +369,18 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4882789230622703508, guid: cec98aa019117994aa6f25dbc4319f2c, type: 3}
+--- !u!114 &3058042357333249237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3959894540506168027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.CellMesh
 --- !u!1 &7360784219164612175
 GameObject:
   m_ObjectHideFlags: 0
@@ -354,6 +393,7 @@ GameObject:
   - component: {fileID: 869949877208774894}
   - component: {fileID: 1879506651503093211}
   - component: {fileID: 8263765201166100249}
+  - component: {fileID: 3745610365749698847}
   m_Layer: 0
   m_Name: WorldCell_-1_-1
   m_TagString: Untagged
@@ -456,6 +496,18 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8540619770766797518, guid: cec98aa019117994aa6f25dbc4319f2c, type: 3}
+--- !u!114 &3745610365749698847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7360784219164612175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.CellMesh
 --- !u!1 &7466809744385590260
 GameObject:
   m_ObjectHideFlags: 0

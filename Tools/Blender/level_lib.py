@@ -31,6 +31,24 @@ from mathutils import Euler, Vector
 
 import lowpoly
 
+
+def outward_profile(profile):
+    """Профиль, обойдённый против часовой стрелки в плоскости (x, z).
+
+    `MeshBuilder.tube` строит грани в порядке «профиль → путь», поэтому обход
+    по часовой стрелке даёт вывернутую трубу: снаружи она просвечивает, а
+    изнутри видна. Знак площади по формуле шнурков не зависит от направления
+    пути — проверять его дешевле, чем ловить перевёрнутые грани на кадре.
+    """
+    area = 0.0
+    count = len(profile)
+    for i in range(count):
+        (x0, z0) = profile[i]
+        (x1, z1) = profile[(i + 1) % count]
+        area += x0 * z1 - x1 * z0
+    return profile if area > 0.0 else list(reversed(profile))
+
+
 # ---------------------------------------------------------------- палитра
 
 #: Имя = имя ассета Unity `Level_<Name>.mat`.

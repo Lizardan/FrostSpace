@@ -286,7 +286,16 @@ python Tools/Blender/build_all.py --all --check --preview
 6. превью       build_all.py --asset <id> --preview --skip-build  # PNG для глаз
 7. MCP          gui_session.py run <файл>.py --auto   # окно живёт только на время шага
 8. отчёт        Tools/Blender/logs/build_all_*.log    # пишется сам
+9. нормали      check_shell_normals.py -- <fbx>        # знак объёма каждой оболочки
 ```
+
+`Tools/Blender/check_shell_normals.py` — проверка, которой не хватало:
+`check_mesh_integrity.py` судит по верхней поверхности и не видит вывернутую
+**стену**. Здесь у каждой замкнутой оболочки считается знак объёма **от её
+центра** (от нуля на мешах в сотнях метров знак случайный): отрицательный —
+оболочка смотрит внутрь и снаружи просвечивает. Профили труб нормализует
+`level_lib.outward_profile`, коробки — `lowpoly.beveled_box`; влитые в клетку
+предметы — `cell_props.merge` (перенос с отрицанием Y разворачивает обход).
 
 `Tools/Blender/selftest.py` — минимальный прогон этого цикла для low-poly ядра: собирает
 меш, проверяет топологию, экспортирует FBX, импортирует обратно и сравнивает габарит.

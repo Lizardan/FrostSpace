@@ -44,6 +44,7 @@
 | [0034](0034-cockpit-and-render-depth.md) | Кокпит в кабине 4,2 м, читаемая голопанель, тени и bloom в поезде | Accepted |
 | [0035](0035-scene-placement-is-manual.md) | Край мира набирается таблицей и ставится руками; `LODGroup` не заводим | Accepted |
 | [0036](0036-world-grid-and-residency.md) | Мир 6,6×6,6 км из клеток 600 м; residency внутри одной сцены; числа — в `world_layout.py` | Accepted |
+| [0037](0037-cell-prefab-owns-content.md) | Префаб клетки — владелец содержимого; `CellMesh` — граница владения; глобальное — в сцене | Accepted |
 | [0037](0037-no-player-xray.md) | X-ray силуэт игрока убран: скрипт и шейдер удалены, вырез прицела остаётся | Accepted |
 
 ## Когда создавать ADR

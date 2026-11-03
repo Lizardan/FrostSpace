@@ -30,6 +30,7 @@ int prefabTris = 0;
 int fbxTris = 0;
 int cellMeshes = 0;
 int prefabMeshes = 0;
+int authoredMeshes = 0;
 var broken = new System.Text.StringBuilder();
 
 for (int g = 0; g < guids.Length; g++)
@@ -65,13 +66,22 @@ for (int g = 0; g < guids.Length; g++)
 
     var prefabNames = new System.Collections.Generic.HashSet<string>();
     int localNull = 0;
-    foreach (var mf in prefab.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
+    var cellFilters = new System.Collections.Generic.HashSet<UnityEngine.MeshFilter>();
+    foreach (var cm in prefab.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
     {
+        var mf = cm.GetComponent<UnityEngine.MeshFilter>();
+        if (mf == null) { localNull++; continue; }
+        cellFilters.Add(mf);
         if (mf.sharedMesh == null) { localNull++; continue; }
         prefabNames.Add(mf.sharedMesh.name);
         prefabTris += mf.sharedMesh.triangles.Length / 3;
         prefabMeshes++;
     }
+
+    // Авторские меши (актёры, добавленные руками объекты) в сверку с FBX не
+    // входят: префаб клетки — владелец содержимого, а не только геометрии.
+    foreach (var mf in prefab.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
+        if (!cellFilters.Contains(mf) && mf.sharedMesh != null) authoredMeshes++;
 
     int missing = 0;
     foreach (var n in fbxNames) if (!prefabNames.Contains(n)) missing++;
@@ -79,9 +89,10 @@ for (int g = 0; g < guids.Length; g++)
     foreach (var n in prefabNames) if (!fbxNames.Contains(n)) extra++;
 
     int localNullColliders = 0;
-    foreach (var mc in prefab.GetComponentsInChildren<UnityEngine.MeshCollider>(true))
+    foreach (var cm in prefab.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
     {
-        if (mc.sharedMesh == null) localNullColliders++;
+        var mc = cm.GetComponent<UnityEngine.MeshCollider>();
+        if (mc == null || mc.sharedMesh == null) localNullColliders++;
     }
 
     var wc = prefab.GetComponent<FrostSpace.Features.Map.WorldCell>();
@@ -101,7 +112,9 @@ for (int g = 0; g < guids.Length; g++)
     }
 }
 
-sb.AppendLine(string.Format("префабы: мешей={0} трис={1} | FBX: мешей={2} трис={3}", prefabMeshes, prefabTris, cellMeshes, fbxTris));
+sb.AppendLine(string.Format("префабы: мешей={0} трис={1} | FBX: мешей={2} трис={3}",
+    prefabMeshes, prefabTris, cellMeshes, fbxTris));
+sb.AppendLine(string.Format("авторских мешей в префабах (актёры и добавленное): {0} — в сверку с FBX не входят", authoredMeshes));
 sb.AppendLine(string.Format("пустых мешей={0} потеряно из FBX={1} лишних в префабе={2} коллайдеров без меша={3} без WorldCell={4}",
     nullMeshes, missingFromPrefab, extraInPrefab, nullColliders, noWorldCell));
 sb.AppendLine("битых клеток: " + cellsBroken);
@@ -151,9 +164,10 @@ for (int i = 0; i < cellsRoot.childCount; i++)
     string sourceName = source != null ? System.IO.Path.GetFileNameWithoutExtension(source) : "<не префаб>";
 
     int instMeshes = 0;
-    foreach (var mf in inst.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
+    foreach (var cm in inst.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
     {
-        if (mf.sharedMesh == null) continue;
+        var mf = cm.GetComponent<UnityEngine.MeshFilter>();
+        if (mf == null || mf.sharedMesh == null) continue;
         instMeshes++;
         sceneTris += mf.sharedMesh.triangles.Length / 3;
     }
@@ -161,8 +175,11 @@ for (int i = 0; i < cellsRoot.childCount; i++)
     var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(prefabDir + "/" + expected + ".prefab");
     int prefabMeshCount = 0;
     if (prefab != null)
-        foreach (var mf in prefab.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
-            if (mf.sharedMesh != null) prefabMeshCount++;
+        foreach (var cm in prefab.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
+        {
+            var mf = cm.GetComponent<UnityEngine.MeshFilter>();
+            if (mf != null && mf.sharedMesh != null) prefabMeshCount++;
+        }
 
     if (!posOk || !indexOk || sourceName != expected || instMeshes != prefabMeshCount)
     {

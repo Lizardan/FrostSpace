@@ -2,6 +2,7 @@ using System.Reflection;
 using FrostSpace.Features.Story;
 using FrostSpace.Features.View;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -140,6 +141,68 @@ namespace FrostSpace.Tests
             {
                 Restore(original);
             }
+        }
+
+        /// <summary>
+        /// Клетка — владелец своего содержимого: актёры депо лежат в префабе,
+        /// а игрок и режиссёр прибытия остаются сценовыми. Если актёр снова
+        /// окажется в корне сцены, резидентность его не погасит, и он будет
+        /// висеть в воздухе над выгруженной клеткой.
+        /// </summary>
+        [Test]
+        public void DepotActorsLiveInCellPrefabAndPlayerStaysInScene()
+        {
+            var scene = OpenFrontier(out var original);
+
+            try
+            {
+                var cells = GameObject.Find("WorldCells");
+                Assert.That(cells, Is.Not.Null, "в Frontier нет корня WorldCells");
+
+                var cell = cells.transform.Find("WorldCell_-2_-2");
+                Assert.That(cell, Is.Not.Null, "нет инстанса клетки депо");
+
+                var actors = new[]
+                {
+                    "DepotTrain", "R7_Drifter", "R16_Warden_A", "R16_Warden_B",
+                    "R8_Bulwark", "DepotLamp", "DepotDoorSpill", "DepotDoorFill",
+                    "DepotArrival", "R13_Prospector", "Prop_GravCart"
+                };
+
+                foreach (var name in actors)
+                {
+                    var actor = FindDeep(cell, name);
+                    Assert.That(actor, Is.Not.Null,
+                        name + " должен лежать в чанке депо, а не в корне сцены");
+                    Assert.That(PrefabUtility.IsPartOfPrefabInstance(actor.gameObject), Is.True,
+                        name + " не часть префаба клетки — выгрузка его не погасит");
+                }
+
+                var player = GameObject.Find("Player");
+                Assert.That(player, Is.Not.Null, "в сцене нет Player");
+                Assert.That(player.transform.IsChildOf(cell), Is.False,
+                    "игрок — сценовый объект и не должен попадать в префаб клетки");
+
+                var director = Object.FindAnyObjectByType<DepotArrivalDirector>();
+                Assert.That(director, Is.Not.Null, "в сцене нет DepotArrivalDirector");
+                Assert.That(director.transform.IsChildOf(cell), Is.True,
+                    "режиссёр прибытия — содержимое депо и должен лежать в чанке");
+                Assert.That(PrefabUtility.IsPartOfPrefabInstance(director.gameObject), Is.True,
+                    "режиссёр прибытия не часть префаба клетки — выгрузка его не погасит");
+            }
+            finally
+            {
+                Restore(original);
+            }
+        }
+
+        private static Transform FindDeep(Transform root, string name)
+        {
+            foreach (var t in root.GetComponentsInChildren<Transform>(true))
+                if (t.name == name)
+                    return t;
+
+            return null;
         }
 
         /// <summary>

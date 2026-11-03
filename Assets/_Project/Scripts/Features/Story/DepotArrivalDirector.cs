@@ -255,6 +255,13 @@ namespace FrostSpace.Features.Story
 
         private IEnumerator Play()
         {
+            // Вагон живёт в префабе клетки депо, игрок — сценовый объект: префаб
+            // не может ссылаться на сцену, поэтому на время проезда игрок снова
+            // становится ребёнком вагона. Иначе состав уехал бы без него, а
+            // CharacterController остался бы стоять на платформе.
+            if (_player != null && _train != null && !_player.IsChildOf(_train))
+                _player.SetParent(_train, true);
+
             _locomotion?.SetControlLock(true);
 
             // Игрок едет внутри вагона. Пока локомоция жива, она каждый кадр
@@ -429,12 +436,19 @@ namespace FrostSpace.Features.Story
             yield return left;
         }
 
+        /// <summary>
+        /// Вернуть спутников в клетку депо. R13 и тележка созданы для депо и
+        /// остаются его содержимым: корень клетки — родитель вагона (вагон лежит
+        /// в префабе). Отцепка в корень сцены вынула бы их из чанка, и при
+        /// выгрузке депо они остались бы висеть в пустоте.
+        /// </summary>
         private void DetachCouriers()
         {
+            var cell = _train != null ? _train.parent : null;
             if (_cart != null)
-                _cart.SetParent(null, true);
+                _cart.SetParent(cell, true);
             if (_r13 != null)
-                _r13.SetParent(null, true);
+                _r13.SetParent(cell, true);
         }
 
         /// <summary>

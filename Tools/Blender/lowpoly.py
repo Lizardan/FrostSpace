@@ -203,6 +203,24 @@ def beveled_box(center, size, bevel):
             )
         )
 
+    # Согласовать обход: у выпуклой коробки нормаль каждой грани обязана
+    # смотреть от центра. Циклы выше строят грань одинаковым порядком для
+    # обеих сторон оси, поэтому по одной грани на каждую ось (и часть фасок)
+    # выходили вывернутыми: снаружи они просвечивали, а изнутри были видны.
+    # Проверка не опирается на соглашения о знаке — только на геометрию.
+    origin = Vector(center)
+    for index, face in enumerate(faces):
+        p0 = verts[face[0]]
+        p1 = verts[face[1]]
+        p2 = verts[face[2]]
+        normal = (p1 - p0).cross(p2 - p0)
+        centroid = Vector((0.0, 0.0, 0.0))
+        for corner in face:
+            centroid += verts[corner]
+        centroid /= len(face)
+        if normal.dot(centroid - origin) < 0.0:
+            faces[index] = tuple(reversed(face))
+
     return verts, faces
 
 

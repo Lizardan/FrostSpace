@@ -68,7 +68,7 @@ MiniMax, WorkBuddy, Freebuff, Qoder и любой следующий): **всё,
 | Play Mode | domain reload **выключен**, scene reload включён; Play тикает только при фокусе окна (`runInBackground` не заменяет) |
 | Сцены | Факт: `Boot` (0, загрузка сервисов) → `MainMenu` (1, диорама и UI) → `CharacterSetup` (2, выбор корпуса) → `Train` (3, интерьер, переноска, квест, диалоги R13 и финал) → `Frontier` (4, депо: прибытие поезда, боковой проём, выход R13 и тележки, охрана, R7 и снаряжение) → `Game` (5, прежний уровень, вне потока). Целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`; `Game` уходит последним индексом. Переходы — только через `Core/SceneController.cs` |
 | Сюжет и дизайн | `docs/WORLD.md` — мир, Тишина, холод, быт; `docs/GAME_DESIGN.md` — предпосылка, три корпуса, поезд, депо, системы, ID битов. Статус: **design intent**; не выдавай его за код |
-| Код | `Core/` (3 файла), `Features/` (17 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Inventory, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story, Map; в `Map` — разбор раскладки, сетка клеток, резидентность клеток и миникарта (`RD-05`); в `Inventory` — доска экипировки и окно по `I`), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (29 файла, 246 тестов); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
+| Код | `Core/` (3 файла), `Features/` (17 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Inventory, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story, Map; в `Map` — разбор раскладки, сетка клеток, резидентность клеток, метка геометрии клетки (`CellMesh`) и миникарта (`RD-05`); в `Inventory` — доска экипировки и окно по `I`), `Editor/` (8 файлов: 4 постпроцессора FBX + сборка WebGL + сборщик ховербайка + обновление префабов ходунов + инспектор диалогов), `Tests/EditMode/` (30 файлов, 247 тестов); asmdef `FrostSpace.Core`, `FrostSpace.Features`, `FrostSpace.Editor`, `FrostSpace.Tests.EditMode` |
 | Числа мира | `Tools/Blender/world_layout.py` — единственный источник раскладки Stage 3 (клетки 600 м, мир 6,6×6,6 км, якоря, руины, узлы, линии и транспортный стол, тёплый каркас, туман, направление аномалии, дальний слой) и 18 инвариантов к нему. Выход — `Assets/_Project/Content/Data/World/world_layout.json` (`TextAsset`, первый не-Unity-файл в `Assets/`). Сборка и проверка — `build_all.py --asset world`; силуэты слоя — `--asset far`, земля клеток — `--asset cells`, путь и дороги по клеткам — `--asset transport`. Решение — ADR 0036 |
 | Unity MCP | пакет `com.coplaydev.unity-mcp`; сервер слушает 6400 или следующий свободный (сейчас 6401), клиент — `Tools/Unity/unity_bridge.py`, порт через `UNITY_MCP_PORT` |
 | Blender | **5.2.3 LTS**, аддон `blender_mcp` (протокол 14), порт `9876` (только GUI) |
@@ -310,6 +310,10 @@ pwsh -File Tools/Agent/LinkAgentSkills.ps1 -Check    # только провер
   (ADR 0005). Исключение, зафиксированное ADR 0012: префаб транспорта
   `Hoverbike_Model` собирается скриптом `Editor/HoverbikeModelBuilder.cs` из FBX в
   Blender — потому что модель и посадка задаются скриптом, а не руками.
+- **Префаб клетки — владелец содержимого (ADR 0037).** Геометрию в нём обновляет
+  только `Tools/Unity/sync_cell_prefabs.cs`: он трогает объекты с меткой `CellMesh`
+  и не удаляет авторское. `rebuild_cell_prefabs.cs` — аварийный сброс, он сам
+  откажется работать, если в префабах есть авторские объекты.
 - **`.blend` не правится как текст.** Не держи `.blend` внутри `Assets/` — Unity попытается
   импортировать его как модель.
 - Не хардкодь машинные пути и версии Blender/Unity в коде: используй env/CLI/документацию.

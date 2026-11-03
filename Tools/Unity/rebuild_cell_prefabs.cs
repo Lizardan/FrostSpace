@@ -36,6 +36,42 @@ int colliders = 0;
 int meshes = 0;
 int tris = 0;
 
+// Страховка: пересборка стирает всё, чего нет в FBX. Если в префабах уже
+// живут авторские объекты (актёры, свет, добавленные компоненты), запускать
+// её нельзя — это молча уничтожит работу. Штатное обновление геометрии —
+// `sync_cell_prefabs.cs`, он трогает только помеченные `CellMesh`.
+int authored = 0;
+var authoredCells = new System.Text.StringBuilder();
+for (int g = 0; g < guids.Length; g++)
+{
+    var probePath = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[g]);
+    var probeName = System.IO.Path.GetFileNameWithoutExtension(probePath);
+    var probe = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(prefabDir + "/" + probeName + ".prefab");
+    if (probe == null) continue;
+
+    int count = 0;
+    foreach (var t in probe.GetComponentsInChildren<UnityEngine.Transform>(true))
+    {
+        if (t == probe.transform) continue;
+        if (t.GetComponent<FrostSpace.Features.Map.CellMesh>() != null) continue;
+        count++;
+    }
+
+    if (count > 0)
+    {
+        authored += count;
+        authoredCells.AppendLine(probeName + ": " + count + " авторских объектов");
+    }
+}
+
+if (authored > 0)
+{
+    sb.AppendLine("СТОП: пересборка стёрла бы авторское содержимое префабов.");
+    sb.AppendLine(authoredCells.ToString());
+    sb.AppendLine("Для обновления геометрии используй Tools/Unity/sync_cell_prefabs.cs.");
+    return sb.ToString();
+}
+
 for (int g = 0; g < guids.Length; g++)
 {
     var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[g]);
@@ -75,6 +111,13 @@ for (int g = 0; g < guids.Length; g++)
             colliders++;
         }
         if (mc.sharedMesh == null) mc.sharedMesh = mf.sharedMesh;
+
+        // Метка границы владения: этот объект собран из FBX и принадлежит
+        // конвейеру. Без неё следующая синхронизация не отличит его от
+        // авторского и создаст дубликат.
+        if (go.GetComponent<FrostSpace.Features.Map.CellMesh>() == null)
+            go.AddComponent<FrostSpace.Features.Map.CellMesh>();
+
         meshes++;
         tris += mf.sharedMesh.triangles.Length / 3;
     }
