@@ -337,6 +337,137 @@ def coplanar_visible_pairs(obj, tol: float = 0.002,
     return pairs
 
 
+#: Минимальный зазор между параллельными гранями **разных объектов и разных
+#: материалов**: 6 см, тот же порог, что «ни мельче 6 см» в STYLE.md. Пары
+#: ближе этого зазора глаз читает как одну плоскость, и тест глубины решает её
+#: случайно — это мерцание, а не деталь.
+COPANAR_GAP = 0.06
+
+#: Сколько соседей в окне зазора успевает проверить одна грань. Пол двора —
+#: сотни квадов в одной плоскости, и перебирать их попарно бессмысленно:
+#: соседство решает порядок, а не геометрия.
+COPANAR_WINDOW = 64
+
+
+#: Насколько нормали двух граней должны совпадать, чтобы пару считать
+#: сопадающей: 0.9994 — это около 2°. Наклонный квад земли пересекает
+#: горизонтальную грань шпалы по одной линии, расходится вдоль поверхности и
+#: не мерцает; мерцают именно параллельные плоскости, идущие вровень.
+COPANAR_NORMAL_DOT = 0.9994
+
+
+#: Сторона честного пятна перекрытия, при котором две параллельные грани
+#: действительно борются за пиксель: 20 см по обеим осям. Произведение само по
+#: себе обманчиво: у скошенной грани AABB шире самой грани, и два листа,
+#: касающиеся ребром, дают «пятно» в 0,04 м² при реальном перекрытии в ноль.
+COPANAR_PATCH_SIDE = 0.20
+
+
+def _patch_sides(a, b) -> list:
+    """Два наибольших размера перекрытия AABB, м."""
+    dims = []
+    for axis in range(3):
+        span = min(a[1][axis], b[1][axis]) - max(a[0][axis], b[0][axis])
+        dims.append(max(span, 0.0))
+    dims.sort()
+    return dims[1:]
+
+
+#: Наклон грани, выше которого она считается «поверхностной»: cos 45°. Проверка
+#: смотрит только такие пары — именно их видит игрок сверху, и именно они
+#: мерцают на земле. Торцевые крышки кусков, отвесные стенки юбок и внутренние
+#: грани балласта скрыты в грунте или соседним куском, и их сопадение
+#: невидимо: ловить его значит плодить ложные отказы.
+COPANAR_UP = 0.70
+
+
+def cross_object_coplanar(meshes, gap: float = COPANAR_GAP,
+                          min_area: float = COPANAR_MIN_AREA,
+                          min_patch: float = COPANAR_MIN_PATCH):
+    """Пары сопадающих граней **между разными объектами** одного файла.
+
+    `coplanar_visible_pairs` смотрит один меш: он ловит шпалу о шпалу и ярус
+    сосны о ярус. А мерцание, которое видит игрок на земле, живёт на стыке
+    объектов: юбка дороги легла вровень с квадом земли, край балласта — вровень
+    с полотном, кровля — вровень со снежной шапкой соседней коробки. Внутри
+    каждого из этих мешей порядок, и файл проходил зелёным ровно до того
+    момента, пока два объекта не оказались в одной плоскости.
+
+    Критерий: параллельные грани (нормаль совпадает), разные объекты, разные
+    материалы (одинаковый цвет мерцает невидимо), перекрытие от 20×20 см и
+    зазор меньше `COPANAR_GAP`. Грани с противоположными нормалями не считаются:
+    это контакт, а не конкуренция плоскостей.
+    """
+    buckets: dict = {}
+    boxes: dict = {}
+    for (name, obj) in meshes.items():
+        if name.endswith("_Collider"):
+            continue
+        mw = obj.matrix_world
+        scale = max(abs(s) for s in mw.to_scale()) or 1.0
+        area_scale = scale * scale
+        lo = [1e9] * 3
+        hi = [-1e9] * 3
+        mats = [s.material.name if s.material else "?"
+                for s in obj.material_slots]
+        for poly in obj.data.polygons:
+            if poly.area * area_scale < min_area:
+                continue
+            nrm = (mw.to_3x3() @ poly.normal).normalized()
+            if nrm.z < COPANAR_UP:
+                continue        # смотрим только на обращённые вверх поверхности
+            cen = mw @ poly.center
+            corners = [mw @ obj.data.vertices[i].co for i in poly.vertices]
+            f_lo = [min(c[a] for c in corners) for a in range(3)]
+            f_hi = [max(c[a] for c in corners) for a in range(3)]
+            for a in range(3):
+                lo[a] = min(lo[a], f_lo[a])
+                hi[a] = max(hi[a], f_hi[a])
+            mat = (mats[poly.material_index]
+                   if poly.material_index < len(mats) else "?")
+            key = (round(nrm.x, 1), round(nrm.y, 1), round(nrm.z, 1))
+            buckets.setdefault(key, []).append(
+                (nrm.dot(cen), name, mat, (f_lo, f_hi), nrm))
+        boxes[name] = ((lo, hi) if lo[0] < hi[0] else None)
+
+    pairs = []
+    for faces in buckets.values():
+        if len(faces) < 2:
+            continue
+        faces.sort()
+        for i in range(len(faces)):
+            (oi, na, ma, ba, va) = faces[i]
+            if boxes.get(na) is None:
+                continue
+            seen = 0
+            j = i + 1
+            while j < len(faces) and faces[j][0] - oi < gap:
+                (oj, nb, mb, bb, vb) = faces[j]
+                j += 1
+                if na == nb or ma == mb or seen > COPANAR_WINDOW:
+                    continue
+                if va.dot(vb) < COPANAR_NORMAL_DOT:
+                    continue
+                seen += 1
+                if boxes.get(nb) is None:
+                    continue
+                if not check_train._overlap(boxes[na], boxes[nb], gap):
+                    continue
+                # Пересечение именно граней, а не «почти дотронулись»: две
+                # параллельные плоскости в 5 см, чьи проекции только касаются,
+                # не конкурируют за пиксель. Пятно перекрытия считается по
+                # честным границам без раздувания, иначе касание общим ребром
+                # проходит как копланарность.
+                if not check_train._overlap(ba, bb, 0.0):
+                    continue
+                if min(_patch_sides(ba, bb)) < COPANAR_PATCH_SIDE:
+                    continue
+                pairs.append((na, nb, ba[0], bb[0]))
+                if len(pairs) >= 4:
+                    return pairs
+    return pairs
+#: кластер», а молча провалившаяся сборка: `_scatter` на залипшем счётчике
+#: однажды вернул ноль точек, и весь пайплайн прошёл зелёным.
 #: Минимум треугольников и оболочек в кластере. Пустой меш — не «лёгкий
 #: кластер», а молча провалившаяся сборка: `_scatter` на залипшем счётчике
 #: однажды вернул ноль точек, и весь пайплайн прошёл зелёным.
@@ -421,6 +552,15 @@ def main() -> int:
             print("  ПРЕДУПРЕЖДЕНИЕ (кластер): %s" % line)
         else:
             problems.append(line)
+
+    # Стыки между объектами одного файла: земля клетки против юбки дороги,
+    # балласт против полотна, кровля против шапки снега. Внутри каждого меша
+    # порядок, а на глаз мерцает именно шов.
+    cross = cross_object_coplanar(meshes)
+    for (na, nb, alo, blo) in cross:
+        problems.append("%s и %s: грани в одной плоскости у %s / %s — мерцание"
+                        % (na, nb, tuple(round(v, 2) for v in alo),
+                           tuple(round(v, 2) for v in blo)))
 
     if problems:
         print("CHECK %s FAIL" % base)

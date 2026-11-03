@@ -3,8 +3,8 @@
 Зачем это нужно, если числа уже проверены: `check_world.py` доказывает, что
 раскладка не противоречит себе, но не показывает, читается ли она как место.
 По SVG видно глазами то, чего провалом инварианта не поймаешь: узлы на границах
-клеток, тёплый каркас полосой вместо площадок, линия, уходящая сквозь вал, и
-насколько пусто между узлами.
+клеток, тёплый каркас полосой вместо площадок, то, что магистраль идёт своей
+нитью и тепла не даёт, и насколько пусто между узлами.
 
 Blender не нужен: `runner` = python, выход — два файла в `AssetSource/Previews/
 World/` (вне git, как и остальные превью — docs/BLENDER.md).
@@ -32,6 +32,7 @@ BG = "#0a1118"
 GRID = "#1d2c39"
 CELL_FILL = "#12202b"
 WARM = "#33566b"
+COLD = "#233646"
 WARM_RECT = "#4a7f9b"
 RAIL_C = "#8fb6cc"
 ROAD_C = "#c9d8e6"
@@ -84,7 +85,9 @@ def plan_svg() -> str:
                    'stroke-width="%.1f" stroke-linejoin="round"/>'
                    % (_line(pts, k), color, 2 * half * k))
 
-    corridor(W.RAIL, W.WARM_RAIL_HALF, WARM)
+    # Магистраль — холодная: она режет плиту коридором, но тепла не даёт, и
+    # поэтому её полоса рисуется отдельно от тёплых дорог.
+    corridor(W.RAIL, W.RAIL_CUT[1], COLD)
     for pts in W.ROADS:
         corridor(pts, W.WARM_ROAD_HALF, WARM)
     for n in W.NODES:
@@ -109,14 +112,8 @@ def plan_svg() -> str:
         out.append('<polyline points="%s" fill="none" stroke="%s" stroke-width="1.6"/>'
                    % (_line(pts, k), ROAD_C))
 
-    # Вал депо и два прорыва: круги по радиусам гребня.
-    (dx, dz) = W.DEPOT
-    for r in (W.FL.EDGE_R, W.FL.RIDGE_R):
-        (px, py) = _xy(dx, dz, k)
-        out.append('<circle cx="%.1f" cy="%.1f" r="%.1f" fill="none" stroke="%s" '
-                   'stroke-width="1" stroke-dasharray="3 6"/>' % (px, py, r * k, GRID))
-
     # Дальность: 99 % тумана и far clip вокруг стартовой точки.
+    (dx, dz) = W.DEPOT
     (px, py) = _xy(dx, dz, k)
     for (r, col, dash) in ((W.fog_distance(0.01), "#5f9db0", "2 5"),
                            (W.FAR_CLIP, "#8fb6cc", "6 4")):

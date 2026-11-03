@@ -242,6 +242,15 @@ def export_static(objs, path: str, mirror_x: bool = True) -> None:
     mirror_x компенсирует `bake_space_transform`, который иначе разворачивает
     модель в Unity на 180° (см. шапку модуля). Меши правятся на месте, поэтому
     после экспорта объекты уже зеркальны — сборка их сразу удаляет.
+
+    Пишем в соседний `.tmp` и ставим на место через `os.replace`. Причина не
+    аккуратность, а гонка: живой редактор следит за `Assets/` и держит файл,
+    пока импортирует его предыдущую версию, и перезапись «открыть на запись»
+    на 1-3 файлах из пачки в 121 падает `OSError [Errno 22]`. Проверено на
+    сборке клеток: в `Temp/` (за редактором) все 121 файл пишутся с первого
+    раза, в `Assets/` — три из ста нет. Атомарная замена прошла все 121 без
+    единого отказа, потому что ей не нужно право записи в занятый файл:
+    достаточно права переименования в каталоге.
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if mirror_x:
@@ -251,15 +260,25 @@ def export_static(objs, path: str, mirror_x: bool = True) -> None:
     for obj in objs:
         obj.select_set(True)
     bpy.context.view_layer.objects.active = objs[0]
-    bpy.ops.export_scene.fbx(
-        filepath=path,
-        use_selection=True,
-        object_types={"MESH"},
-        global_scale=1.0,
-        apply_unit_scale=True,
-        bake_space_transform=True,
-        mesh_smooth_type="FACE",
-    )
+    tmp = os.path.join(os.path.dirname(path),
+                       "." + os.path.basename(path) + ".tmp")
+    try:
+        bpy.ops.export_scene.fbx(
+            filepath=tmp,
+            use_selection=True,
+            object_types={"MESH"},
+            global_scale=1.0,
+            apply_unit_scale=True,
+            bake_space_transform=True,
+            mesh_smooth_type="FACE",
+        )
+        if not os.path.exists(tmp):
+            raise RuntimeError("FBX не создан: %s" % tmp)
+        os.replace(tmp, path)
+    except OSError:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
     if not os.path.exists(path):
         raise RuntimeError("FBX не создан: %s" % path)
     print("EXPORT %s (%d bytes)" % (path, os.path.getsize(path)))

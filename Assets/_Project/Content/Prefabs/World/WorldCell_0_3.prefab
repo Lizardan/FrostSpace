@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2232935337567878234}
-  - component: {fileID: 7321547663084546327}
-  - component: {fileID: 679480496479569458}
+  - component: {fileID: 1693486663648898509}
+  - component: {fileID: 5688259145417650473}
   - component: {fileID: 7438500586507204478}
-  - component: {fileID: 450322755886944714}
+  - component: {fileID: 874096635951036174}
   m_Layer: 0
   m_Name: WorldCell_0_3
   m_TagString: Untagged
@@ -35,7 +35,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &7321547663084546327
+--- !u!33 &1693486663648898509
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -43,7 +43,7 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5046343128848236915}
   m_Mesh: {fileID: 6585206701357510906, guid: cecc6fbfab06b5341984d286a284c834, type: 3}
---- !u!23 &679480496479569458
+--- !u!23 &5688259145417650473
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.WorldCell
   _cell: {x: 0, y: 3}
---- !u!64 &450322755886944714
+--- !u!64 &874096635951036174
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

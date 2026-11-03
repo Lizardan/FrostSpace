@@ -31,10 +31,20 @@ namespace FrostSpace.Tests
         private static PathCurve CameraCurve()
             => new PathCurve(DepotArrivalDirector.DefaultPath());
 
+        // Маршрут игрока в осях сцены: место в вагоне, горловина проёма, порог на
+        // платформе, точка на платформе. Отметки — не ноль сцены: депо стало чанком
+        // клетки (−2,−2), и головка главного пути напротив этих точек лежит на
+        // −16,343804 м (число из `Tools/Blender/world_layout.py`). Место в вагоне —
+        // корень вагона (+1,00 над головкой) плюс 0,15 локально, порог двери —
+        // верх платформы (+0,60 над головкой).
+        private const float RailHeadAtDoor = -16.343804f;
+
         private static PathCurve PlayerCurve()
             => new PathCurve(DepotArrivalDirector.BuildRoute(
-                new Vector3(-8.6f, 1.15f, -1.0f), new Vector3(-5.0f, 1.0f, -1.0f),
-                new Vector3(-2.6f, 0.6f, -1.0f), new Vector3(0.7f, 0.6f, -1.0f)));
+                new Vector3(-8.6f, RailHeadAtDoor + 1.15f, -1.0f),
+                new Vector3(-5.0f, RailHeadAtDoor + 1.0f, -1.0f),
+                new Vector3(-2.6f, RailHeadAtDoor + 0.6f, -1.0f),
+                new Vector3(0.7f, RailHeadAtDoor + 0.6f, -1.0f)));
 
         private static Vector3 PlayerAt(PathCurve route, float elapsed)
         {

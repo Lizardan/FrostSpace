@@ -97,6 +97,11 @@ def build_cell(materials, i: int, j: int):
         # Тон грани — по центру: четыре угла у одной грани могут попасть в
         # разные заносы, а решение на грань — это и есть грань.
         (mx, mz) = ((qx0 + qx1) * 0.5, (qz0 + qz1) * 0.5)
-        b.mb.add_face((a, bb, c, d), deep if _deep(mx, mz) else snow, "surface")
+        # Обход — против часовой в Blender XY (a, d, c, bb), как в
+        # `frontier_parts.build_ground`: только так нормаль грани смотрит вверх.
+        # Обратный порядок не ломает свет и не ломает коллайдер, но делает землю
+        # односторонней: сверху грань отсекается как задняя, и в редакторе
+        # клетка невидима с орбиты, зато видна из-под неё.
+        b.mb.add_face((a, d, c, bb), deep if _deep(mx, mz) else snow, "surface")
 
     return b.build("WorldCell_%d_%d" % (i, j), recalc=False)

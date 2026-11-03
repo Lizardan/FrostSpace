@@ -273,10 +273,12 @@ def build_cabin(materials):
 
     # --- пол: плита-основание и доски
     b = level_lib.LevelBuilder(materials)
-    b.box((0.0, 0.0, 0.16), (2 * HX + 0.1, 2 * HY + 0.1, 0.08), "Level_Wood")
+    b.box((0.0, 0.0, 0.14), (2 * HX + 0.1, 2 * HY + 0.1, 0.08), "Level_Wood")
     for k in range(7):
         x = -3.0 + k * 1.0
-        b.box((x, 0.0, 0.225), (0.98, 2 * HY - 0.06, 0.05), "Level_Wood",
+        # 7 см, не 5: «ничего тоньше 6 см» из STYLE.md меряется и на полу
+        # клетки, а доска пола — первая деталь, которую видно у порога.
+        b.box((x, 0.0, 0.215), (0.98, 2 * HY - 0.06, 0.07), "Level_Wood",
               bevel=0.008)
     objs.append(b.build("Cabin_Floor"))
 
@@ -364,12 +366,15 @@ def build_cabin(materials):
                       (0.14, ln + 0.06, 0.28), (-sign * SLOPE, 0.0, 0.0),
                       "Level_WoodDark", bevel=0.012)
     # заплата из ржавого листа на северном скате
-    lift = ROOF_T * 0.5 + 0.02
+    # заплата из ржавого листа на северном скате — лежит ПОВЕРХ снежного пласта:
+    # врезанная между кровлей и снегом она давала бы с их гранями пару в
+    # полтора сантиметра, то есть мерцание под снежным краем.
+    lift = ROOF_T * 0.5 + SNOW_T + 0.04
     ny = math.sin(math.radians(SLOPE))
     nz = math.cos(math.radians(SLOPE))
     b.box_rot((1.25, -(EAVE_Y * 0.38 + ny * lift),
                EAVE_Z + (RIDGE_Z - EAVE_Z) * 0.62 + nz * lift),
-              (1.05, 0.76, 0.06), (SLOPE, 0.0, 0.0), "Level_Rust",
+              (1.05, 0.76, 0.12), (SLOPE, 0.0, 0.0), "Level_Rust",
               bevel=0.012)
     objs.append(b.build("Cabin_Roof"))
 
@@ -462,10 +467,11 @@ def build_cabin(materials):
     b.box_rot((center.x, center.y, d_lo + door_h * 0.5),
               (door_w, 0.10, door_h), (0.0, 0.0, math.degrees(beta)),
               "Level_WoodDark", bevel=0.012)
-    # ржавые поперечины и оранжевая ручка — «собран из мусора»
-    for off in (-0.26, 0.30):
-        b.box_rot((center.x + direction.x * off,
-                   center.y + direction.y * off, d_lo + door_h * 0.5),
+    # ржавые поперечины и оранжевая ручка — «собран из мусора». Бруски стоят
+    # внизу и вверху полотна: два бруска на одной высоте дают копланарную пару
+    # с перекрытием, и проверка чанка ловит из как будущий z-fighting.
+    for zc in (d_lo + 0.42, d_lo + door_h - 0.42):
+        b.box_rot((center.x, center.y, zc),
                   (door_w - 0.20, 0.06, 0.14), (0.0, 0.0, math.degrees(beta)),
                   "Level_Rust", bevel=0.012)
     handle = center + direction * (door_w * 0.5 - 0.16)

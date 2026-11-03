@@ -14,9 +14,10 @@
 живёт 7200.
 
 В файле клетки живёт всё, что в неё входит: земля (`world_cell_parts`), путь,
-шпалы, путевые знаки и дороги (`transport_parts`). Один файл — один префаб —
-одна кнопка выгрузки: править перегон, станцию или депо значит открыть один
-префаб, а не искать по сцене пять объектов.
+шпалы, путевые знаки и дороги (`transport_parts`), а в клетке депо — ещё и двор
+с боковым путём (`depot_parts`). Один файл — один префаб — одна кнопка выгрузки:
+править перегон, станцию или депо значит открыть один префаб, а не искать по
+сцене пять объектов.
 
 Файлы идут в `Assets/_Project/Content/Models/Level/` — только там работает
 `LevelAssetPostprocessor`, подменяющий материалы на проектные (ADR 0002).
@@ -42,6 +43,8 @@ if HERE not in sys.path:
 import bpy  # noqa: E402
 
 import level_lib  # noqa: E402
+import depot_parts as DP  # noqa: E402
+import settlement_parts as SP  # noqa: E402
 import transport_parts as TP  # noqa: E402
 import world_cell_parts as C  # noqa: E402
 import world_layout as W  # noqa: E402
@@ -114,13 +117,13 @@ def _corridor_check() -> list:
     коридор, потом заносы — ровно та ошибка, что уже была найдена в
     `plate_height`), здесь полезут сантиметры, и поймаются они до экспорта.
 
-    Точки под площадкой узла пропускаются: двор обязан быть плоским, и его пол
-    перекрывает стол намеренно. Это не расхождение, а другой порядок — его
-    держит `world_height`, и проверяется он своей площадкой.
+    Точки под площадкой узла тоже меряются: коридор режет двор, а не двор
+    перекрывает коридор, и именно это проверка и ловит, если порядок слоёв
+    поедет обратно.
     """
     bad = []
     checked = 0
-    skipped = 0
+    onpad = 0
     step = W.TERRAIN_STEP
     for c in W.cells():
         (x0, x1, z0, z1) = W.cell_bounds(c["i"], c["j"])
@@ -130,17 +133,24 @@ def _corridor_check() -> list:
             while pz <= z1 + 1e-6:
                 f = W.transport_floor(px, pz)
                 if f is not None and f["mask"] > 0.999:
+                    checked += 1
                     if W.pad_blend(px, pz) > 1e-6:
-                        skipped += 1
-                    else:
-                        checked += 1
-                        d = abs(W.world_height(px, pz) - f["level"])
-                        if d > FLOOR_TOL and len(bad) < 4:
-                            bad.append("(%.0f, %.0f) %.4f м от стола" % (px, pz, d))
+                        onpad += 1
+                    # Ждём не голое дно, а смешанную отметку: доля 0,999 — это
+                    # не единица, и плита вносит оставшийся миллиметр. Сверять
+                    # с дном в допуске полмиллиметра значит ловить собственную
+                    # формулу смешивания, а не дефект рельефа.
+                    floor = f["level"] - W.CUT_DEPTH[f["kind"]]
+                    plate = W.pad_height(px, pz)
+                    want = plate + (floor - plate) * f["mask"]
+                    d = abs(W.world_height(px, pz) - want)
+                    if d > FLOOR_TOL and len(bad) < 4:
+                        bad.append("(%.0f, %.0f) %.4f м от дна коридора"
+                                   % (px, pz, d))
                 pz += step
             px += step
-    print("КОРИДОР: узлов на дне выемки %d, все на столе; ещё %d под полом узла"
-          % (checked, skipped))
+    print("КОРИДОР: узлов на дне %d, все на отметке стола минус постель; из них "
+          "%d внутри тёплых площадок" % (checked, onpad))
     return bad
 
 
@@ -162,6 +172,46 @@ def _verify(obj, i, j) -> list:
     if worst > H_TOL:
         return ["высота не совпадает с мировым полем: макс %.4f м" % worst]
     return []
+
+
+def _bounds_check(pieces, label: str, i: int, j: int) -> list:
+    """Узел обязан влезть в клетку и стоять на её полу.
+
+    Критерий приёмки «депо целиком внутри клетки (−2,−2)» до этой проверки был
+    словом, а не числом: чанк клетки с габаритом 600×600 м и постройкой,
+    выставленной за ребро, выглядит в редакторе нормально, а на стыке с
+    соседней клеткой даёт висящий в воздухе фасад. Меряются вершины всех
+    объектов узла, а не только земли: земля в клетку ложится по построению,
+    а постройка — нет.
+    """
+    bad = []
+    half = W.BLK * 0.5 + 0.5      # полметра допуска: вершина на ребре клетки
+    # есть вершина на ребре, и в float это 300,0000001, а не 300.
+    # Отметка самой высокой точки рельефа именно ЭТОЙ клетки: от неё меряется,
+    # насколько далеко вверх уходят постройки. Двор наклонён вдоль линии,
+    # поэтому «пол двора» — не одно число, и верхняя граница честнее нижней.
+    # Центр берётся из индексов, а не из нуля сцены: у депо они совпадают, у
+    # поселения — нет, и прошлый вариант мерил рельеф депо для чужой клетки.
+    (cx, cz) = W.cell_center(i, j)
+    hi = max(W.world_height(cx + lx, cz + lz)
+             for lx in (-300.0, 0.0, 300.0) for lz in (-300.0, 0.0, 300.0))
+    reach = 0.0
+    for obj in pieces:
+        for v in obj.data.vertices:
+            if abs(v.co.x) > half or abs(v.co.y) > half:
+                bad.append("%s: вершина %.1f, %.1f м вне клетки"
+                           % (obj.name, v.co.x, v.co.y))
+                if len(bad) > 2:
+                    return bad[:3]
+            reach = max(reach, v.co.z - hi)
+    if reach > 12.0:
+        bad.append("%s поднимается над рельефом на %.1f м — выше любого "
+                   "габарита узла" % (label, reach))
+    print("%s: объектов %d, вершин %d, над верхней точкой рельефа максимум "
+          "%.1f м, габарит клетки %.0f x %.0f м" % (
+              label.upper(), len(pieces),
+              sum(len(o.data.vertices) for o in pieces), reach, W.BLK, W.BLK))
+    return bad
 
 
 def main() -> int:
@@ -192,7 +242,21 @@ def main() -> int:
             print("FAIL WorldCell_%d_%d: %s" % (i, j, "; ".join(problems)))
             return 1
         pieces = [ground] + TP.build_cell_transport(mats, i, j)
-        tris = sum(len(o.data.polygons) for o in pieces)
+        depot = DP.build_cell_depot(mats, i, j)
+        pieces += depot
+        if depot:
+            problems = _bounds_check(depot, "депо", i, j)
+            if problems:
+                print("FAIL депо: %s" % "; ".join(problems))
+                return 1
+        hut = SP.build_cell_settlement(mats, i, j)
+        pieces += hut
+        if hut:
+            problems = _bounds_check(hut, "поселение", i, j)
+            if problems:
+                print("FAIL поселение: %s" % "; ".join(problems))
+                return 1
+        tris = sum(len(p.vertices) - 2 for o in pieces for p in o.data.polygons)
         print("WorldCell_%d_%d: квадов %d, объектов %d, трис %d%s" % (
             i, j, len(C._quads(i, j)), len(pieces), tris,
             " · контент" if c["content"] else ""))
@@ -200,7 +264,10 @@ def main() -> int:
         level_lib.export_static(pieces, os.path.join(
             OUT, "WorldCell_%d_%d.fbx" % (i, j)))
         for obj in pieces:
+            me = obj.data
             bpy.data.objects.remove(obj, do_unlink=True)
+            if me is not None and me.users == 0:
+                bpy.data.meshes.remove(me)   # не копить сотни осиротевших меш-блоков
 
     print("BUILT %d файлов, TOTAL трис %d" % (len(cells), total))
     return 0

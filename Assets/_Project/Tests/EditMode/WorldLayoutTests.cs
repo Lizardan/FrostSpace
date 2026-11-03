@@ -139,8 +139,8 @@ namespace FrostSpace.Tests
         {
             var layout = ParseReal();
 
-            // 1 линия пути + 5 дорог + 5 троп, все с реальным числом точек.
-            Assert.That(layout.Lines.Count, Is.EqualTo(11));
+            // 1 линия пути + 4 дороги + 5 троп, все с реальным числом точек.
+            Assert.That(layout.Lines.Count, Is.EqualTo(10));
             var rail = layout.Lines[0];
             Assert.That(rail.Kind, Is.EqualTo(WorldLineKind.Rail));
             Assert.That(rail.Points.Length, Is.EqualTo(11));
@@ -159,7 +159,7 @@ namespace FrostSpace.Tests
                     "линия из одной точки — не дорога");
             }
 
-            Assert.That(roads, Is.EqualTo(5));
+            Assert.That(roads, Is.EqualTo(4));
             Assert.That(paths, Is.EqualTo(5));
         }
 

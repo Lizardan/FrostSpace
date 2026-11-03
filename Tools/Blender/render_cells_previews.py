@@ -14,6 +14,10 @@
   прорезанным в снегу или положенным на стол;
 * `depot` — косой вид на клетку депо: сквозная линия через неё проходит, а не
   кончается в ней;
+* `yard` — глаз в уровне порога вагона вдоль двора: отметки платформы, рампы и
+  коробки сходятся с путём или нет;
+* `yard_plan` — ортоплан двора: геометрия съезда, платформы и ворот без
+  искажения перспективы;
 * `map` — план всей карты с рельефом: сеть читается единой, а не лоскутной.
 
 Workbench не знает ни тумана, ни неба `SkyNightStars`, поэтому «красиво ли в
@@ -34,6 +38,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+import depot_parts as DP  # noqa: E402
 import level_lib  # noqa: E402
 import transport_parts as TP  # noqa: E402
 import world_cell_parts as C  # noqa: E402
@@ -59,6 +64,11 @@ def to_blender(ux: float, uy: float, uz: float) -> Vector:
 
     Клетка авторится в локальных осях, поэтому её вершины уже лежат в осях
     Unity относительно центра; сюда приходит позиция центра в осях депо.
+
+    Знак по X — не опечатка и не зеркало кадра: `export_static` перед выгрузкой
+    зеркалит меш по X, и превью без этого знака показывало бы карту не так, как
+    её увидит Unity. Как именно совпадают лево и право, проверяется кадром из
+    редактора (`Temp/shot_yard.cs`), а не рассуждением о знаках.
     """
     return Vector((-ux, -uz, uy))
 
@@ -105,12 +115,13 @@ def setup_render(square: bool = False) -> None:
 
 
 def build_all_cells(materials):
-    """Все клетки на своих местах в осях депо: земля плюс транспорт клетки."""
+    """Все клетки на своих местах в осях депо: земля, транспорт и двор клетки."""
     placed = {}
     for c in W.cells():
         (i, j) = (c["i"], c["j"])
         pieces = [C.build_cell(materials, i, j)]
         pieces += TP.build_cell_transport(materials, i, j)
+        pieces += DP.build_cell_depot(materials, i, j)
         (cx, cz) = W.cell_center(i, j)
         pos = to_blender(cx - W.DEPOT[0], 0.0, cz - W.DEPOT[1])
         for obj in pieces:
@@ -174,13 +185,28 @@ def main() -> int:
                                         dcz - W.DEPOT[1] + 200.0), 24.0)
     shoot(out, "depot")
 
-    # План всей карты с рельефом: сеть читается единой, а не лоскутной.
+    # Глаз в уровне порога вагона вдоль двора: по этому кадру видно, что пол
+    # депо лежит в уровне пути, а не в яме с насыпью, и что платформа, рампа и
+    # коробка сходятся по отметкам. Числа это доказать не могут — они меряют
+    # одну точку, а кадр смотрит вдоль 80 м.
+    eye = to_blender(-2.0, DP.head(-2.0, -35.0) + 1.85, -35.0)
+    aim = to_blender(3.0, DP.head(3.0, 30.0) + 1.05, 46.0)
+    add_camera("yard", eye, aim, 24.0)
+    shoot(out, "yard")
+
+    # План двора: ортография сверху, чтобы видеть геометрию съезда, платформы
+    # и ворот без искажения перспективы.
     setup_render(square=True)
+    add_camera("yard_plan", to_blender(-16.0, 400.0, -30.0),
+               to_blender(-16.0, 0.0, -30.0), ortho=420.0)
+    shoot(out, "yard_plan")
+
+    # План всей карты с рельефом: сеть читается единой, а не лоскутной.
     add_camera("map", to_blender(0.0, 6000.0, 0.0), (0.0, 0.0, 0.0),
                ortho=7000.0)
     shoot(out, "map")
 
-    print("PREVIEWS 4")
+    print("PREVIEWS 6")
     return 0
 
 
