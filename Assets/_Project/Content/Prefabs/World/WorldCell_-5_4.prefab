@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &7701502673344825913
+--- !u!1 &6322194460724270989
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,49 +8,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4525957538132621292}
-  - component: {fileID: 2573923922887318823}
-  - component: {fileID: 7777130299881466443}
-  - component: {fileID: 6977590236564301121}
-  - component: {fileID: 7645143880659296288}
-  - component: {fileID: 6422286322784402852}
+  - component: {fileID: 2510915760493799115}
+  - component: {fileID: 2105299962210729725}
+  - component: {fileID: 3390325961499295659}
+  - component: {fileID: 7988514595350343107}
+  - component: {fileID: 6593159641535347040}
   m_Layer: 0
-  m_Name: WorldCell_-5_4
+  m_Name: Ground_-5_4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4525957538132621292
+--- !u!4 &2510915760493799115
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7701502673344825913}
+  m_GameObject: {fileID: 6322194460724270989}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 4525957538132621292}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &2573923922887318823
+--- !u!33 &2105299962210729725
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7701502673344825913}
-  m_Mesh: {fileID: -5837363819891498472, guid: d6ae8a05d87ede5459314af3939aaaef, type: 3}
---- !u!23 &7777130299881466443
+  m_GameObject: {fileID: 6322194460724270989}
+  m_Mesh: {fileID: -762720179157337223, guid: 35c068902a2b02c44802ca7a19454218, type: 3}
+--- !u!23 &3390325961499295659
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7701502673344825913}
+  m_GameObject: {fileID: 6322194460724270989}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -93,26 +92,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &6977590236564301121
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7701502673344825913}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 065c543cf5b2c994c929a563cb2cae96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.WorldCell
-  _cell: {x: -5, y: 4}
---- !u!64 &7645143880659296288
+--- !u!64 &7988514595350343107
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7701502673344825913}
+  m_GameObject: {fileID: 6322194460724270989}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -127,8 +113,53 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: -5837363819891498472, guid: d6ae8a05d87ede5459314af3939aaaef, type: 3}
---- !u!114 &6422286322784402852
+  m_Mesh: {fileID: -762720179157337223, guid: 35c068902a2b02c44802ca7a19454218, type: 3}
+--- !u!114 &6593159641535347040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6322194460724270989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.CellMesh
+--- !u!1 &7701502673344825913
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4525957538132621292}
+  - component: {fileID: 6977590236564301121}
+  m_Layer: 0
+  m_Name: WorldCell_-5_4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4525957538132621292
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7701502673344825913}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2510915760493799115}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6977590236564301121
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -137,6 +168,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7701502673344825913}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}
+  m_Script: {fileID: 11500000, guid: 065c543cf5b2c994c929a563cb2cae96, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.CellMesh
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.WorldCell
+  _cell: {x: -5, y: 4}

@@ -9,11 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 219411197678572177}
-  - component: {fileID: 8301194969744508060}
-  - component: {fileID: 4125165332952981231}
   - component: {fileID: 5409777018021403411}
-  - component: {fileID: 7243530544940897982}
-  - component: {fileID: 8564548672671682589}
   m_Layer: 0
   m_Name: WorldCell_1_-5
   m_TagString: Untagged
@@ -33,24 +29,73 @@ Transform:
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6958261930876882401}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &8301194969744508060
+--- !u!114 &5409777018021403411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5159626028658342324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 065c543cf5b2c994c929a563cb2cae96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.WorldCell
+  _cell: {x: 1, y: -5}
+--- !u!1 &9014500130688552045
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6958261930876882401}
+  - component: {fileID: 2747756881076996830}
+  - component: {fileID: 6700716205656675032}
+  - component: {fileID: 3721139557772026918}
+  - component: {fileID: 7864548219588606942}
+  m_Layer: 0
+  m_Name: Ground_1_-5
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6958261930876882401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9014500130688552045}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 219411197678572177}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &2747756881076996830
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5159626028658342324}
-  m_Mesh: {fileID: 4156812060965492099, guid: ee2c1585594d57440bb88445a2b1f4e3, type: 3}
---- !u!23 &4125165332952981231
+  m_GameObject: {fileID: 9014500130688552045}
+  m_Mesh: {fileID: -4888144165728763683, guid: 0e1377b39e4625543b156a04ffe45d5f, type: 3}
+--- !u!23 &6700716205656675032
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5159626028658342324}
+  m_GameObject: {fileID: 9014500130688552045}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -93,26 +138,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &5409777018021403411
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5159626028658342324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 065c543cf5b2c994c929a563cb2cae96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Map.WorldCell
-  _cell: {x: 1, y: -5}
---- !u!64 &7243530544940897982
+--- !u!64 &3721139557772026918
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5159626028658342324}
+  m_GameObject: {fileID: 9014500130688552045}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -127,14 +159,14 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 4156812060965492099, guid: ee2c1585594d57440bb88445a2b1f4e3, type: 3}
---- !u!114 &8564548672671682589
+  m_Mesh: {fileID: -4888144165728763683, guid: 0e1377b39e4625543b156a04ffe45d5f, type: 3}
+--- !u!114 &7864548219588606942
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5159626028658342324}
+  m_GameObject: {fileID: 9014500130688552045}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a709ef2b37191bf44ab0b0e5394b451a, type: 3}

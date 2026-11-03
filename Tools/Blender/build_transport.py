@@ -195,6 +195,12 @@ def build_all(verbose: bool = True):
                    else T.build_road(mats, i, j, ln["k"]))
             if obj is not None:
                 objs.append((ln["k"], i, j, obj))
+            if ln["kind"] != "rail":
+                # Столбики обочины — проп, как путевые знаки: правило
+                # «вершина на столе» к ним не применимо, они выше гребня.
+                posts = T.build_road_posts(mats, i, j, ln["k"])
+                if posts is not None:
+                    props.append((ln["k"], i, j, posts))
             if ln["kind"] == "rail":
                 ties = T.build_ties(mats, i, j)
                 if ties is not None:

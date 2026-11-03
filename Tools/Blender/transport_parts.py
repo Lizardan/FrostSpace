@@ -226,6 +226,31 @@ def _levels(key: str, path):
     return [(x, z, W.level_at(ln["table"], s)) for (x, z, s) in path]
 
 
+def _bank_runs(key: str, fine):
+    """Куски пути, где дорога ещё на своём ложе, — только там и есть занос.
+
+    У тупика дорога сходит на двор (`W.flush_blend`), и земля под ней
+    поднимается к полу двора. Снежная обочина там не нужна дважды: двор
+    расчищен, а полоса профиля прошла бы в трёх сантиметрах над землёй (замер
+    на узле склада), и пара «дорога/земля» мерцала бы. Куски от двух точек:
+    одиночная станция трубой не становится.
+    """
+    ln = line_of(key)
+    out = []
+    cur = []
+    for p in fine:
+        s = W.project_to_line(p[0], p[1], ln["pts"])[1]
+        if W.flush_blend(key, s) >= 1.0 - 1e-6:
+            cur.append(p)
+            continue
+        if len(cur) > 1:
+            out.append(cur)
+        cur = []
+    if len(cur) > 1:
+        out.append(cur)
+    return out
+
+
 def _sweep(b, fine, profile, mat, center, z_level):
     """Протянуть профиль по куску клетки в локальных осях.
 
@@ -330,6 +355,51 @@ def build_signs(materials, i: int, j: int):
     return b.build("Signs_%d_%d" % (i, j), recalc=False)
 
 
+#: Накатанные полосы на полотне: где колёса протоптали лёд. Профиль лежит
+#: внутри плиты (низ нулевой, верх +5 см): дно полосы не совпадает с верхом
+#: полотна, и межобъектная проверка не видит пары «полоса/полотно».
+TRACK_HALF = 0.275
+TRACK_OFF = 1.25
+TRACK_PROFILE = [(-TRACK_HALF, -0.01), (TRACK_HALF, -0.01),
+                 (TRACK_HALF, 0.06), (-TRACK_HALF, 0.06)]
+
+#: Столбики обочины: вид тот же, что у дороги в меню (`MenuRideSegment_B`),
+#: но ритм реже: в меню полоса 32 м несёт восемь столбиков, а на карте это
+#: тысячи штук. Шаг 24 м — как у путевых знаков: стойка с оранжевой табличкой
+#: читает край дороги, не набивая его тыном (замер: 12 м давали +110 тыс. трис).
+POST_EVERY = 24.0
+POST_OUT = 5.65
+
+
+def _road_posts(b, key: str, i: int, j: int) -> int:
+    """Столбики на обеих обочинах; фаза — глобальная, по всей трассе.
+
+    Считать их от начала куска нельзя? можно, но тогда на стыке двух клеток
+    два столбика встанут рядом или один пропадёт. Фаза берётся из глобальной
+    длины дуги — той же, что у шпал и знаков.
+    """
+    ln = line_of(key)
+    center = W.cell_center(i, j)
+    step = max(1, int(round(POST_EVERY / STATION_STEP)))
+    placed = 0
+    for (idx, (ux, uz, s, rot, _seg)) in cell_stations(key, i, j):
+        if idx % step:
+            continue
+        level = W.level_at(ln["table"], s)
+        pts = [(p[0], p[1]) for p in ln["pts"]]
+        for side in (-1.0, 1.0):
+            off = FP._offset([(ux, uz), (ux + 0.01, uz)], side * POST_OUT)[0]
+            (bx, bz) = (off[0] - center[0], -(off[1] - center[1]))
+            # База утоплена в кромку на 0,35 м: столбик читается вкопанным,
+            # а не лежащим на снегу.
+            b.box_rot((bx, bz, level + 0.35), (0.16, 0.16, 1.30),
+                      (0.0, 0.0, rot), "Level_Metal", bevel=0.01)
+            b.box_rot((bx, bz, level + 1.10), (0.46, 0.12, 0.26),
+                      (0.0, 0.0, rot), "Level_Orange", bevel=0.0)
+            placed += 1
+    return placed
+
+
 def build_road(materials, i: int, j: int, key: str):
     """Кусок дороги `key` в клетке: None, если дорога её не касается.
 
@@ -344,12 +414,37 @@ def build_road(materials, i: int, j: int, key: str):
     center = W.cell_center(i, j)
     b = level_lib.LevelBuilder(materials)
     # Оба профиля набраны от стола, который теперь и есть поверхность линии.
+    # Порядок: кромка, потом ледовое полотно, потом накатанные полосы. Кромка
+    # — снег, как у дороги в меню: она держит край и не даёт льду читаться
+    # серой плитой, впаянной в снег.
     for path in paths:
         fine = _levels(key, path)
-        _sweep(b, fine, BANK_PROFILE, "Level_SnowDeep", center, 0.0)
-        _sweep(b, fine, PAVE_PROFILE, "Level_Stone", center, 0.0)
+        for run in _bank_runs(key, fine):
+            _sweep(b, run, BANK_PROFILE, "Level_Snow", center, 0.0)
+        _sweep(b, fine, PAVE_PROFILE, "Level_Ice", center, 0.0)
+        for side in (-1.0, 1.0):
+            off = FP._offset([(x, z) for (x, z, _l) in fine], side * TRACK_OFF)
+            _sweep(b, [(o[0], o[1], p[2]) for (o, p) in zip(off, fine)],
+                   TRACK_PROFILE, "Level_SnowDeep", center, 0.0)
     return b.build("Road_%s_%d_%d" % (key.replace("road ", "").replace(" ", "_"),
                                       i, j), recalc=False)
+
+
+def build_road_posts(materials, i: int, j: int, key: str):
+    """Столбики обочины — отдельным объектом и отдельным файлом.
+
+    Держать их в мешe полотна нельзя: полотно меряется правилом «вершина на
+    столе» (`build_transport.measure`, `Z_HIGH = 0.48`), а столбик высотой в
+    1,3 м — это проп у дороги, как путевые знаки у пути. Отдельный объект
+    позволяет мерить полотно строго, а столбики считать пропом.
+    """
+    if not cell_paths(key, i, j, STATION_STEP):
+        return None
+    b = level_lib.LevelBuilder(materials)
+    if not _road_posts(b, key, i, j):
+        return None
+    return b.build("Posts_%s_%d_%d" % (key.replace("road ", "").replace(" ", "_"),
+                                       i, j), recalc=False)
 
 
 def transport_cells():
@@ -371,9 +466,13 @@ def build_cell_transport(materials, i: int, j: int):
     if ties is not None:
         objs.append(ties)
     for n in range(len(W.ROADS)):
-        road = build_road(materials, i, j, "road %d" % n)
+        key = "road %d" % n
+        road = build_road(materials, i, j, key)
         if road is not None:
             objs.append(road)
+        posts = build_road_posts(materials, i, j, key)
+        if posts is not None:
+            objs.append(posts)
     signs = build_signs(materials, i, j)
     if signs is not None:
         objs.append(signs)

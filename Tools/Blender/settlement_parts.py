@@ -169,4 +169,9 @@ def build_cell_settlement(materials, i: int, j: int):
         (px, py) = _place(lx, lz)
         _move(tree, px, py, _ground(lx, lz) - 0.15)
         objs.append(tree)
+    # Часть живёт своим FBX и обязана носить клетку в имени: по суффиксу
+    # `<i>_<j>` префаб клетки собирается из частей (`sync_cell_prefabs.cs`).
+    # Без него «Hut_Chimney» попал бы в клетку по догадке, а не по имени.
+    for obj in objs:
+        obj.name = "%s_%d_%d" % (obj.name, i, j)
     return objs

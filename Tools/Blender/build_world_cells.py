@@ -1,4 +1,4 @@
-"""Собирает клетки мира и экспортирует их единым префабом: земля плюс транспорт.
+"""Собирает клетки мира и экспортирует их **частями**: файл на объект.
 
 Запуск (обычно через пайплайн):
 
@@ -13,14 +13,21 @@
 заранее — ADR 0036: 121 клетка это 96 800 трис террейна, в памяти при радиусе 1
 живёт 7200.
 
-В файле клетки живёт всё, что в неё входит: земля (`world_cell_parts`), путь,
-шпалы, путевые знаки и дороги (`transport_parts`), а в клетке депо — ещё и двор
-с боковым путём (`depot_parts`). Один файл — один префаб — одна кнопка выгрузки:
-править перегон, станцию или депо значит открыть один префаб, а не искать по
-сцене пять объектов.
+В клетку входит: земля (`world_cell_parts`), путь, шпалы, путевые знаки и
+дороги (`transport_parts`), в клетке депо — двор (`depot_parts`), в клетке
+станции — поселение (`settlement_parts`). Каждый объект выгружается в свой FBX
+в `Cells/`: `Ground_<i>_<j>`, `Rail_<i>_<j>`, `Ties_<i>_<j>`, `Road_0_<i>_<j>`,
+`Signs_<i>_<j>`, `DepotApron_<i>_<j>`, `Hut_<i>_<j>` и так далее.
 
-Файлы идут в `Assets/_Project/Content/Models/Level/` — только там работает
-`LevelAssetPostprocessor`, подменяющий материалы на проектные (ADR 0002).
+**Чанк — это префаб, а не файл.** `Assets/_Project/Content/Prefabs/World/
+WorldCell_<i>_<j>.prefab` собирается из этих частей
+(`Tools/Unity/sync_cell_prefabs.cs`). Один FBX на клетку был бы «чанком в
+файле»: дорогу нельзя переехать, заменить или отключить отдельно от земли, а
+префаб перестаёт быть местом авторской правки.
+
+Файлы идут в `Assets/_Project/Content/Models/Level/Cells/` — папка внутри
+`Level/`, поэтому работает `LevelAssetPostprocessor`, подменяющий материалы на
+проектные (ADR 0002).
 
 Числа, которыми клетка сдаётся, а не верой:
 
@@ -51,6 +58,13 @@ import world_layout as W  # noqa: E402
 
 OUT = os.path.abspath(os.path.join(HERE, "..", "..", "Assets", "_Project",
                                    "Content", "Models", "Level"))
+
+#: Части клеток. Один объект — один файл: `Ground_<i>_<j>.fbx`, `Rail_<i>_<j>.fbx`,
+#: `Road_0_<i>_<j>.fbx`, `DepotApron_<i>_<j>.fbx`. Чанк — это **префаб**,
+#: собранный из этих частей (`Tools/Unity/sync_cell_prefabs.cs`), а не FBX:
+#: иначе дорогу нельзя ни переехать, ни заменить отдельно от земли, а префаб
+#: клетки перестаёт быть местом правки.
+CELL_PARTS = os.path.join(OUT, "Cells")
 
 #: Допуск сверки высоты вершины меша с мировым полем: сетка считается из того же
 #: вызова, что и поле, так что сантиметр — это уже разъехавшийся порядок обхода.
@@ -139,10 +153,13 @@ def _corridor_check() -> list:
                     # Ждём не голое дно, а смешанную отметку: доля 0,999 — это
                     # не единица, и плита вносит оставшийся миллиметр. Сверять
                     # с дном в допуске полмиллиметра значит ловить собственную
-                    # формулу смешивания, а не дефект рельефа.
-                    floor = f["level"] - W.CUT_DEPTH[f["kind"]]
+                    # формулу смешивания, а не дефект рельефа. Дно и доля берутся
+                    # из `world_layout.corridor`: дорога в тёплом дворе не режет
+                    # его вовсе, и проверка обязана мерить то же правило, что и
+                    # поле высот, а не собственное прочтение.
+                    (floor, share) = W.corridor(px, pz)
                     plate = W.pad_height(px, pz)
-                    want = plate + (floor - plate) * f["mask"]
+                    want = plate + (floor - plate) * share
                     d = abs(W.world_height(px, pz) - want)
                     if d > FLOOR_TOL and len(bad) < 4:
                         bad.append("(%.0f, %.0f) %.4f м от дна коридора"
@@ -231,12 +248,16 @@ def main() -> int:
 
     level_lib.clear_scene()
     mats = level_lib.make_level_materials()
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(CELL_PARTS, exist_ok=True)
     total = 0
+    files = 0
 
     for c in cells:
         (i, j) = (c["i"], c["j"])
         ground = C.build_cell(mats, i, j)
+        # Земля — такая же часть, как и всё остальное, и имя у неё по роли, а не
+        # по чанку: файл `WorldCell_*.fbx` был бы снова «чанком в файле».
+        ground.name = "Ground_%d_%d" % (i, j)
         problems = _verify(ground, i, j)
         if problems:
             print("FAIL WorldCell_%d_%d: %s" % (i, j, "; ".join(problems)))
@@ -245,6 +266,7 @@ def main() -> int:
         depot = DP.build_cell_depot(mats, i, j)
         pieces += depot
         if depot:
+            print("  части двора: %s" % ", ".join(o.name for o in depot))
             problems = _bounds_check(depot, "депо", i, j)
             if problems:
                 print("FAIL депо: %s" % "; ".join(problems))
@@ -261,15 +283,19 @@ def main() -> int:
             i, j, len(C._quads(i, j)), len(pieces), tris,
             " · контент" if c["content"] else ""))
         total += level_lib.report(pieces)
-        level_lib.export_static(pieces, os.path.join(
-            OUT, "WorldCell_%d_%d.fbx" % (i, j)))
+        # Один объект — один FBX: часть переезжает, отключается и правится
+        # отдельно от земли и от дорог.
+        for obj in pieces:
+            level_lib.export_static([obj], os.path.join(
+                CELL_PARTS, obj.name + ".fbx"))
+        files += len(pieces)
         for obj in pieces:
             me = obj.data
             bpy.data.objects.remove(obj, do_unlink=True)
             if me is not None and me.users == 0:
                 bpy.data.meshes.remove(me)   # не копить сотни осиротевших меш-блоков
 
-    print("BUILT %d файлов, TOTAL трис %d" % (len(cells), total))
+    print("BUILT %d клеток в %d частей, TOTAL трис %d" % (len(cells), files, total))
     return 0
 
 

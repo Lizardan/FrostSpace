@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import math
 
+import bpy
 from mathutils import Vector
 
 
@@ -39,6 +40,14 @@ def merge(b, obj, lx: float, lz: float, ground: float, sink: float = 0.0,
         # оказывается вывернутым — снаружи просвечивает, изнутри виден.
         b.mb.add_face([base + i for i in reversed(poly.vertices)],
                       b._index(name), "surface")
+
+    # Источник больше не нужен: его вершины уже скопированы. Без этого каждый
+    # влитый предмет оставался в сцене отдельным объектом в начале координат —
+    # в превью он висел над двором на высоте нуля.
+    mesh = obj.data
+    bpy.data.objects.remove(obj, do_unlink=True)
+    if mesh.users == 0:
+        bpy.data.meshes.remove(mesh)
 
 
 def drift(b, lx: float, lz: float, ground: float, rx: float, ry: float,

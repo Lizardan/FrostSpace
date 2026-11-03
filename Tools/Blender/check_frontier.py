@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import sys
 import traceback
 
@@ -584,15 +585,35 @@ def _check_clusters(meshes, base, problems) -> None:
                             % (name, stats["shells"], kind, min_shells))
 
 
+def _label(paths: list[str]) -> str:
+    """Имя проверки: клетка, если все файлы — её части, иначе имя первого файла.
+
+    Клетка живёт в префабе, а не в одном FBX: части земли, пути и двора лежат
+    отдельными файлами. Мерить их по одному бессмысленно — шов «дорога/земля»
+    и «плита/платформа» живёт именно между двумя файлами.
+    """
+    cells = set()
+    for path in paths:
+        mt = re.search(r"_(-?\d+)_(-?\d+)$",
+                       os.path.splitext(os.path.basename(path))[0])
+        if not mt:
+            return os.path.splitext(os.path.basename(paths[0]))[0]
+        cells.add((mt.group(1), mt.group(2)))
+    if len(cells) != 1:
+        return os.path.splitext(os.path.basename(paths[0]))[0]
+    (i, j) = cells.pop()
+    return "WorldCell_%s_%s" % (i, j)
+
+
 def main() -> int:
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     if not argv:
-        print("укажи FBX после --")
+        print("укажи FBX после -- (можно несколько: все части одной клетки)")
         return 2
-    path = argv[0]
-    base = os.path.splitext(os.path.basename(path))[0]
-    if not os.path.exists(path):
-        print("CHECK %s FAIL нет файла" % base)
+    base = _label(argv)
+    missing = [p for p in argv if not os.path.exists(p)]
+    if missing:
+        print("CHECK %s FAIL нет файла: %s" % (base, missing[0]))
         return 1
 
     check_train.configure_stdout()
@@ -600,7 +621,8 @@ def main() -> int:
     _check_layout(problems)
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.fbx(filepath=path)
+    for path in argv:
+        bpy.ops.import_scene.fbx(filepath=path)
     meshes = {obj.name: obj for obj in bpy.context.scene.objects
               if obj.type == "MESH"}
 

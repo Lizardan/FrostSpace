@@ -64,7 +64,8 @@ def _step(script: str, per: str = "none", args: list[str] | None = None,
     """Один шаг пайплайна.
 
     per = "file" — шаг запускается на каждый файл из `outputs` (путь идёт первым
-    аргументом после `--`); per = "none" — один раз без файла.
+    аргументом после `--`); per = "cell" — на каждую клетку сразу всеми её
+    частями; per = "none" — один раз без файла.
     """
     return {"script": script, "per": per, "args": list(args or []), "runner": runner}
 
@@ -187,10 +188,14 @@ PIPELINE: dict[str, dict] = {
     # «примерно на нём».
     "cells": {
         "script": "build_world_cells.py",
-        "outputs": [MODELS + "/Level/WorldCell_*.fbx"],
+        # Части клеток: один объект — один файл. Сборка в префаб — в Unity
+        # (`sync_cell_prefabs.cs`), файла-чанка `WorldCell_*.fbx` больше нет.
+        "outputs": [MODELS + "/Level/Cells/*.fbx"],
         "previews": [_step("render_cells_previews.py", "none",
                            ["--out", PREVIEWS + "/Cells"])],
-        "checks": [_step("check_frontier.py", "file")],
+        # Проверка — на клетку целиком: шов «дорога/земля» и «плита/платформа»
+        # живёт между файлами, и поодиночке его не измерить.
+        "checks": [_step("check_frontier.py", "cell")],
     },
     # Транспортный слой клетки: путь и дороги, нарезанные по рёбрам решётки.
     # Отдельный идентификатор от `cells`, потому что проверка у него своя —
@@ -354,11 +359,13 @@ def find_blender(explicit: str | None) -> str:
 # ------------------------------------------------------------------- запуск
 
 
-def _command(blender: str, step: dict, extra: list[str], target: str | None,
-             python: str) -> list[str]:
+def _command(blender: str, step: dict, extra: list[str],
+             target: str | list[str] | None, python: str) -> list[str]:
     args = []
     if target:
-        args.append(target)
+        # Для `per="cell"` проверка получает сразу все части клетки: шов живёт
+        # между файлами, и по одному файлу его не измерить.
+        args.extend(target if isinstance(target, list) else [target])
     args.extend(extra)
     script = os.path.join(HERE, step["script"])
     if step["runner"] == "python":
@@ -421,6 +428,28 @@ def expand(patterns: list[str]) -> list[str]:
 
 def relative(path: str) -> str:
     return os.path.relpath(path, ROOT).replace(os.sep, "/")
+
+
+def group_by_cell(files: list[str]) -> list[list[str]]:
+    """Сгруппировать части по клетке: `_<i>_<j>` в конце имени.
+
+    Части клетки — `Ground_-2_-2`, `Rail_-2_-2`, `DepotApron_-2_-2` — разные
+    файлы одного чанка. Проверки, которые мерят швы между объектами, обязаны
+    видеть их вместе.
+    """
+    groups: dict[tuple[str, ...], list[str]] = {}
+    for path in files:
+        base = os.path.splitext(os.path.basename(path))[0]
+        mt = re.search(r"_(-?\d+)_(-?\d+)$", base)
+        key = (mt.group(1), mt.group(2)) if mt else (base,)
+        groups.setdefault(key, []).append(path)
+    return [groups[key] for key in sorted(groups)]
+
+
+def _target_name(target) -> str:
+    if isinstance(target, list):
+        return "%s (+%d частей)" % (os.path.basename(target[0]), len(target) - 1)
+    return os.path.basename(target or "-")
 
 
 def filter_by_ids(files: list[str], ids: list[str]) -> list[str]:
@@ -584,8 +613,12 @@ def main() -> int:
                         results.append((name + ":превью", ok, note))
 
             for step in asset["checks"] if args.check else []:
-                targets = (filter_by_ids(files, args.ids) if step["per"] == "file"
-                           else [None])
+                if step["per"] == "file":
+                    targets = filter_by_ids(files, args.ids)
+                elif step["per"] == "cell":
+                    targets = group_by_cell(filter_by_ids(files, args.ids))
+                else:
+                    targets = [None]
                 print("[%s] проверка: %s" % (name, step["script"]))
                 for target in targets:
                     cmd = _command(blender, step, step["args"], target, python)
@@ -593,7 +626,7 @@ def main() -> int:
                         print("  -> %s" % _quote(cmd))
                         results.append((name + ":проверка", True, "dry-run"))
                     else:
-                        ok, note = run_step("проверка %s" % os.path.basename(target or "-"),
+                        ok, note = run_step("проверка %s" % _target_name(target),
                                             cmd, check_timeout, log)
                         results.append((name + ":проверка", ok, note))
             print()

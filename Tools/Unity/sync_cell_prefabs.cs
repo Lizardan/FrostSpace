@@ -1,73 +1,133 @@
-// Неразрушающая синхронизация префабов клеток с FBX.
+// Неразрушающая синхронизация префабов клеток с частями FBX.
 //
 //   python Tools/Unity/run_snippet.py Tools/Unity/sync_cell_prefabs.cs
 //
-// Чем отличается от `rebuild_cell_prefabs.cs`: тот собирает префаб с нуля и
-// стирает всё авторское (актёров, свет, добавленные компоненты). Этот — только
-// обновляет помеченные `CellMesh` объекты по имени меша и никогда ничего не
-// удаляет. Границу владения задаёт метка: `CellMesh` принадлежит конвейеру,
-// всё остальное в префабе — авторское.
+// Клетка — это **префаб**, собранный из частей. Сам FBX-чанка больше нет:
+// земля, путь, шпалы, дороги, части двора и поселения лежат отдельными файлами
+// в `Models/Level/Cells/<Имя>_<i>_<j>.fbx`, а префаб `WorldCell_<i>_<j>.prefab`
+// держит по объекту на часть. Причина — дорога внутри чанка не переезжает,
+// не отключается и не меняется отдельно от земли, а префаб перестаёт быть
+// местом авторской правки (ADR 0039).
 //
-// Что делает по каждой из 121 клетки:
-//   1. находит объект с тем же именем, что меш в FBX, и обновляет меш,
+// Границу владения задаёт метка `CellMesh`: этот скрипт трогает только
+// помеченные объекты и никогда ничего не удаляет. Всё прочее в префабе —
+// актёры депо, свет, слоты, авторское — неприкосновенно.
+//
+// Что делает по каждой клетке:
+//   1. находит объект с тем же именем, что часть FBX, и обновляет меш,
 //      материалы, коллайдер и локальный трансформ;
 //   2. если объекта нет — создаёт его и помечает `CellMesh`;
-//   3. если у существующего объекта метки нет — принимает его в конвейер
-//      (adopt), а не плодит дубликат;
-//   4. печатает помеченные объекты, которых нет в FBX (устаревшие), но не удаляет;
-//   5. проверяет `WorldCell` на корне.
+//   3. если у существующего объекта метки нет — принимает его в конвейер;
+//   4. снимает меш с корня префаба: раньше земля лежала на корне FBX-чанка,
+//      теперь она приходит частью `Ground_<i>_<j>`, и корень с мешем дал бы
+//      две совпадающие поверхности;
+//   5. печатает помеченные объекты, которых нет ни в одной части, но не удаляет;
+//   6. проверяет `WorldCell` на корне.
 //
-// Повторный запуск безопасен и ничего не меняет, если FBX не менялся.
+// Повторный запуск безопасен и ничего не меняет, если части не менялись.
 
 var sb = new System.Text.StringBuilder();
 
-const string modelDir = "Assets/_Project/Content/Models/Level";
+const string partsDir = "Assets/_Project/Content/Models/Level/Cells";
 const string prefabDir = "Assets/_Project/Content/Prefabs/World";
+var partName = new System.Text.RegularExpressions.Regex(@"_(-?\d+)_(-?\d+)$");
 
-var guids = UnityEditor.AssetDatabase.FindAssets("t:Model WorldCell_", new string[] { modelDir });
-sb.AppendLine("FBX клеток: " + guids.Length + " (ожидалось 121)");
+if (UnityEditor.EditorApplication.isPlaying) return "редактор в Play — сначала останови";
 
-int cells = 0;
-int updatedCells = 0;
-int updatedMeshes = 0;
-int addedMeshes = 0;
-int adoptedMeshes = 0;
-int staleMeshes = 0;
-int createdPrefabs = 0;
+var guids = UnityEditor.AssetDatabase.FindAssets("t:Model", new[] { partsDir });
+var byCell = new System.Collections.Generic.SortedDictionary<string, System.Collections.Generic.List<string>>();
+foreach (var guid in guids)
+{
+    var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+    var name = System.IO.Path.GetFileNameWithoutExtension(path);
+    var mt = partName.Match(name);
+    if (!mt.Success) continue;
+    var key = mt.Groups[1].Value + "_" + mt.Groups[2].Value;
+    System.Collections.Generic.List<string> list;
+    if (!byCell.TryGetValue(key, out list))
+    {
+        list = new System.Collections.Generic.List<string>();
+        byCell[key] = list;
+    }
+    list.Add(path);
+}
+
+sb.AppendLine("частей FBX: " + guids.Length + ", клеток: " + byCell.Count);
+
+int cells = 0, updatedCells = 0, updatedMeshes = 0, addedMeshes = 0, adoptedMeshes = 0;
+int createdPrefabs = 0, staleMeshes = 0, clearedRoots = 0;
 var issues = new System.Text.StringBuilder();
 
-for (int g = 0; g < guids.Length; g++)
+foreach (var pair in byCell)
 {
-    var modelPath = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[g]);
-    var name = System.IO.Path.GetFileNameWithoutExtension(modelPath);
-    var parts = name.Split('_');
-    int ci, cj;
-    if (parts.Length != 3 || !int.TryParse(parts[1], out ci) || !int.TryParse(parts[2], out cj))
+    var names = pair.Key.Split('_');
+    int ci = int.Parse(names[0]), cj = int.Parse(names[1]);
+    var cellName = "WorldCell_" + pair.Key;
+
+    // Имя → часть. Имя части совпадает с именем объекта в её FBX.
+    var parts = new System.Collections.Generic.List<UnityEngine.MeshFilter>();
+    foreach (var path in pair.Value)
     {
-        issues.AppendLine(name + ": имя не разбирается как WorldCell_<x>_<z> — пропущен");
-        continue;
+        var model = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(path);
+        if (model == null) { issues.AppendLine(path + ": FBX не загрузился"); continue; }
+        var mf = model.GetComponent<UnityEngine.MeshFilter>();
+        if (mf == null || mf.sharedMesh == null)
+        {
+            issues.AppendLine(model.name + ": в части нет меша на корне");
+            continue;
+        }
+        parts.Add(mf);
     }
 
-    var model = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(modelPath);
-    if (model == null)
-    {
-        issues.AppendLine(name + ": FBX не загрузился — пропущен");
-        continue;
-    }
-
-    var prefabPath = prefabDir + "/" + name + ".prefab";
+    var prefabPath = prefabDir + "/" + cellName + ".prefab";
     var existing = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(prefabPath);
-
-    UnityEngine.GameObject contents;
     bool isNew = existing == null;
+    UnityEngine.GameObject contents;
     if (isNew)
     {
-        contents = new UnityEngine.GameObject(name);
+        contents = new UnityEngine.GameObject(cellName);
         createdPrefabs++;
     }
     else
     {
         contents = UnityEditor.PrefabUtility.LoadPrefabContents(prefabPath);
+    }
+
+    bool changed = isNew;
+
+    // Земля раньше лежала мешем на корне префаба (у пустошей только она и была).
+    // Теперь она приходит частью `Ground_<i>_<j>`: корневой меш обязан уйти,
+    // иначе клетка получает две совпадающие поверхности и двойной коллайдер.
+    if (contents.GetComponent<UnityEngine.MeshFilter>() != null)
+    {
+        var oldCollider = contents.GetComponent<UnityEngine.MeshCollider>();
+        if (oldCollider != null) UnityEngine.Object.DestroyImmediate(oldCollider);
+        var oldRenderer = contents.GetComponent<UnityEngine.MeshRenderer>();
+        if (oldRenderer != null) UnityEngine.Object.DestroyImmediate(oldRenderer);
+        UnityEngine.Object.DestroyImmediate(contents.GetComponent<UnityEngine.MeshFilter>());
+        clearedRoots++;
+        changed = true;
+    }
+    // Метка владения принадлежит частям, а не корню: корень держит `WorldCell`
+    // и актёров. Оставленная на нём метка читалась бы как «часть, которой нет».
+    var rootMark = contents.GetComponent<FrostSpace.Features.Map.CellMesh>();
+    if (rootMark != null)
+    {
+        UnityEngine.Object.DestroyImmediate(rootMark);
+        changed = true;
+    }
+    // На корне не может быть и коллайдера с рендерером без меша.
+    var strayCollider = contents.GetComponent<UnityEngine.MeshCollider>();
+    if (strayCollider != null)
+    {
+        UnityEngine.Object.DestroyImmediate(strayCollider);
+        changed = true;
+    }
+    var strayRenderer = contents.GetComponent<UnityEngine.MeshRenderer>();
+    if (strayRenderer != null)
+    {
+        UnityEngine.Object.DestroyImmediate(strayRenderer);
+        changed = true;
     }
 
     var byName = new System.Collections.Generic.Dictionary<string, UnityEngine.Transform>();
@@ -78,124 +138,55 @@ for (int g = 0; g < guids.Length; g++)
     }
 
     var sourceNames = new System.Collections.Generic.HashSet<string>();
-    bool changed = isNew;
-
-    // У клеток-пустошей меш земли лежит на самом корне FBX, а не на ребёнке.
-    // Корень обрабатывается отдельно: иначе инструмент создал бы дочерний
-    // дубликат с тем же мешем, и клетка получила бы две совпадающие поверхности.
-    var rootFilter = model.GetComponent<UnityEngine.MeshFilter>();
-    if (rootFilter != null && rootFilter.sharedMesh != null)
+    foreach (var src in parts)
     {
-        sourceNames.Add(model.name);
-
-        var rootOnPrefab = contents.GetComponent<UnityEngine.MeshFilter>();
-        if (rootOnPrefab == null)
-        {
-            rootOnPrefab = contents.AddComponent<UnityEngine.MeshFilter>();
-            changed = true;
-        }
-        if (rootOnPrefab.sharedMesh != rootFilter.sharedMesh)
-        {
-            rootOnPrefab.sharedMesh = rootFilter.sharedMesh;
-            updatedMeshes++;
-            changed = true;
-        }
-
-        var rootRenderer = model.GetComponent<UnityEngine.MeshRenderer>();
-        var rootRendererOnPrefab = contents.GetComponent<UnityEngine.MeshRenderer>();
-        if (rootRendererOnPrefab == null && rootRenderer != null)
-        {
-            rootRendererOnPrefab = contents.AddComponent<UnityEngine.MeshRenderer>();
-            changed = true;
-        }
-        if (rootRendererOnPrefab != null && rootRenderer != null &&
-            !SameMaterials(rootRendererOnPrefab.sharedMaterials, rootRenderer.sharedMaterials))
-        {
-            rootRendererOnPrefab.sharedMaterials = rootRenderer.sharedMaterials;
-            changed = true;
-        }
-
-        var rootCollider = contents.GetComponent<UnityEngine.MeshCollider>();
-        if (rootCollider == null)
-        {
-            rootCollider = contents.AddComponent<UnityEngine.MeshCollider>();
-            changed = true;
-        }
-        if (rootCollider.sharedMesh != rootFilter.sharedMesh)
-        {
-            rootCollider.sharedMesh = rootFilter.sharedMesh;
-            changed = true;
-        }
-
-        if (contents.GetComponent<FrostSpace.Features.Map.CellMesh>() == null)
-        {
-            contents.AddComponent<FrostSpace.Features.Map.CellMesh>();
-            adoptedMeshes++;
-            changed = true;
-        }
-    }
-
-    foreach (var srcFilter in model.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
-    {
-        if (srcFilter.sharedMesh == null) continue;
-        if (srcFilter.transform == model.transform) continue; // корень уже обработан
-
-        var src = srcFilter.transform;
         var meshName = src.name;
         sourceNames.Add(meshName);
+        var srcRenderer = src.GetComponent<UnityEngine.MeshRenderer>();
 
         UnityEngine.Transform dst;
         if (byName.TryGetValue(meshName, out dst) && dst.GetComponent<UnityEngine.MeshFilter>() != null)
         {
             var dstFilter = dst.GetComponent<UnityEngine.MeshFilter>();
             var dstRenderer = dst.GetComponent<UnityEngine.MeshRenderer>();
-            var srcRenderer = src.GetComponent<UnityEngine.MeshRenderer>();
-
-            if (dstFilter.sharedMesh != srcFilter.sharedMesh)
+            if (dstFilter.sharedMesh != src.sharedMesh)
             {
-                dstFilter.sharedMesh = srcFilter.sharedMesh;
+                dstFilter.sharedMesh = src.sharedMesh;
                 updatedMeshes++;
                 changed = true;
             }
-
             if (dstRenderer != null && srcRenderer != null &&
                 !SameMaterials(dstRenderer.sharedMaterials, srcRenderer.sharedMaterials))
             {
                 dstRenderer.sharedMaterials = srcRenderer.sharedMaterials;
                 changed = true;
             }
-
-            if (dst.localPosition != src.localPosition)
+            if (dst.localPosition != src.transform.localPosition)
             {
-                dst.localPosition = src.localPosition;
+                dst.localPosition = src.transform.localPosition;
                 changed = true;
             }
-
-            if (dst.localRotation != src.localRotation)
+            if (dst.localRotation != src.transform.localRotation)
             {
-                dst.localRotation = src.localRotation;
+                dst.localRotation = src.transform.localRotation;
                 changed = true;
             }
-
-            if (dst.localScale != src.localScale)
+            if (dst.localScale != src.transform.localScale)
             {
-                dst.localScale = src.localScale;
+                dst.localScale = src.transform.localScale;
                 changed = true;
             }
-
             var collider = dst.GetComponent<UnityEngine.MeshCollider>();
             if (collider == null)
             {
                 collider = dst.gameObject.AddComponent<UnityEngine.MeshCollider>();
                 changed = true;
             }
-
             if (collider.sharedMesh != dstFilter.sharedMesh)
             {
                 collider.sharedMesh = dstFilter.sharedMesh;
                 changed = true;
             }
-
             if (dst.GetComponent<FrostSpace.Features.Map.CellMesh>() == null)
             {
                 dst.gameObject.AddComponent<FrostSpace.Features.Map.CellMesh>();
@@ -207,20 +198,18 @@ for (int g = 0; g < guids.Length; g++)
         {
             var go = new UnityEngine.GameObject(meshName);
             go.transform.SetParent(contents.transform, false);
-            go.transform.localPosition = src.localPosition;
-            go.transform.localRotation = src.localRotation;
-            go.transform.localScale = src.localScale;
+            go.transform.localPosition = src.transform.localPosition;
+            go.transform.localRotation = src.transform.localRotation;
+            go.transform.localScale = src.transform.localScale;
 
             var filter = go.AddComponent<UnityEngine.MeshFilter>();
-            filter.sharedMesh = srcFilter.sharedMesh;
+            filter.sharedMesh = src.sharedMesh;
 
-            var srcRenderer = src.GetComponent<UnityEngine.MeshRenderer>();
             var renderer = go.AddComponent<UnityEngine.MeshRenderer>();
-            if (srcRenderer != null)
-                renderer.sharedMaterials = srcRenderer.sharedMaterials;
+            if (srcRenderer != null) renderer.sharedMaterials = srcRenderer.sharedMaterials;
 
             var collider = go.AddComponent<UnityEngine.MeshCollider>();
-            collider.sharedMesh = srcFilter.sharedMesh;
+            collider.sharedMesh = src.sharedMesh;
 
             go.AddComponent<FrostSpace.Features.Map.CellMesh>();
             addedMeshes++;
@@ -228,13 +217,13 @@ for (int g = 0; g < guids.Length; g++)
         }
     }
 
-    // Устаревшие: помечены как наши, но в FBX такого меша больше нет.
+    // Устаревшие: помечены как наши, но такой части в FBX больше нет.
     // Не удаляем — вдруг это ручная правка, которую забыли пометить иначе.
     foreach (var cellMesh in contents.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
     {
         if (sourceNames.Contains(cellMesh.name)) continue;
         staleMeshes++;
-        issues.AppendLine(name + ": лишний CellMesh «" + cellMesh.name + "» — в FBX его нет (не удалён)");
+        issues.AppendLine(cellName + ": лишний CellMesh «" + cellMesh.name + "» — части нет (не удалён)");
     }
 
     var cell = contents.GetComponent<FrostSpace.Features.Map.WorldCell>();
@@ -255,10 +244,8 @@ for (int g = 0; g < guids.Length; g++)
         updatedCells++;
     }
 
-    if (isNew)
-        UnityEngine.Object.DestroyImmediate(contents);
-    else
-        UnityEditor.PrefabUtility.UnloadPrefabContents(contents);
+    if (isNew) UnityEngine.Object.DestroyImmediate(contents);
+    else UnityEditor.PrefabUtility.UnloadPrefabContents(contents);
 
     cells++;
 }
@@ -266,10 +253,11 @@ for (int g = 0; g < guids.Length; g++)
 UnityEditor.AssetDatabase.SaveAssets();
 UnityEditor.AssetDatabase.Refresh();
 
-sb.AppendLine("клеток обработано: " + cells);
+sb.AppendLine("клеток собрано: " + cells + " (ожидалось 121)");
 sb.AppendLine("префабов создано: " + createdPrefabs + ", обновлено: " + updatedCells);
 sb.AppendLine("мешей обновлено: " + updatedMeshes + ", добавлено: " + addedMeshes +
               ", принято в конвейер: " + adoptedMeshes);
+sb.AppendLine("снято мешей с корня префаба: " + clearedRoots);
 sb.AppendLine("устаревших CellMesh: " + staleMeshes);
 if (issues.Length > 0) sb.AppendLine(issues.ToString());
 return sb.ToString();

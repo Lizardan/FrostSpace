@@ -45,6 +45,8 @@
 | [0035](0035-scene-placement-is-manual.md) | Край мира набирается таблицей и ставится руками; `LODGroup` не заводим | Accepted |
 | [0036](0036-world-grid-and-residency.md) | Мир 6,6×6,6 км из клеток 600 м; residency внутри одной сцены; числа — в `world_layout.py` | Accepted |
 | [0037](0037-cell-prefab-owns-content.md) | Префаб клетки — владелец содержимого; `CellMesh` — граница владения; глобальное — в сцене | Accepted |
+| [0038](0038-road-flushes-on-warm-yard.md) | Дорога сходит на тёплый двор у своего тупика (слой покрытия 10 см, без заноса); сквозная дорога и путь режут всегда | Accepted |
+| [0039](0039-cell-is-a-prefab-of-parts.md) | Клетка — префаб из частей: один объект — один FBX в `Cells/`, префаб собирает `sync_cell_prefabs.cs`; файла-чанка нет | Accepted |
 | [0037](0037-no-player-xray.md) | X-ray силуэт игрока убран: скрипт и шейдер удалены, вырез прицела остаётся | Accepted |
 
 ## Когда создавать ADR

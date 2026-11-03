@@ -1,99 +1,116 @@
-// Проверка, что префабы клеток соответствуют FBX, а сцена — префабам.
+// Проверка, что префабы клеток соответствуют частям FBX, а сцена — префабам.
 //
-// Зачем отдельный шаг: префаб клетки — производная от FBX, который собирает
-// `Tools/Blender/build_world_cells.py`. Между сборкой FBX и пересборкой
-// префаба проходит произвольное время, и расхождение молчаливое: меш в FBX
-// переименован — ссылка в префабе повисает и меш исчезает из кадра; меш
-// добавлен — в префабе его нет. 2026-11-03 так потерялись 15 мешей поселения
-// в клетке (0,-2) и по одной дороге в клетках (0,-1) и (-1,-1).
+//   python Tools/Unity/run_snippet.py Tools/Unity/verify_cell_prefabs.cs
 //
-// Проверка ничего не меняет: только читает префабы, FBX и сцену.
+// Клетка — префаб, собранный из частей (`Models/Level/Cells/<Часть>_<i>_<j>.fbx`).
+// Между сборкой частей и синхронизацией префаба проходит произвольное время, и
+// расхождение молчаливое: часть переименована — объект в префабе повисает;
+// часть добавлена — в префабе её нет. 2026-11-03 так потерялись 15 частей
+// поселения и по одной дороге в двух клетках.
 //
-// Запуск:
-//     python Tools/Unity/run_snippet.py Tools/Unity/verify_cell_prefabs.cs
+// Проверка ничего не меняет: только читает части, префабы и сцену.
+//
+// Отдельно ловится возврат файла-чанка: `WorldCell_<i>_<j>.fbx` в корне
+// `Models/Level/` — это старая архитектура, где дороги лежали внутри одного
+// файла, и она не должна вернуться (ADR 0039).
 
 var sb = new System.Text.StringBuilder();
 
 const string modelDir = "Assets/_Project/Content/Models/Level";
+const string partsDir = modelDir + "/Cells";
 const string prefabDir = "Assets/_Project/Content/Prefabs/World";
+var partName = new System.Text.RegularExpressions.Regex(@"_(-?\d+)_(-?\d+)$");
 
-var guids = UnityEditor.AssetDatabase.FindAssets("t:Model WorldCell_", new string[] { modelDir });
-sb.AppendLine("FBX клеток: " + guids.Length + " (ожидалось 121)");
+if (UnityEditor.EditorApplication.isPlaying) return "редактор в Play — сначала останови";
 
-int nullMeshes = 0;
-int missingFromPrefab = 0;
-int extraInPrefab = 0;
-int cellsBroken = 0;
-int nullColliders = 0;
-int noWorldCell = 0;
-int prefabTris = 0;
-int fbxTris = 0;
-int cellMeshes = 0;
-int prefabMeshes = 0;
-int authoredMeshes = 0;
+// Старый файл-чанк не должен вернуться: дороги внутри одного FBX.
+var oldChunks = UnityEditor.AssetDatabase.FindAssets("t:Model", new[] { modelDir });
+int chunkFiles = 0;
+var chunkList = new System.Text.StringBuilder();
+foreach (var guid in oldChunks)
+{
+    var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+    if (System.IO.Path.GetDirectoryName(path).Replace('\\', '/') != modelDir) continue;
+    var baseName = System.IO.Path.GetFileNameWithoutExtension(path);
+    if (!baseName.StartsWith("WorldCell_")) continue;
+    chunkFiles++;
+    chunkList.AppendLine("файл-чанк вернулся: " + path);
+}
+
+var byCell = new System.Collections.Generic.SortedDictionary<string, System.Collections.Generic.List<UnityEngine.GameObject>>();
+foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:Model", new[] { partsDir }))
+{
+    var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+    var name = System.IO.Path.GetFileNameWithoutExtension(path);
+    var mt = partName.Match(name);
+    if (!mt.Success)
+    {
+        chunkList.AppendLine(name + ": часть без суффикса клетки — не попадёт в префаб");
+        continue;
+    }
+    var key = mt.Groups[1].Value + "_" + mt.Groups[2].Value;
+    System.Collections.Generic.List<UnityEngine.GameObject> list;
+    if (!byCell.TryGetValue(key, out list))
+    {
+        list = new System.Collections.Generic.List<UnityEngine.GameObject>();
+        byCell[key] = list;
+    }
+    var model = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(path);
+    if (model != null) list.Add(model);
+}
+
+int nullMeshes = 0, missingFromPrefab = 0, extraInPrefab = 0, cellsBroken = 0;
+int nullColliders = 0, noWorldCell = 0, prefabTris = 0, partsTris = 0;
+int cellMeshes = 0, prefabMeshes = 0, authoredMeshes = 0;
 var broken = new System.Text.StringBuilder();
 
-for (int g = 0; g < guids.Length; g++)
+foreach (var pair in byCell)
 {
-    var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[g]);
-    var name = System.IO.Path.GetFileNameWithoutExtension(path);
-    var parts = name.Split('_');
-    int ci, cj;
-    if (parts.Length != 3 || !int.TryParse(parts[1], out ci) || !int.TryParse(parts[2], out cj))
+    var names = pair.Key.Split('_');
+    int ci = int.Parse(names[0]), cj = int.Parse(names[1]);
+    var cellName = "WorldCell_" + pair.Key;
+    var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(prefabDir + "/" + cellName + ".prefab");
+    if (prefab == null)
     {
-        broken.AppendLine(name + ": имя не разбирается как WorldCell_<x>_<z>");
+        broken.AppendLine(cellName + ": нет префаба");
         cellsBroken++;
         continue;
     }
 
-    var model = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(path);
-    var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(prefabDir + "/" + name + ".prefab");
-    if (model == null || prefab == null)
+    var partNames = new System.Collections.Generic.HashSet<string>();
+    foreach (var model in pair.Value)
     {
-        broken.AppendLine(name + ": нет FBX или префаба");
-        cellsBroken++;
-        continue;
-    }
-
-    var fbxNames = new System.Collections.Generic.HashSet<string>();
-    foreach (var mf in model.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
-    {
-        if (mf.sharedMesh == null) continue;
-        fbxNames.Add(mf.sharedMesh.name);
-        fbxTris += mf.sharedMesh.triangles.Length / 3;
+        var mf = model.GetComponent<UnityEngine.MeshFilter>();
+        if (mf == null || mf.sharedMesh == null) { nullMeshes++; continue; }
+        partNames.Add(model.name);
+        partsTris += mf.sharedMesh.triangles.Length / 3;
         cellMeshes++;
     }
 
     var prefabNames = new System.Collections.Generic.HashSet<string>();
-    int localNull = 0;
+    int localNull = 0, localNullColliders = 0;
     var cellFilters = new System.Collections.Generic.HashSet<UnityEngine.MeshFilter>();
     foreach (var cm in prefab.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
     {
         var mf = cm.GetComponent<UnityEngine.MeshFilter>();
-        if (mf == null) { localNull++; continue; }
+        if (mf == null || mf.sharedMesh == null) { localNull++; continue; }
         cellFilters.Add(mf);
-        if (mf.sharedMesh == null) { localNull++; continue; }
-        prefabNames.Add(mf.sharedMesh.name);
+        prefabNames.Add(cm.name);
         prefabTris += mf.sharedMesh.triangles.Length / 3;
         prefabMeshes++;
+        var mc = cm.GetComponent<UnityEngine.MeshCollider>();
+        if (mc == null || mc.sharedMesh == null) localNullColliders++;
     }
 
-    // Авторские меши (актёры, добавленные руками объекты) в сверку с FBX не
+    // Авторские меши (актёры, добавленные руками объекты) в сверку с частями не
     // входят: префаб клетки — владелец содержимого, а не только геометрии.
     foreach (var mf in prefab.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
         if (!cellFilters.Contains(mf) && mf.sharedMesh != null) authoredMeshes++;
 
     int missing = 0;
-    foreach (var n in fbxNames) if (!prefabNames.Contains(n)) missing++;
+    foreach (var n in partNames) if (!prefabNames.Contains(n)) missing++;
     int extra = 0;
-    foreach (var n in prefabNames) if (!fbxNames.Contains(n)) extra++;
-
-    int localNullColliders = 0;
-    foreach (var cm in prefab.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
-    {
-        var mc = cm.GetComponent<UnityEngine.MeshCollider>();
-        if (mc == null || mc.sharedMesh == null) localNullColliders++;
-    }
+    foreach (var n in prefabNames) if (!partNames.Contains(n)) extra++;
 
     var wc = prefab.GetComponent<FrostSpace.Features.Map.WorldCell>();
     bool indexOk = wc != null && wc.Cell.x == ci && wc.Cell.y == cj;
@@ -107,15 +124,17 @@ for (int g = 0; g < guids.Length; g++)
     if (localNull > 0 || missing > 0 || extra > 0 || localNullColliders > 0 || !indexOk)
     {
         cellsBroken++;
-        broken.AppendLine(string.Format("{0}: пустых мешей={1} потеряно из FBX={2} лишних={3} коллайдеров без меша={4} индекс клетки={5}",
-            name, localNull, missing, extra, localNullColliders, indexOk ? "ок" : "НЕВЕРЕН"));
+        broken.AppendLine(string.Format("{0}: пустых мешей={1} потеряно из частей={2} лишних={3} коллайдеров без меша={4} индекс клетки={5}",
+            cellName, localNull, missing, extra, localNullColliders, indexOk ? "ок" : "НЕВЕРЕН"));
     }
 }
 
-sb.AppendLine(string.Format("префабы: мешей={0} трис={1} | FBX: мешей={2} трис={3}",
-    prefabMeshes, prefabTris, cellMeshes, fbxTris));
-sb.AppendLine(string.Format("авторских мешей в префабах (актёры и добавленное): {0} — в сверку с FBX не входят", authoredMeshes));
-sb.AppendLine(string.Format("пустых мешей={0} потеряно из FBX={1} лишних в префабе={2} коллайдеров без меша={3} без WorldCell={4}",
+sb.AppendLine("частей FBX: " + (cellMeshes + nullMeshes) + ", клеток: " + byCell.Count + " (ожидалось 121)");
+if (chunkFiles > 0) sb.AppendLine(chunkList.ToString());
+sb.AppendLine(string.Format("префабы: мешей={0} трис={1} | части: мешей={2} трис={3}",
+    prefabMeshes, prefabTris, cellMeshes, partsTris));
+sb.AppendLine("авторских мешей в префабах (актёры и добавленное): " + authoredMeshes + " — в сверку с частями не входят");
+sb.AppendLine(string.Format("пустых мешей={0} потеряно из частей={1} лишних в префабе={2} коллайдеров без меша={3} без WorldCell={4}",
     nullMeshes, missingFromPrefab, extraInPrefab, nullColliders, noWorldCell));
 sb.AppendLine("битых клеток: " + cellsBroken);
 if (cellsBroken > 0) sb.AppendLine(broken.ToString());
@@ -193,7 +212,7 @@ sb.AppendLine("сцена: инстансов=" + instances + " трис=" + sce
 if (sceneBroken > 0) sb.AppendLine(sceneReport.ToString());
 
 bool allGood = cellsBroken == 0 && sceneBroken == 0 && nullMeshes == 0 && missingFromPrefab == 0
-            && extraInPrefab == 0 && nullColliders == 0 && noWorldCell == 0
-            && instances == 121 && prefabTris == fbxTris;
+            && extraInPrefab == 0 && nullColliders == 0 && noWorldCell == 0 && chunkFiles == 0
+            && byCell.Count == 121 && instances == 121 && prefabTris == partsTris;
 sb.AppendLine(allGood ? "ИТОГ: клетки и сцена сходятся" : "ИТОГ: есть расхождения");
 return sb.ToString();
