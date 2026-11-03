@@ -150,15 +150,22 @@ RAIL_PROFILE = [(-0.07, -0.10), (0.07, -0.10), (0.07, 0.10), (-0.07, 0.10)]
 #: предел 22°, а у выемки он ещё меньше. Видимым остаётся гребень заноса
 #: (+0,28), вниз уходит погребённая стена.
 BED_SKIRT = 1.60
+#: Обход профиля — **против часовой стрелки** в плоскости кольца (px — вбок,
+#: py — вверх). Порядок точек задаёт направление нормалей: труба строит грани
+#: в порядке «профиль → путь», и если верхнее ребро профиля идёт от меньшего
+#: `px` к большему, верх смотрит вниз, а меш рисуется наизнанку. Профиль
+#: симметричен относительно `px = 0`, поэтому порядок можно выбрать свободно;
+#: выбран тот, при котором верх смотрит вверх. Проверка ориентации —
+#: `Tools/Blender/check_sweep_orientation.py`.
 BED_PROFILE = [
-    (-L.CORRIDOR_FLAT + 0.4, L.BED_TOP_Y),
-    (L.CORRIDOR_FLAT - 0.4, L.BED_TOP_Y),
-    (L.CORRIDOR_FLAT - 0.1, L.BANK_TOP_Y),
-    (L.CORRIDOR_FLAT + 1.6, L.BANK_TOP_Y),
-    (L.CORRIDOR_FLAT + 1.6, -BED_SKIRT),
-    (-L.CORRIDOR_FLAT - 1.6, -BED_SKIRT),
-    (-L.CORRIDOR_FLAT - 1.6, L.BANK_TOP_Y),
     (-L.CORRIDOR_FLAT + 0.1, L.BANK_TOP_Y),
+    (-L.CORRIDOR_FLAT - 1.6, L.BANK_TOP_Y),
+    (-L.CORRIDOR_FLAT - 1.6, -BED_SKIRT),
+    (L.CORRIDOR_FLAT + 1.6, -BED_SKIRT),
+    (L.CORRIDOR_FLAT + 1.6, L.BANK_TOP_Y),
+    (L.CORRIDOR_FLAT - 0.1, L.BANK_TOP_Y),
+    (L.CORRIDOR_FLAT - 0.4, L.BED_TOP_Y),
+    (-L.CORRIDOR_FLAT + 0.4, L.BED_TOP_Y),
 ]
 
 #: Шаг станций вдоль линии. 2.0 м — шаг шпалы; постель и рельсы тянутся по

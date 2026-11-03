@@ -74,7 +74,7 @@ namespace FrostSpace.Tests
         {
             var layout = ParseReal();
 
-            Assert.That(layout.Nodes.Count, Is.EqualTo(12), "узлов раскладки");
+            Assert.That(layout.Nodes.Count, Is.EqualTo(13), "узлов раскладки");
             Assert.That(layout.Ruins.Count, Is.EqualTo(8), "руин");
             Assert.That(layout.Anchors.Count, Is.EqualTo(7), "якорей");
 
@@ -87,6 +87,17 @@ namespace FrostSpace.Tests
 
             Assert.That(layout.FindNode("nope"), Is.Null,
                 "несуществующий ключ обязан возвращать null");
+
+            // Посёлок — первый узел слоя E: его меши живут в чанке клетки
+            // (0,-2), а не отдельным объектом сцены. Позиция и клетка обязаны
+            // совпадать с раскладкой, иначе чанк соберётся не туда.
+            var settlement = layout.FindNode("settlement");
+            Assert.That(settlement, Is.Not.Null, "в раскладке нет узла settlement");
+            Assert.That(settlement.Position, Is.EqualTo(new Vector2(0f, -1200f)));
+            Assert.That(settlement.LayoutCell, Is.EqualTo(new Vector2Int(0, -2)),
+                "посёлок стоит в клетке (0,-2) — его чанк называется WorldCell_0_-2");
+            Assert.That(settlement.Warm, Is.True,
+                "посёлок тёплый: в нём живут роботы, и миникарта рисует его как площадку");
 
             var slide = layout.Ruins[0];
             Assert.That(slide.Key, Is.EqualTo("slide"));

@@ -373,12 +373,49 @@ def _patch_sides(a, b) -> list:
     return dims[1:]
 
 
+def _face_height(nrm, cen, x: float, y: float) -> float:
+    """Отметка плоскости грани в точке (x, y).
+
+    Плоскость грани задана нормалью `nrm` и точкой на ней `cen`. Z — высота,
+    X и Y — горизонтальные оси. Отметка отличается от смещения плоскости от
+    начала координат именно тем, что не зависит от того, где плоскость стоит
+    относительно нуля: на углу клетки это сотни метров, и разница нормалей
+    двух граней, умноженная на такое расстояние, съедает настоящий зазор.
+    """
+    return (nrm.dot(cen) - nrm.x * x - nrm.y * y) / nrm.z
+
+
+#: Окно поиска кандидатов по отметке грани. Шире порога `COPANAR_GAP`: у двух
+#: почти параллельных граней, стоящих в разных местах, отметки центров
+#: расходятся ещё и на уклоне — на 2° и десяти метрах это уже треть метра.
+#: Окно считается от уклона и размера грани, а не берётся с потолка.
+def _search_window(nrm, radius: float, rad_max: float, gap: float) -> float:
+    slope = math.hypot(nrm.x, nrm.y) / max(nrm.z, 1e-6)
+    return gap + slope * (radius + rad_max) + 0.05
+
+
 #: Наклон грани, выше которого она считается «поверхностной»: cos 45°. Проверка
 #: смотрит только такие пары — именно их видит игрок сверху, и именно они
 #: мерцают на земле. Торцевые крышки кусков, отвесные стенки юбок и внутренние
 #: грани балласта скрыты в грунте или соседним куском, и их сопадение
 #: невидимо: ловить его значит плодить ложные отказы.
 COPANAR_UP = 0.70
+
+#: Шпала вложена в балласт по замыслу: её верхняя грань примыкает к плечу
+#: балласта **по линии**, а не лежит на нём площадью. Проверка меряет плоскости,
+#: и такая линия даёт зазор в сантиметры — при том, что глаз не видит ничего:
+#: кадры депо и перегона показывают чистые шпалы. Борьба плоскостей — это когда
+#: совпадает площадь, а не когда одно тело вложено в другое. Поэтому шпалы и
+#: путевая структура, в которую они вложены, из проверки исключены.
+EMBEDDED_IN_TRACK = ("Ties", "Rail", "Siding")
+
+
+def _is_designed_contact(na: str, nb: str) -> bool:
+    """Шпала и путевая структура, в которую она вложена, — не борьба плоскостей."""
+    for a, b in ((na, nb), (nb, na)):
+        if a.startswith(EMBEDDED_IN_TRACK) and b.startswith(EMBEDDED_IN_TRACK):
+            return True
+    return False
 
 
 def cross_object_coplanar(meshes, gap: float = COPANAR_GAP,
@@ -400,6 +437,7 @@ def cross_object_coplanar(meshes, gap: float = COPANAR_GAP,
     """
     buckets: dict = {}
     boxes: dict = {}
+    rad_max = 0.0
     for (name, obj) in meshes.items():
         if name.endswith("_Collider"):
             continue
@@ -426,8 +464,19 @@ def cross_object_coplanar(meshes, gap: float = COPANAR_GAP,
             mat = (mats[poly.material_index]
                    if poly.material_index < len(mats) else "?")
             key = (round(nrm.x, 1), round(nrm.y, 1), round(nrm.z, 1))
+            # Ключ сортировки — отметка грани по центру, а не смещение плоскости
+            # от начала координат. Смещение зависит от того, где плоскость
+            # стоит относительно нуля, и на двух гранях с чуть разными
+            # нормалями (склон земли против склона рельса) разница нормалей
+            # умножается на расстояние до нуля: в углу клетки это сотни метров,
+            # и настоящий зазор в полметра превращается в сантиметры. Отметка
+            # от этого свободна — это высота поверхности в её точке.
             buckets.setdefault(key, []).append(
-                (nrm.dot(cen), name, mat, (f_lo, f_hi), nrm))
+                (_face_height(nrm, cen, cen.x, cen.y), name, mat,
+                 (f_lo, f_hi), nrm, cen))
+            rad = max(f_hi[0] - f_lo[0], f_hi[1] - f_lo[1]) * 0.5
+            if rad > rad_max:
+                rad_max = rad
         boxes[name] = ((lo, hi) if lo[0] < hi[0] else None)
 
     pairs = []
@@ -436,15 +485,19 @@ def cross_object_coplanar(meshes, gap: float = COPANAR_GAP,
             continue
         faces.sort()
         for i in range(len(faces)):
-            (oi, na, ma, ba, va) = faces[i]
+            (oi, na, ma, ba, va, ca) = faces[i]
             if boxes.get(na) is None:
                 continue
             seen = 0
             j = i + 1
-            while j < len(faces) and faces[j][0] - oi < gap:
-                (oj, nb, mb, bb, vb) = faces[j]
+            radius = max(ba[1][0] - ba[0][0], ba[1][1] - ba[0][1]) * 0.5
+            window = _search_window(va, radius, rad_max, gap)
+            while j < len(faces) and faces[j][0] - oi < window:
+                (oj, nb, mb, bb, vb, cb) = faces[j]
                 j += 1
                 if na == nb or ma == mb or seen > COPANAR_WINDOW:
+                    continue
+                if _is_designed_contact(na, nb):
                     continue
                 if va.dot(vb) < COPANAR_NORMAL_DOT:
                     continue
@@ -461,6 +514,33 @@ def cross_object_coplanar(meshes, gap: float = COPANAR_GAP,
                 if not check_train._overlap(ba, bb, 0.0):
                     continue
                 if min(_patch_sides(ba, bb)) < COPANAR_PATCH_SIDE:
+                    continue
+                # Настоящий зазор: расстояние от точки поверхности A в пятне
+                # перекрытия до плоскости B, а не разница смещений. Смещение
+                # плоскости от нуля для этого не годится — оно зависит от
+                # положения грани относительно начала координат и от того,
+                # насколько нормали двух граней расходятся (см. сортировку выше).
+                #
+                # Зазор считается не в одной точке перекрытия, а по всему
+                # пятну: если плоскости совпадают, зазор мал в любой его точке,
+                # а если грани лишь задевают друг друга (шпала вложена в
+                # балласт по замыслу), зазор мал только посередине и растёт к
+                # краям. Борьба плоскостей за пиксель — это когда плоскости
+                # совпадают на всей площади, а не когда одна проходит сквозь
+                # другую по краю.
+                ox0 = max(ba[0][0], bb[0][0])
+                ox1 = min(ba[1][0], bb[1][0])
+                oy0 = max(ba[0][1], bb[0][1])
+                oy1 = min(ba[1][1], bb[1][1])
+                px = (ox0 + ox1) * 0.5
+                py = (oy0 + oy1) * 0.5
+                far = 0.0
+                for (qx, qy) in ((px, py), (ox0, oy0), (ox1, oy1), (ox0, oy1), (ox1, oy0)):
+                    qz = _face_height(va, ca, qx, qy)
+                    d = abs(vb.x * qx + vb.y * qy + vb.z * qz - vb.dot(cb))
+                    if d > far:
+                        far = d
+                if far >= gap:
                     continue
                 pairs.append((na, nb, ba[0], bb[0]))
                 if len(pairs) >= 4:

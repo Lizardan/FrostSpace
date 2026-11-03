@@ -24,6 +24,36 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from unity_bridge import Bridge, configure_stdout  # noqa: E402
 
 
+def extract_text(payload: object) -> str:
+    """Достать текст, который вернул сам сниппет.
+
+    Мост отдаёт ответ в несколько слоёв: верхний `result` — обёртка MCP,
+    внутри неё `data.result` — то, что вернул сниппет. Раньше инструмент
+    печатал `Code executed successfully.` вместо вывода сниппета, и разбор
+    ответа приходилось вести вручную через `--raw`.
+    """
+    node = payload
+    for _ in range(6):
+        if isinstance(node, str):
+            return node
+        if not isinstance(node, dict):
+            break
+        if isinstance(node.get("data"), dict):
+            node = node["data"]
+            continue
+        if isinstance(node.get("result"), (dict, str)):
+            node = node["result"]
+            continue
+        break
+    if isinstance(node, str):
+        return node
+    if isinstance(node, dict):
+        message = node.get("message")
+        if isinstance(message, str):
+            return message
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
 def main(argv: list[str] | None = None) -> int:
     configure_stdout()
     parser = argparse.ArgumentParser(description="Выполнить C#-сниппет в Unity через MCP.")
@@ -67,12 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.raw:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
-        payload = result.get("result", result)
-        if isinstance(payload, dict):
-            text = payload.get("result", payload.get("message", payload))
-        else:
-            text = payload
-        print(text)
+        print(extract_text(result))
     return 0 if result.get("status") == "success" else 2
 
 

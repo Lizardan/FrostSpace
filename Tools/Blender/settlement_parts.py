@@ -25,6 +25,8 @@ import level_lib
 import level_parts as LP
 import world_layout as W
 
+import cell_props as CP
+
 #: Клетка поселения и её центр в мире.
 CELL = W.cell_of(*W.SETTLEMENT)
 
@@ -34,11 +36,30 @@ CELL = W.cell_of(*W.SETTLEMENT)
 HOUSE = (34.0, 40.0)
 
 #: Забор двора: прямоугольник в локальных осях клетки и проём с южной стороны.
-YARD = (16.0, 62.0, 20.0, 66.0)
+#: Двор обнят **вокруг дома**, а не во всю клетку: изба занимает 7 × 6 м, и
+#: забор 46 × 46 м читался пустым огороженным полем, где дом — мелочь.
+#: Южная линия отодвинута на 30 м от оси дороги: её выемка кончается на 28 м,
+#: и забор в откосе стоял бы на голой земле.
+YARD = (22.0, 46.0, 30.0, 56.0)
 GAP = (30.0, 40.0)          # проём по южной линии забора, по X
 
+#: Тропа от дороги через проём к двери: снег на ней утоптан, поэтому темнее и
+#: лежит поверх земли, а не вровень с ней.
+PATH = ((34.0, 24.0), (34.0, 31.0), (34.0, 44.0))
+
+#: Дрова: изба с печью, значит поленница у стены и вязанка у порога.
+#: Места — западный и юго-западный угол дома, чтобы не загораживать дверь.
+LOGS = ((26.5, 45.0, 0.0), (26.5, 47.2, 90.0))
+BUNDLE = (30.0, 45.6)
+
+#: Наносы у стен дома: снег прилип к углу и к северной стене.
+DRIFTS = ((24.5, 48.5, 3.2, 2.2, 0.85, 1.0),
+          (39.5, 50.5, 3.6, 2.4, 0.95, 2.0),
+          (43.0, 36.0, 2.6, 2.6, 0.70, 3.0))
+
 #: Сосны: вне обеих ног дороги и вне забора, но в поле двора.
-PINES = ((-44.0, 46.0, 0.4), (-38.0, -44.0, 2.1), (58.0, 12.0, 3.8))
+PINES = ((-44.0, 46.0, 0.4), (-38.0, -44.0, 2.1), (58.0, 12.0, 3.8),
+         (54.0, 44.0, 4.6), (-30.0, 8.0, 5.9), (18.0, 66.0, 7.2))
 
 #: Габарит забора: столб, две лажи, высота.
 POST = (0.12, 0.12, 1.15)
@@ -57,6 +78,20 @@ def _place(lx: float, lz: float):
 def _ground(lx: float, lz: float) -> float:
     """Отметка пола двора поселения под локальной точкой."""
     return W.world_height(W.SETTLEMENT[0] + lx, W.SETTLEMENT[1] + lz)
+
+
+def _dressing(materials):
+    """Обитание двора: тропа, дрова, наносы — и всё это в одном объекте."""
+    b = level_lib.LevelBuilder(materials)
+    CP.trodden(b, PATH, _ground, width=1.8, mat="Level_SnowDeep", lift=0.05)
+    for (lx, lz, rx, ry, h, seed) in DRIFTS:
+        CP.drift(b, lx, lz, _ground(lx, lz), rx, ry, h, seed)
+    for (lx, lz, rot) in LOGS:
+        CP.merge(b, LP.build_log_pile(materials), lx, lz, _ground(lx, lz),
+                 sink=-0.02, rot=rot)
+    CP.merge(b, LP.build_log_bundle(materials), BUNDLE[0], BUNDLE[1],
+             _ground(*BUNDLE), sink=-0.02, rot=25.0)
+    return b.build("Hut_Dressing", recalc=False)
 
 
 def _move(obj, dx: float, dy: float, dz: float) -> None:
@@ -128,7 +163,7 @@ def build_cell_settlement(materials, i: int, j: int):
     """Объекты поселения клетки: пустой список, если клетка не поселения."""
     if (i, j) != CELL:
         return []
-    objs = build_house(materials) + [_fence(materials)]
+    objs = build_house(materials) + [_fence(materials), _dressing(materials)]
     for (n, (lx, lz, seed)) in enumerate(PINES):
         tree = LP.build_pine(materials, seed, name="Hut_Pine_%d" % n)
         (px, py) = _place(lx, lz)
