@@ -51,7 +51,8 @@ import bpy  # noqa: E402
 
 import level_lib  # noqa: E402
 import depot_parts as DP  # noqa: E402
-import settlement_parts as SP  # noqa: E402
+import settlement_parts as SP
+import station_parts as ST  # noqa: E402
 import transport_parts as TP  # noqa: E402
 import world_cell_parts as C  # noqa: E402
 import world_layout as W  # noqa: E402
@@ -191,7 +192,7 @@ def _verify(obj, i, j) -> list:
     return []
 
 
-def _bounds_check(pieces, label: str, i: int, j: int) -> list:
+def _bounds_check(pieces, label: str, i: int, j: int, cap: float = 12.0) -> list:
     """Узел обязан влезть в клетку и стоять на её полу.
 
     Критерий приёмки «депо целиком внутри клетки (−2,−2)» до этой проверки был
@@ -205,8 +206,8 @@ def _bounds_check(pieces, label: str, i: int, j: int) -> list:
     half = W.BLK * 0.5 + 0.5      # полметра допуска: вершина на ребре клетки
     # есть вершина на ребре, и в float это 300,0000001, а не 300.
     # Отметка самой высокой точки рельефа именно ЭТОЙ клетки: от неё меряется,
-    # насколько далеко вверх уходят постройки. Двор наклонён вдоль линии,
-    # поэтому «пол двора» — не одно число, и верхняя граница честнее нижней.
+    # насколько далеко вверх уходят постройки. Двор узла держит одну отметку
+    # (ADR 0041), поэтому верхняя граница рельефа — это и есть пол двора.
     # Центр берётся из индексов, а не из нуля сцены: у депо они совпадают, у
     # поселения — нет, и прошлый вариант мерил рельеф депо для чужой клетки.
     (cx, cz) = W.cell_center(i, j)
@@ -221,9 +222,9 @@ def _bounds_check(pieces, label: str, i: int, j: int) -> list:
                 if len(bad) > 2:
                     return bad[:3]
             reach = max(reach, v.co.z - hi)
-    if reach > 12.0:
-        bad.append("%s поднимается над рельефом на %.1f м — выше любого "
-                   "габарита узла" % (label, reach))
+    if reach > cap:
+        bad.append("%s поднимается над рельефом на %.1f м — выше разрешённого "
+                   "для узла %.1f м" % (label, reach, cap))
     print("%s: объектов %d, вершин %d, над верхней точкой рельефа максимум "
           "%.1f м, габарит клетки %.0f x %.0f м" % (
               label.upper(), len(pieces),
@@ -277,6 +278,17 @@ def main() -> int:
             problems = _bounds_check(hut, "поселение", i, j)
             if problems:
                 print("FAIL поселение: %s" % "; ".join(problems))
+                return 1
+        # Станция: 22 м вместо штатных 12 — узел держит гигантский ангар с
+        # обломком корабля, и пролёт без такой высоты физически не соберётся.
+        # Оговорка стоит здесь, а не внутри `station_parts`, чтобы предел
+        # оставался проверкой, а не комментарием.
+        station = ST.build_cell_station(mats, i, j)
+        pieces += station
+        if station:
+            problems = _bounds_check(station, "станция", i, j, cap=22.0)
+            if problems:
+                print("FAIL станция: %s" % "; ".join(problems))
                 return 1
         tris = sum(len(p.vertices) - 2 for o in pieces for p in o.data.polygons)
         print("WorldCell_%d_%d: квадов %d, объектов %d, трис %d%s" % (

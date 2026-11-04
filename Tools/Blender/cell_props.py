@@ -32,7 +32,13 @@ def merge(b, obj, lx: float, lz: float, ground: float, sink: float = 0.0,
     for v in obj.data.vertices:
         x = v.co.x * ca - v.co.y * sa
         y = v.co.x * sa + v.co.y * ca
-        b.mb.verts.append(Vector((x + lx, -y + lz, v.co.z + ground + sink)))
+        # Blender-Y = −z мира: та же конвенция, что у `_path` в депо и у террейна
+        # клетки. Прежняя строка писала `-y + lz`, то есть ставила предмет на
+        # зеркальную половину мира: отметка земли считалась для (lx, lz), а тело
+        # вставало в (lx, −lz). Отсюда сосны, закопанные на 7 и 11 метров в
+        # чанке депо: дерево получало высоту своей точки, а становилось там,
+        # где рельеф другой.
+        b.mb.verts.append(Vector((x + lx, -lz - y, v.co.z + ground + sink)))
     for poly in obj.data.polygons:
         name = mats[poly.material_index] if poly.material_index < len(mats) else "?"
         # Y переносится с отрицанием (Blender-Y = −z мира), а это зеркало:
@@ -59,6 +65,34 @@ def drift(b, lx: float, lz: float, ground: float, rx: float, ry: float,
     """
     b.ico((lx, -lz, ground + height * 0.35), 1.0, "Level_Snow",
           subdivisions=1, scale=(rx, ry, height), jitter=0.22, seeds=seed)
+
+
+def billow(b, lx: float, lz: float, ground: float, r: float,
+           seed: float = 0.0) -> None:
+    """Крупный перекат снега: то же тело, что `MenuDrift`, но в осях клетки.
+
+    Два пересекающихся икосаэдра, широкий и плоский (3D-scale по Z 0,30) —
+    высокий гранёный ком читается камнем, а снег это намет, у которого высота
+    втрое меньше ширины. Второй язык нужен, чтобы силуэт не был правильной
+    полусферой: у заноса, который наметало два дня, всегда горб сбоку.
+    """
+    b.ico((lx, -lz, ground + r * 0.30 * 0.35), r, "Level_Snow",
+          subdivisions=2, scale=(1.35, 0.95, 0.30), jitter=0.12, seeds=1.7 + seed)
+    b.ico((lx - r * 0.74, -lz + r * 0.14, ground + r * 0.32 * 0.35),
+          r * 0.55, "Level_Snow", subdivisions=2, scale=(1.25, 0.85, 0.32),
+          jitter=0.10, seeds=4.2 + seed)
+
+
+def shard(b, lx: float, lz: float, ground: float, height: float,
+          seed: float = 0.0) -> None:
+    """Ледяной шип у кромки наноса: движение по вертикали на плоском снегу.
+
+    Тот же приём, что у дороги в меню: вокруг всё пологое, и один-два острых
+    тела на клетку дают глазу масштаб и холод. Основание утоплено на треть:
+    шип вырос из снега, а не лежит на нём.
+    """
+    b.ico((lx, -lz, ground + height * 0.62), height * 0.30, "Level_Ice",
+          subdivisions=1, scale=(0.75, 0.75, 1.6), jitter=0.30, seeds=seed)
 
 
 def trodden(b, pts, ground, width: float = 1.8, mat: str = "Level_SnowDeep",

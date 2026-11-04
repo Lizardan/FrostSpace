@@ -1,13 +1,15 @@
-"""Аудит декора клетки: кто висит над землёй и кто в неё утоплен.
+"""Аудит посадки предметов клетки: кто висит, кто утонул.
 
 Прогон:
     blender --background --factory-startup --python Tools/Blender/probes/probe_decor_ground.py -- [-2 -2]
 
-Причина «висячих» деревьев не в том, что отметка взята плохая: рельеф рендерится
-плоскими 15-метровыми квадами, а предмет ставится по аналитической высоте своей
-оси. В вогнутом месте хорда ниже формулы, и нога повисает. Поэтому меряется
-расстояние от низа предмета до ФАКТИЧЕСКОЙ поверхности земли — лучом вниз по
-мешу террейна, а не по формуле.
+Меряется не аналитическая высота, а то, на что предмет реально опирается: луч
+от подошвы вниз по всем остальным объектам клетки и самое верхнее попадание.
+Причина в том, что пола у клетки несколько — рельеф, терраса двора, настил
+перрона, — и предмет, который «висит 0,9 м над землёй», стоит на террасе и
+правильный. Аналитика же молчала ровно там, где была права: сосны в чанке
+депо стояли на отметке своей точки, а тело получалось в зеркальной половине
+мира (зеркальщина `CP.merge`), и только такой луч это показывает.
 """
 
 from __future__ import annotations
@@ -21,29 +23,43 @@ from mathutils import Vector  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
-ROOT = os.path.dirname(TOOLS)
-CELLS = os.path.join(os.path.dirname(ROOT), "Assets", "_Project", "Content",
-                     "Models", "Level", "Cells")
 if TOOLS not in sys.path:
     sys.path.insert(0, TOOLS)
 
 import world_layout as W  # noqa: E402
 
-#: Предметы тоньше этого не считаются: шляпка гвоздя и кромка плиты не «висят».
+CELLS = os.path.join(os.path.dirname(os.path.dirname(TOOLS)), "Assets",
+                     "_Project", "Content", "Models", "Level", "Cells")
+
+#: Зазор, который глаз ещё читает касанием.
 TOUCH_TOL = 0.06
-#: Насколько допустимо утонуть: юбка сосны и валун входят в грунт на десятки
-#: сантиметров по замыслу, поэтому снизу прощаем до этого предела.
-SINK_OK = -1.2
+#: Декор обязан касаться опоры: висеть выше 12 см или тонуть глубже метра —
+#: обе беды видны в кадре.
+DECOR_UP = 0.12
+DECOR_DOWN = 1.00
+#: Постройкам и пути претензий нет: у них юбка уходит в грунт на метры по
+#: замыслу (`BURY`), и это норма, а не дефект.
+DECOR = ("Grove", "Yard", "Posts", "Signs", "Rocks", "Drift", "Prop")
+#: Глубину закапывания проверяем у предметов, у которых основание видно: у
+#: сосны, валуна и заноса провал ниже метра — это уже пропавший предмет. Столб
+#: и знак тонут глубже: у них под снегом стойка, и в земле её не видно по
+#: замыслу, но в пять метров она быть не обязана.
+SUNK_CHECK = ("Grove", "Rocks", "Drift", "Prop")
+SUNK_POSTS = ("Posts", "Signs", "Masts")
+SUNK_POSTS_DOWN = 2.00
+#: Сколько метров над подошвой стартовать луч. Брать надо с запасом: юбка
+#: стены уходит в грунт на 1,6 м, и луч, пущенный с полуметра, стартует под
+#: землёй, ничего не находит, и закопанное приходит в отчёт как висящее.
+PROBE_DOWN = 3.00
 #: Сколько худших строк печатать на объект.
 TOP = 6
 
 
 def cell_parts(i: int, j: int) -> list[str]:
-    d = CELLS
     out = []
-    for f in sorted(os.listdir(d)):
+    for f in sorted(os.listdir(CELLS)):
         if f.endswith(".fbx") and f.endswith("_%d_%d.fbx" % (i, j)):
-            out.append(os.path.join(d, f))
+            out.append(os.path.join(CELLS, f))
     return out
 
 
@@ -59,32 +75,36 @@ def import_all(paths: list[str]) -> dict:
     return objs
 
 
-def ground(objs: dict):
-    for name, o in objs.items():
-        if name.startswith("Ground"):
-            return o
-    return None
+#: Что считается полом. Брать самое верхнее попадание по всем объектам
+#: нельзя: у постройки подошва.foundation лежит под её же стеной, стена под
+#: кровлей, и «опорой» стала бы крыша на пять метров выше. Полом клетки бывают
+#: рельеф, полотна дорог и пути, боковой путь и плиты двора.
+SUPPORT = ("Ground", "DepotApron", "DepotPlatform", "Road_", "Rail_",
+           "Siding_")
 
 
-def surface_at(gnd, x: float, y: float) -> float | None:
-    """Отметка фактической земли под точкой: луч сверху вниз по мешу террейна.
+def support(objs, skip, x: float, y: float, z: float):
+    """Самая верхняя грань пола над точкой — то, на чём предмет стоит.
 
-    FBX импортируется с компенсацией 0,01 и поворотом 90° (ADR 0007), поэтому
-    `ray_cast` отвечает в локальных осях объекта: без переноса в мировые
-    сравнивали бы высоту предмета с его же координатой по Y.
+    Луч идёт сверху клетки, а не от самой подошвы: короткий луч на три метра
+    ведёт себя нестабильно (над ровной террасой он не находил грань, которая
+    стоит прямо под ним), а длинный находит всегда. Если самое верхнее
+    попадание выше подошвы — предмет закопан, если ниже — висит.
     """
-    origin = gnd.matrix_world.inverted() @ Vector((x, y, 500.0))
-    direction = gnd.matrix_world.inverted().to_3x3() @ Vector((0, 0, -1))
-    hit, loc, _n, _idx = gnd.ray_cast(origin, direction.normalized())
-    return (gnd.matrix_world @ loc).z if hit else None
-
-
-#: Декор обязан касаться земли: и висеть, и утонуть по самое основание — обе
-#: беды видны в кадре. Постройкам и пути это не претензия: у них юбка уходит в
-#: грунт на метры по замыслу (`BURY`), и закапывать их — норма.
-DECOR = ("Grove", "Yard", "Posts", "Signs", "Rocks", "Drift", "Prop")
-DECOR_UP = 0.12
-DECOR_DOWN = 1.00
+    best = None
+    for (name, other) in objs.items():
+        if other is skip or not any(k in name for k in SUPPORT):
+            continue
+        inv = other.matrix_world.inverted()
+        origin = inv @ Vector((x, y, z + 60.0))
+        direction = (inv.to_3x3() @ Vector((0, 0, -1))).normalized()
+        hit, loc, _n, _i = other.ray_cast(origin, direction)
+        if not hit:
+            continue
+        wz = (other.matrix_world @ loc).z
+        if best is None or wz > best:
+            best = wz
+    return best
 
 
 def main() -> int:
@@ -97,57 +117,56 @@ def main() -> int:
         print("НЕТ ФАЙЛОВ клетки %d_%d" % (i, j))
         return 1
     objs = import_all(paths)
-    gnd = ground(objs)
-    if gnd is None:
+    if not any(n.startswith("Ground") for n in objs):
         print("НЕТ Ground в клетке")
         return 1
 
-    print("КЛЕТКА %d_%d, объектов %d, земля %s" % (i, j, len(objs), gnd.name))
+    print("КЛЕТКА %d_%d, объектов %d" % (i, j, len(objs)))
     bad = 0
+    measured = 0
     for name, obj in sorted(objs.items()):
-        if obj is gnd or name.endswith("_Collider"):
-            continue
+        if name.endswith("_Collider") or name.startswith("Ground"):
+            continue        # земля и есть опора, мерить её нечем
         decor = any(k in name for k in DECOR)
-        zs = [(obj.matrix_world @ v.co).z for v in obj.data.vertices]
-        base = min(zs)
+        if not decor:
+            continue        # постройки меряем другим правилом: у них юбка в
+                            # грунте по замыслу, а висячим может быть только декор
+        measured += 1
+        world = [obj.matrix_world @ v.co for v in obj.data.vertices]
+        base = min(p.z for p in world)
         rows = []
-        for v, z in zip(obj.data.vertices, zs):
-            if z - base > 0.35:
+        for wp in world:
+            if wp.z - base > 0.35:
                 continue        # меряем только подошву предмета
-            wp = obj.matrix_world @ v.co
-            s = surface_at(gnd, wp.x, wp.y)
-            if s is None:
-                rows.append((999.0, wp, None))
-                continue
-            rows.append((z - s, wp, s))
+            if abs(wp.x) > 300.0 or abs(wp.y) > 300.0:
+                continue        # за край клетки: там опора у соседнего чанка
+            s = support(objs, obj, wp.x, wp.y, wp.z)
+            rows.append((wp.z - s if s is not None else 999.0, wp, s))
         if not rows:
             continue
         hang = [r for r in rows if r[0] > TOUCH_TOL]
-        deep = [r for r in rows if r[0] < SINK_OK]
         worst = max(rows, key=lambda r: abs(r[0]))
+        sunk = any(k in name for k in SUNK_CHECK)
+        posts = any(k in name for k in SUNK_POSTS)
         if decor:
-            defect = any(r[0] > DECOR_UP or r[0] < -DECOR_DOWN for r in rows)
+            defect = any(r[0] > DECOR_UP for r in rows) or (
+                sunk and any(r[0] < -DECOR_DOWN for r in rows)) or (
+                posts and any(r[0] < -SUNK_POSTS_DOWN for r in rows))
         else:
             defect = bool(hang)
         if defect:
             bad += 1
-        print("%-26s %-8s %8s  подошвы точек %4d  %s" %
-              (name, "декор" if decor else "постройка",
-               ("%+.3f" % worst[0]), len(rows), "ДЕФЕКТ" if defect else ""))
-        rows.sort(key=lambda r: -r[0])
+        print("%-26s %-9s худший %+7.3f м  подошвы %4d  %s" %
+              (name, "декор" if decor else "постройка", worst[0], len(rows),
+               "ДЕФЕКТ" if defect else ""))
+        rows.sort(key=lambda r: -abs(r[0]))
         for r in rows[:TOP]:
             (gap, wp, s) = r
             if not decor and -TOUCH_TOL < gap < 1e5:
                 continue
-            # Аналитика против меша: если `world_height` под этой же точкой
-            # не совпадает с поверхностью, виноват не предмет, а земля.
-            (lx, lz) = (-wp.x, -wp.y)
-            an = W.world_height(*W.to_world(lx, lz))
-            print("    (%8.2f, %8.2f) низ=%8.3f земля=%s зазор=%+.3f "
-                  "локально=(%7.1f, %7.1f) world_height=%8.3f" %
-                  (wp.x, wp.y, wp.z, "нет луча" if s is None else "%.3f" % s,
-                   gap, lx, lz, an))
-    print("ИТОГ: объектов с дефектом %d из %d" % (bad, len(objs) - 1))
+            print("    (%8.2f, %8.2f) низ=%8.3f опора=%s зазор=%+.3f" %
+                  (wp.x, wp.y, wp.z, "ничего" if s is None else "%.3f" % s, gap))
+    print("ИТОГ: предметов декора с дефектом %d из %d" % (bad, measured))
     return 0
 
 

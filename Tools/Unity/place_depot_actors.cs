@@ -1,33 +1,46 @@
-// Расстановка актёров депо по новым отметкам двора.
+// Расстановка актёров, света и кадра прибытия депо по отметке пола двора.
 //
-//   python Tools/Unity/run_snippet.py Tools/Unity/place_depot_actors.cs
+//   UNITY_MCP_PORT=6401 python Tools/Unity/run_snippet.py Tools/Unity/place_depot_actors.cs
 //
 // Переиспользуемый скрипт: запускается всякий раз, когда двигается двор депо.
-// Головка рельса в депо больше не ноль сцены: двор наклонён вдоль магистрали, и
-// её отметка задана таблицей из `world_layout` (шаг 5 м по локальному z). Все
-// высоты актёров считаются от неё, поэтому «порог двери вровень с платформой»
-// держится в любой точке двора, а не только там, где кадр был принят.
+// Метки заданы ПРИВЫШКОЙ над головкой главного пути (таблица `HH`), а не
+// абсолютной высотой: кто стоит на перроне, тот и остаётся на перроне, когда
+// двор едет. Таблица головки — вывод `Temp/reseat_marks.py` по
+// `Tools/Blender/world_layout.py`; она обязана соответствовать сборке клеток.
 //
-// ВНИМАНИЕ: скрипт перезаписывает позиции актёров и ключи кадра прибытия и
-// сохраняет сцену. Перед запуском убедиться, что сцена `Frontier` активна и
-// редактор не в Play.
+// Правит ДВА уровня. Актёры депо живут внутри префаба клетки
+// (`WorldCell_-2_-2.prefab`, ADR 0037/0039), поэтому сначала пересаживаются
+// корни инстансов в префабе, затем те же числа применяются к сцене, а
+// внутренние корни моделей (одно имя с инстансом!) возвращаются к позам
+// источника. `GameObject.Find` возвращает первый совпавший трансформ, и без
+// этого условия скрипт двигал бы модель внутри префаба, оставляя корень на
+// месте: робот улетал бы на 15 м вверх местным смещением.
+//
+// Привычки сняты с принятой сцены 2026-11-04, когда двор стал ровным: пол
+// площадки −1,060, плита перрона +0,90 над головкой, плюс 0,14 снеговой шапки
+// вала → ходить по перрону нужно на +1,04, а тот, у кого пятка на 5 мм ниже
+// корня, стоит на +1,045. Терраса двора — на 7 см ниже настила, то есть +0,97.
+// Пол кузова +1,00. План (x, z) скрипт не трогает — правит только высоты.
+//
+// ВНИМАНИЕ: скрипт перезаписывает позиции, сериализованные числа прибытия,
+// сохраняет префаб клетки и сцену. Перед запуском убедиться, что сцена
+// `Frontier` активна, редактор не в Play и копия сцены лежит в `Temp/backup/`.
 var sb = new System.Text.StringBuilder();
 var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 if (scene.name != "Frontier") return "активна не Frontier: " + scene.name;
 if (UnityEditor.EditorApplication.isPlaying) return "редактор в Play — сначала останови";
 
-float[] HZ = new float[] { -200f, -195f, -190f, -185f, -180f, -175f, -170f, -165f, -160f, -155f,
-    -150f, -145f, -140f, -135f, -130f, -125f, -120f, -115f, -110f, -105f, -100f, -95f, -90f, -85f,
-    -80f, -75f, -70f, -65f, -60f, -55f, -50f, -45f, -40f, -35f, -30f, -25f, -20f, -15f, -10f, -5f,
-    0f, 5f, 10f, 15f, 20f, 25f, 30f, 35f, 40f, 45f, 50f, 55f, 60f, 65f, 70f, 75f, 80f, 85f, 90f,
-    95f, 100f };
-float[] HH = new float[] { -8.454f, -8.654f, -8.854f, -9.054f, -9.254f, -9.454f, -9.654f, -9.854f,
-    -10.054f, -10.254f, -10.454f, -10.654f, -10.854f, -11.054f, -11.254f, -11.454f, -11.654f,
-    -11.854f, -12.054f, -12.254f, -12.454f, -12.654f, -12.854f, -13.054f, -13.254f, -13.429f,
-    -13.604f, -13.778f, -13.953f, -14.127f, -14.308f, -14.502f, -14.696f, -14.890f, -15.084f,
-    -15.282f, -15.501f, -15.719f, -15.938f, -16.157f, -16.394f, -16.644f, -16.894f, -17.144f,
-    -17.420f, -17.712f, -18.004f, -18.308f, -18.659f, -19.011f, -19.394f, -19.835f, -20.289f,
-    -20.880f, -21.270f, -21.360f, -21.449f, -21.539f, -21.628f, -21.718f, -21.807f };
+const string CELL_PREFAB = "Assets/_Project/Content/Prefabs/World/WorldCell_-2_-2.prefab";
+
+// Головка рельса по оси сцены z, шаг 5 м: ровный двор и начало волны стола у
+// северного края (там линия выходит из площадки).
+float[] HZ = new float[] { -80f, -75f, -70f, -65f, -60f, -55f, -50f, -45f, -40f, -35f, -30f,
+    -25f, -20f, -15f, -10f, -5f, 0f, 5f, 10f, 15f, 20f, 25f, 30f, 35f, 40f, 45f, 50f, 55f,
+    60f, 65f, 70f, 75f, 80f };
+float[] HH = new float[] { -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f,
+    -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f,
+    -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.060f,
+    -1.060f, -1.060f, -1.060f, -1.060f, -1.060f, -1.058f, -1.055f, -1.051f };
 
 System.Func<float, float> head = delegate (float z)
 {
@@ -42,77 +55,202 @@ System.Func<float, float> head = delegate (float z)
     return HH[HH.Length - 1];
 };
 
-// (имя, x, z, прибавка к головке рельса) — прибавка есть разность прежней высоты
-// актёра и прежней головки (0,0): кто стоял на платформе, тот и стоит на ней.
-string[] names = { "DepotTrain", "DepotDoorSpill", "DepotDoorFill", "R16_Warden_A", "R16_Warden_B",
-                   "R7_Drifter", "R8_Bulwark", "FrontierSnowfall", "Main Camera" };
-float[] xs = { -8f, -3.3f, -5.6f, -2.4f, 0.6f, 9.59f, 11.51f, 0f, -2.3f };
-float[] zs = { -2f, -1f, -1f, -4.8f, -5f, 0.13f, 1.74f, 0f, -1.6f };
-float[] add = { 1f, 2.8f, 2f, 0.7f, 0.7f, 0.68f, 0.58f, 5.98f, 2.7f };
-for (int k = 0; k < names.Length; k++)
+// (имя, привычка над головкой). Свет и объём снегопада меряются от той же
+// головки: стол линии и пол узла прирезаны друг к другу, поэтому одна база
+// держит и настил перрона, и мачты, и снег над двором.
+string[] names = { "DepotTrain", "R16_Warden_A", "R16_Warden_B", "R7_Drifter", "R8_Bulwark",
+    "R9_Tinker", "R20_Cogsmith", "DepotDoorSpill", "DepotDoorFill", "DepotLamp",
+    "YardLampDocks", "WorkLight", "SidingLight", "BoothLamp", "FrontierSnowfall",
+    "Main Camera", "Player" };
+float[] add = { 1.000f, 1.045f, 1.045f, 0.971f, 0.970f, 0.970f, 0.970f, 3.850f, 3.050f,
+    4.344f, 4.763f, 7.514f, 5.594f, 2.344f, 5.980f, 2.696f, 1.200f };
+
+// Корень инстанса — тот, что висит на корне клетки (в префабе) или на объекте
+// клетки (в сцене). Одноимённый ребёнок внутри префаба модели — не он.
+System.Func<UnityEngine.Transform, string, UnityEngine.Transform> rootOf =
+    delegate (UnityEngine.Transform scope, string name)
 {
-    var go = UnityEngine.GameObject.Find(names[k]);
-    if (go == null) { sb.AppendLine("нет " + names[k]); continue; }
-    var p = go.transform.position;
-    float y = head(zs[k]) + add[k];
-    go.transform.position = new UnityEngine.Vector3(xs[k], y, zs[k]);
-    sb.AppendLine(string.Format("{0,-17} ({1:0.00}, {2:0.00}, {3:0.00})  было ({4:0.00}, {5:0.00}, {6:0.00})",
-        names[k], xs[k], y, zs[k], p.x, p.y, p.z));
+    for (int i = 0; i < scope.childCount; i++)
+    {
+        var c = scope.GetChild(i);
+        if (c.name == name) return c;
+    }
+    return null;
+};
+
+// 1. Префаб клетки: актёры депо живут там, а не в сцене.
+var fw = UnityEngine.GameObject.Find("FrontierWorld");
+var cells = fw != null ? rootOf(fw.transform, "WorldCells") : null;
+int moved = 0;
+if (cells != null && rootOf(cells, "WorldCell_-2_-2") != null)
+{
+    var prefabRoot = UnityEditor.PrefabUtility.LoadPrefabContents(CELL_PREFAB);
+    for (int k = 0; k < names.Length; k++)
+    {
+        var t = rootOf(prefabRoot.transform, names[k]);
+        if (t == null) continue;                       // сценные объекты не в префабе
+        var lp = t.localPosition;
+        lp.y = head(lp.z) + add[k];
+        t.localPosition = lp;
+        moved++;
+    }
+    // Состав: крен вагона (2,705°) и местная высота −0,022 были подгонкой под
+    // уклон старого стола. Двор ровный, стол на всём подходе −1,060 → подгонка
+    // не нужна: низ колеса на 1,00 ниже пола вагона, то есть в головку.
+    var carP = rootOf(prefabRoot.transform, "DepotTrain");
+    if (carP != null)
+    {
+        var tc = rootOf(carP, "TrainCar");
+        if (tc != null)
+        {
+            var lp = tc.localPosition;
+            tc.localPosition = new UnityEngine.Vector3(lp.x, 0f, lp.z);
+            tc.localRotation = UnityEngine.Quaternion.identity;
+        }
+        var gc = rootOf(carP, "Prop_GravCart");
+        if (gc != null)
+        {
+            var lp = gc.localPosition;
+            gc.localPosition = new UnityEngine.Vector3(lp.x, 0f, lp.z);
+            var le = gc.localEulerAngles;
+            gc.localEulerAngles = new UnityEngine.Vector3(0f, le.y, 0f);
+        }
+    }
+    UnityEditor.PrefabUtility.SaveAsPrefabAsset(prefabRoot, CELL_PREFAB);
+    UnityEditor.PrefabUtility.UnloadPrefabContents(prefabRoot);
+    sb.AppendLine("префаб: пересажено корней " + moved);
+}
+else sb.AppendLine("нет WorldCells — префаб не тронут");
+
+// 2. Сцена: те же высоты по корням инстансов и возврат внутренних корней.
+foreach (var t in UnityEngine.Object.FindObjectsByType<UnityEngine.Transform>(FindObjectsSortMode.None))
+{
+    int idx = -1;
+    for (int k = 0; k < names.Length; k++) if (t.name == names[k]) idx = k;
+    if (idx < 0) continue;
+    bool onCell = t.parent != null && (t.parent.name == "WorldCell_-2_-2" ||
+                                        t.parent.name == "FrontierWorld");
+    if (onCell || t.parent == null)
+    {
+        var p = t.position;
+        t.position = new UnityEngine.Vector3(p.x, head(p.z) + add[idx], p.z);
+    }
+    else
+    {
+        // внутренний корень модели: вернуть позу источника, если её сдвинули
+        var src = UnityEditor.PrefabUtility.GetCorrespondingObjectFromSource(t.gameObject);
+        if (src != null && (t.localPosition != src.transform.localPosition ||
+                            t.localRotation != src.transform.localRotation))
+        {
+            t.localPosition = src.transform.localPosition;
+            t.localRotation = src.transform.localRotation;
+            sb.AppendLine("  возвращена поза модели " + t.name + " (parent=" + t.parent.name + ")");
+        }
+    }
+}
+// Состав в сцене — те же нули, что в префабе.
+var trainScene = UnityEngine.GameObject.Find("DepotTrain");
+if (trainScene != null)
+{
+    var tc = rootOf(trainScene.transform, "TrainCar");
+    if (tc != null)
+    {
+        var lp = tc.localPosition;
+        tc.localPosition = new UnityEngine.Vector3(lp.x, 0f, lp.z);
+        tc.localRotation = UnityEngine.Quaternion.identity;
+    }
+    var gc = rootOf(trainScene.transform, "Prop_GravCart");
+    if (gc != null)
+    {
+        var lp = gc.localPosition;
+        gc.localPosition = new UnityEngine.Vector3(lp.x, 0f, lp.z);
+        var le = gc.localEulerAngles;
+        gc.localEulerAngles = new UnityEngine.Vector3(0f, le.y, 0f);
+    }
 }
 
-// Лампа переезжает под новый навес: прежняя висела над снятым навесом из кубов.
-var lamp = UnityEngine.GameObject.Find("DepotLamp");
-if (lamp != null)
-{
-    float ly = head(-16f) - 0.6f + 3.35f;
-    lamp.transform.position = new UnityEngine.Vector3(9.2f, ly, -16f);
-    sb.AppendLine(string.Format("{0,-17} ({1:0.00}, {2:0.00}, {3:0.00})", "DepotLamp", 9.2f, ly, -16f));
-}
-
-// Кадр прибытия: ключи пути и мировые точки цели едут вместе с путём.
+// 3. Кадр прибытия: те же привычки. Значения обязаны совпасть с дефолтами
+// `DepotArrivalDirector` — это меряет тест `FrontierSceneSyncTests`.
 var dir = UnityEngine.Object.FindFirstObjectByType<FrostSpace.Features.Story.DepotArrivalDirector>();
 if (dir == null) return sb + "\nнет директора";
 var so = new UnityEditor.SerializedObject(dir);
+float[] pathAdd = { 3.050f, 3.030f, 3.241f, 3.200f, 3.150f, 3.100f };
 var path = so.FindProperty("_path");
-for (int k = 0; k < path.arraySize; k++)
+if (path != null)
 {
-    var pos = path.GetArrayElementAtIndex(k).FindPropertyRelative("Position");
-    float y = head(pos.vector3Value.z) + pos.vector3Value.y;
-    pos.vector3Value = new UnityEngine.Vector3(pos.vector3Value.x, y, pos.vector3Value.z);
+    for (int k = 0; k < path.arraySize && k < pathAdd.Length; k++)
+    {
+        var pos = path.GetArrayElementAtIndex(k).FindPropertyRelative("Position");
+        var v = pos.vector3Value;
+        v.y = head(v.z) + pathAdd[k];
+        pos.vector3Value = v;
+        sb.AppendLine(string.Format("_path[{0}]     ({1:0.00}, {2:0.00}, {3:0.00})", k, v.x, v.y, v.z));
+    }
 }
 string[] vecs = { "_doorAim", "_r13Exit", "_r13Face", "_cartExit", "_playerExit" };
+// Цель в проёме: пол кузова (+1,00) плюс 1,10 м до точки прицела. Точки выхода
+// встают на настил перрона (+1,04), R13 — на +1,045 из-за пятки под корнем.
+float[] vecAdd = { 2.100f, 1.045f, 1.301f, 1.040f, 1.040f };
 for (int v = 0; v < vecs.Length; v++)
 {
     var p = so.FindProperty(vecs[v]);
     if (p == null) { sb.AppendLine("нет поля " + vecs[v]); continue; }
     var val = p.vector3Value;
-    p.vector3Value = new UnityEngine.Vector3(val.x, head(val.z) + val.y, val.z);
-    sb.AppendLine(string.Format("{0,-17} ({1:0.00}, {2:0.00}, {3:0.00})", vecs[v],
-        p.vector3Value.x, p.vector3Value.y, p.vector3Value.z));
+    val.y = head(val.z) + vecAdd[v];
+    p.vector3Value = val;
+    sb.AppendLine(string.Format("{0,-17} ({1:0.00}, {2:0.00}, {3:0.00})", vecs[v], val.x, val.y, val.z));
 }
 so.ApplyModifiedPropertiesWithoutUndo();
 
-// Проверка ногами: луч вниз от каждого актёра по чанкам. Висячий остаток —
-// это то, что числами двора не видно: отметка посчитана верно, а коллайдер
-// клетки под ним другой формы.
-sb.AppendLine("--- луч вниз (дистанция до земли от ступней) ---");
-string[] probe = { "Player", "DepotTrain", "R16_Warden_A", "R16_Warden_B", "R7_Drifter",
-                   "R8_Bulwark", "DepotGate?", "DepotLamp" };
-foreach (var n in probe)
+// 4. Проверка ногами: самая верхняя опора ПОД низом геометрии, не считая
+// самого объекта. Уровень и роботы лежат на слое Default, поэтому mask не
+// помогает — перебираем все попадания. Это ловит то, чего числами двора не
+// видно: отметка посчитана верно, а коллайдер клетки под меткой другой формы.
+sb.AppendLine("--- ступни против опоры ---");
+var found = new UnityEngine.RaycastHit[32];
+foreach (var n in names)
 {
     var go = UnityEngine.GameObject.Find(n);
     if (go == null) continue;
-    var o = go.transform.position;
-    var ray = new UnityEngine.Ray(new UnityEngine.Vector3(o.x, o.y + 4f, o.z), UnityEngine.Vector3.down);
-    UnityEngine.RaycastHit hit;
-    if (UnityEngine.Physics.Raycast(ray, out hit, 20f))
-        sb.AppendLine(string.Format("  {0,-15} feet→{1:0.000} м, слой {2}", n, hit.distance - 4f,
-            UnityEngine.LayerMask.LayerToName(hit.collider.gameObject.layer)));
-    else
-        sb.AppendLine(string.Format("  {0,-15} НИЧЕГО под ногами в 20 м", n));
+    float feet = float.PositiveInfinity;
+    foreach (var sk in go.GetComponentsInChildren<UnityEngine.SkinnedMeshRenderer>(false))
+    {
+        if (sk.sharedMesh == null) continue;
+        var b = sk.sharedMesh.bounds;
+        var c = sk.transform.localToWorldMatrix.MultiplyPoint(new UnityEngine.Vector3(0, b.min.y, 0));
+        if (c.y < feet) feet = c.y;
+    }
+    foreach (var mf in go.GetComponentsInChildren<UnityEngine.MeshFilter>(false))
+    {
+        if (mf.sharedMesh == null) continue;
+        var b = mf.sharedMesh.bounds;
+        var c = mf.transform.localToWorldMatrix.MultiplyPoint(new UnityEngine.Vector3(0, b.min.y, 0));
+        if (c.y < feet) feet = c.y;
+    }
+    if (float.IsPositiveInfinity(feet)) continue;      // свет и объёмы мерить нечем
+    var origin = new UnityEngine.Vector3(go.transform.position.x, feet + 0.6f, go.transform.position.z);
+    int count = UnityEngine.Physics.RaycastNonAlloc(new UnityEngine.Ray(origin, UnityEngine.Vector3.down),
+        found, 8f);
+    float best = float.NegativeInfinity; string who = "";
+    for (int i = 0; i < count; i++)
+    {
+        var t = found[i].collider.transform;
+        if (t == go.transform || t.IsChildOf(go.transform)) continue;
+        float y = origin.y - found[i].distance;
+        if (y > best) { best = y; who = found[i].collider.gameObject.name; }
+    }
+    if (float.IsNegativeInfinity(best))
+    {
+        sb.AppendLine(string.Format("  {0,-17} низ {1:0.000} — опоры нет", n, feet));
+        continue;
+    }
+    float gap = feet - best;
+    sb.AppendLine(string.Format("  {0,-17} низ {1:0.000}  опора {2:0.000} ({3})  {4}",
+        n, feet, best, who, gap > 0.06f ? "ВИСИТ " + gap.ToString("0.000")
+        : (gap < -0.06f ? "ТОНЕТ " + (-gap).ToString("0.000") : "вровень")));
 }
 
 UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
 bool saved = UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
-sb.AppendLine("сохранено=" + saved);
+sb.AppendLine("сохранено сцены=" + saved);
 return sb.ToString();

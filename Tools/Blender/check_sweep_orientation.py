@@ -55,18 +55,20 @@ def build(profile, path, name, recalc=True):
 def main() -> int:
     fwd = [(0.0, 0.0, 0.0), (10.0, 0.0, 0.0), (20.0, 0.0, 0.0)]
     back = [(0.0, 0.0, 0.0), (-10.0, 0.0, 0.0), (-20.0, 0.0, 0.0)]
+    # Полотное и борт дороги больше не константы модуля: их отметка зависит от
+    # самой дороги (`road_crown`), поэтому проверка берёт профиль с базовой
+    # кроной.
+    road = ((TP.pave_profile(TP.W.PAVE_CROWN), "pave_profile"),
+            (TP.bank_profile(TP.W.PAVE_CROWN), "bank_profile"),
+            (TP.track_profile(TP.W.PAVE_CROWN), "track_profile"))
     print("--- сырая намотка (recalc=False), как в клетках ---")
     for prof, nm in ((FP.RAIL_PROFILE, "RAIL_PROFILE"),
-                     (FP.BED_PROFILE, "BED_PROFILE"),
-                     (TP.PAVE_PROFILE, "PAVE_PROFILE"),
-                     (TP.BANK_PROFILE, "BANK_PROFILE")):
+                     (FP.BED_PROFILE, "BED_PROFILE")) + road:
         build(prof, fwd, nm + " raw вперёд", recalc=False)
         build(prof, back, nm + " raw назад", recalc=False)
     print("--- с пересчётом (recalc=True) ---")
     for prof, nm in ((FP.RAIL_PROFILE, "RAIL_PROFILE"),
-                     (FP.BED_PROFILE, "BED_PROFILE"),
-                     (TP.PAVE_PROFILE, "PAVE_PROFILE"),
-                     (TP.BANK_PROFILE, "BANK_PROFILE")):
+                     (FP.BED_PROFILE, "BED_PROFILE")) + road:
         build(prof, fwd, nm + " recalc вперёд", recalc=True)
     return 0
 

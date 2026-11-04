@@ -64,35 +64,39 @@ PAVE_HALF = 4.0
 #: погребённый край.
 BURY = 1.60
 
-#: Обход профиля — **против часовой стрелки** в плоскости кольца: порядок точек
-#: задаёт направление нормалей, и при обходе по часовой стрелке верх полотна
-#: смотрит вниз (меш рисуется наизнанку: сверху видна только заглублённая
-#: изнанка плиты, а само полотно не рисуется вовсе). Профиль симметричен
-#: относительно `px = 0`, поэтому порядок можно выбрать свободно.
-#: Проверка ориентации — `Tools/Blender/check_sweep_orientation.py`.
-PAVE_PROFILE = [(-PAVE_HALF, -W.CUT_DEPTH["road"] - BURY),
-                (PAVE_HALF, -W.CUT_DEPTH["road"] - BURY),
-                (PAVE_HALF, 0.02),
-                (-PAVE_HALF, 0.02)]
+def pave_profile(crown: float) -> list:
+    """Полотно дороги: плита покрытия, положенная на полку коридора.
 
-#: Обочина с заносом по краям полотна. Наружная стенка — **вертикальная**:
-#: пологая юбка, идущая вниз и наружу, рано или поздно ложится параллельно
-#: склону выемки, и тогда её грань и грань земли сходятся в пару сантиметров
-#: — это мерцание по кромке. Вертикальную грань природный склон не повторит
-#: никогда. Видимой остаётся только шапка заноса (+0,25) и плечо к краю дна
-#: (+0,05), а вниз уходит погребённая стена. Шапка заноса на 0,25 м выше
-#: полотна — тот же приём, что у балластных гребней пути: дорога читается
-#: прорезанной в снегу, а не положенной на стол.
-#: Обход профиля — против часовой стрелки, как у `PAVE_PROFILE`: иначе боковые
-#: стенки обочины смотрят внутрь, и «борт» просвечивает с одной стороны и
-#: исчезает с другой.
-BANK_PROFILE = [(W.ROAD_CUT[0], -W.CUT_DEPTH["road"] - BURY),
-                (W.ROAD_CUT[0], 0.05),
-                (PAVE_HALF + 1.2, 0.25), (PAVE_HALF + 0.2, 0.25),
-                (PAVE_HALF, 0.0), (-PAVE_HALF, 0.0),
-                (-PAVE_HALF - 0.2, 0.25), (-PAVE_HALF - 1.2, 0.25),
-                (-W.ROAD_CUT[0], 0.05),
-                (-W.ROAD_CUT[0], -W.CUT_DEPTH["road"] - BURY)]
+    Верх на `crown` над столом, низ уходит на юбку `BURY`: между снегом и
+    льдом остаётся 34 см, и ни при каком весе схода на двор пара «дорога/земля»
+    не ложится в одну плоскость. Обход — против часовой стрелки, иначе верх
+    полотна смотрит вниз и меш рисуется наизнанку
+    (`Tools/Blender/check_sweep_orientation.py`).
+    """
+    return [(-PAVE_HALF, -BURY), (PAVE_HALF, -BURY),
+            (PAVE_HALF, crown), (-PAVE_HALF, crown)]
+
+
+def bank_profile(crown: float) -> list:
+    """Муфта: узкий занос по кромке полотна, как в `MenuRideSegment_C`.
+
+    Прежняя форма раскатывала снег плоским плечом до края коридора (±16 м), и
+    на перегоне дорога тонула в тридцатиметровой ленте: полотно, канал, плато.
+    Теперь борт занимает 1,2 м: шапка на 22 см выше полотна, наружный склон
+    мягкий, внутрь борт на 10 см влезает в плиту — две грани в одной плоскости
+    там не появляются, а стык льда и снега не читается швом. Наружная стена
+    отвесная и уходит в грунт: пологое плечо нашло бы склон коридора
+    параллельным и дало бы мерцание ровно там, где оно ловилось и раньше.
+    """
+    top = crown + 0.22
+    return [(PAVE_HALF + 1.2, -BURY),
+            (PAVE_HALF + 1.2, crown + 0.04),
+            (PAVE_HALF + 0.30, top), (PAVE_HALF - 0.10, top),
+            (PAVE_HALF - 0.10, crown + 0.02),
+            (-PAVE_HALF + 0.10, crown + 0.02),
+            (-PAVE_HALF + 0.10, top), (-PAVE_HALF - 0.30, top),
+            (-PAVE_HALF - 1.2, crown + 0.04),
+            (-PAVE_HALF - 1.2, -BURY)]
 
 _STATIONS: dict = {}
 
@@ -342,9 +346,15 @@ def build_signs(materials, i: int, j: int):
     for (idx, (ux, uz, s, rot, _seg)) in st:
         if idx % SIGN_EVERY:
             continue
-        placed += 1
         level = W.level_at(ln["table"], s)
         side = 1.0 if (idx // SIGN_EVERY) % 2 == 0 else -1.0
+        # Внутри тёплого двора восточное плечо занято посадочным перроном
+        # (депо — ADR 0040, станция — слой E): стойка в 7,2 м от оси встала бы
+        # внутри плиты настила — невидимая сама и ловимая проверкой как
+        # провалившаяся. На открытой линии ритм остаётся двусторонним.
+        if side > 0.0 and W.in_yard(ux, uz):
+            continue
+        placed += 1
         px = ux + side * (FL.CORRIDOR_FLAT + 2.9)
         b.box_rot((px - center[0], -(uz - center[1]), level + 0.125 + SHIFT),
                   (0.16, 0.16, 1.95), (0.0, 0.0, rot), "Level_Metal", bevel=0.01)
@@ -360,8 +370,29 @@ def build_signs(materials, i: int, j: int):
 #: полотна, и межобъектная проверка не видит пары «полоса/полотно».
 TRACK_HALF = 0.275
 TRACK_OFF = 1.25
-TRACK_PROFILE = [(-TRACK_HALF, -0.01), (TRACK_HALF, -0.01),
-                 (TRACK_HALF, 0.06), (-TRACK_HALF, 0.06)]
+
+
+def track_profile(crown: float) -> list:
+    """Накатанные следы: два колеёных рубца над полотном на 8 см.
+
+    Низ на 2 см утоплен в лёд, чтобы след не висел над ним отдельной плитой;
+    верх на 8 см выше полотна — меньше порога мерцания нельзя, больше — следы
+    начнут читаться рельсами, которых у дороги нет.
+    """
+    return [(-TRACK_HALF, crown - 0.02), (TRACK_HALF, crown - 0.02),
+            (TRACK_HALF, crown + W.TRACK_CROWN),
+            (-TRACK_HALF, crown + W.TRACK_CROWN)]
+
+
+def road_crown(key: str) -> float:
+    """Отметка полотна этой дороги: чётные на `PAVE_CROWN`, нечётные выше на
+    `ROAD_CROWN_STEP`, чтобы две дороги в пересечении не легли в одну плоскость.
+    """
+    try:
+        n = int(key.split()[-1])
+    except (IndexError, ValueError):
+        n = 0
+    return W.PAVE_CROWN + (W.ROAD_CROWN_STEP if n % 2 else 0.0)
 
 #: Столбики обочины: вид тот же, что у дороги в меню (`MenuRideSegment_B`),
 #: но ритм реже: в меню полоса 32 м несёт восемь столбиков, а на карте это
@@ -369,6 +400,19 @@ TRACK_PROFILE = [(-TRACK_HALF, -0.01), (TRACK_HALF, -0.01),
 #: читает край дороги, не набивая его тыном (замер: 12 м давали +110 тыс. трис).
 POST_EVERY = 24.0
 POST_OUT = 5.65
+#: Насколько далеко от границы узла ставится столбик. Стена двора стоит по
+#: границе, а её тумба у проёма выступает на метр внутрь и наружу: первый
+#: столбик дороги, посаженный ровно у старта нити, оказывался в тумбе ворот и
+#: уходил под обвязку на 6,4 м — то есть не существовал.
+POST_KEEP_OUT = 2.00
+
+
+def _in_node(x: float, z: float) -> bool:
+    """True, если точка внутри тёплого узла или в двух метрах от его стены."""
+    for n in W.NODES:
+        if n["rect"] and W._rect_dist(x, z, n["rect"]) < POST_KEEP_OUT:
+            return True
+    return False
 
 
 def _road_posts(b, key: str, i: int, j: int) -> int:
@@ -389,6 +433,8 @@ def _road_posts(b, key: str, i: int, j: int) -> int:
         pts = [(p[0], p[1]) for p in ln["pts"]]
         for side in (-1.0, 1.0):
             off = FP._offset([(ux, uz), (ux + 0.01, uz)], side * POST_OUT)[0]
+            if _in_node(off[0], off[1]):
+                continue        # во дворе своя обстановка, и стена здесь
             (bx, bz) = (off[0] - center[0], -(off[1] - center[1]))
             # База утоплена в кромку на 0,35 м: столбик читается вкопанным,
             # а не лежащим на снегу.
@@ -419,13 +465,14 @@ def build_road(materials, i: int, j: int, key: str):
     # серой плитой, впаянной в снег.
     for path in paths:
         fine = _levels(key, path)
+        crown = road_crown(key)
         for run in _bank_runs(key, fine):
-            _sweep(b, run, BANK_PROFILE, "Level_Snow", center, 0.0)
-        _sweep(b, fine, PAVE_PROFILE, "Level_Ice", center, 0.0)
+            _sweep(b, run, bank_profile(crown), "Level_Snow", center, 0.0)
+        _sweep(b, fine, pave_profile(crown), "Level_Ice", center, 0.0)
         for side in (-1.0, 1.0):
             off = FP._offset([(x, z) for (x, z, _l) in fine], side * TRACK_OFF)
             _sweep(b, [(o[0], o[1], p[2]) for (o, p) in zip(off, fine)],
-                   TRACK_PROFILE, "Level_SnowDeep", center, 0.0)
+                   track_profile(crown), "Level_SnowDeep", center, 0.0)
     return b.build("Road_%s_%d_%d" % (key.replace("road ", "").replace(" ", "_"),
                                       i, j), recalc=False)
 

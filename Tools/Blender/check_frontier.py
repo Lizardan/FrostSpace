@@ -568,6 +568,102 @@ def _check_not_empty(meshes, problems) -> None:
             problems.append("%s: в меше %d трис — это не ассет" % (name, tris))
 
 
+#: Что в клетке бывает полом: рельеф, полотна дорог и пути, боковой путь и
+#: плиты двора. Мерить опору по всем объектам нельзя: основание постройки
+#: лежит под её же стеной, стена под кровлей, и «опорой» стала бы крыша в пяти
+#: метрах над полом.
+FLOOR_KINDS = ("Ground", "DepotApron", "DepotPlatform", "Station_Pad", "Road_",
+               "Rail_", "Siding_")
+#: Декор, которого касается проверка опоры, и то, из чего он сделан.
+#: Поселение меряется теми же правилами, что и депо: секции сруба (`Hut_Walls`,
+#: `Hut_Roof`, `Hut_Chimney`, `Hut_Shop_*`) в список не входят намеренно — у
+#: здания подошвой является фундамент, а трубы и окна висят по замыслу.
+DECOR_KINDS = ("Grove", "Yard", "Posts", "Signs", "Rocks", "Drift", "Prop",
+               "Hut_Fence", "Hut_Pen", "Hut_Power", "Hut_Mast", "Hut_Pine",
+               "Hut_Dressing", "Station_Fence", "Station_Dressing",
+               "Station_Pine")
+#: Провал проверять только у тех предметов, у которых основание видно: у сосны
+#: и валуна метр под снегом — это пропавший предмет, у столба и знака под
+#: снегом стоит стойка, и два метра для них норма. Наносы (`Drift`,
+#: `Hut_Dressing`, дворовые `Yard`) — не исключение, а правило: у снежного
+#: вала основание и должно уходить в снег на два его метра, иначе проверка
+#: требует от снега быть камнем.
+DECOR_SUNK_KINDS = ("Grove", "Rocks", "Drift", "Prop", "Hut_Pine",
+                    "Station_Pine")
+#: Зазоры. Висеть декор не может больше 12 см: это видно и в кадре, и при
+#: попытке поставить рядом предмет. Проваливаться — больше метра (двух у
+#: столбов).
+CONTACT_FLOAT = 0.12
+CONTACT_SUNK = 1.00
+CONTACT_SUNK_POSTS = 2.00
+#: Подошва предмета: вершины в 35 см от самой низкой точки. Выше — это уже
+#: корпус, а не основание.
+CONTACT_BAND = 0.35
+#: Отступ от края клетки: за ним опора у соседнего чанка, а его в этом прогоне
+#: нет.
+CONTACT_EDGE = 300.0
+
+
+def _floor_top(meshes, skip, x: float, y: float, z: float):
+    """Самая верхняя грань пола над точкой: луч сверху клетки вниз."""
+    best = None
+    for (name, other) in meshes.items():
+        if other is skip or not any(k in name for k in FLOOR_KINDS):
+            continue
+        inv = other.matrix_world.inverted()
+        origin = inv @ Vector((x, y, z + 60.0))
+        direction = (inv.to_3x3() @ Vector((0, 0, -1))).normalized()
+        hit, loc, _n, _i = other.ray_cast(origin, direction)
+        if not hit:
+            continue
+        wz = (other.matrix_world @ loc).z
+        if best is None or wz > best:
+            best = wz
+    return best
+
+
+def _check_ground_contact(meshes, problems) -> None:
+    """Ни одного висячего и ни одного провалившегося предмета декора.
+
+    Причина, по которой проверка стала шагом пайплайна: до ровной базы мира
+    такие дефекты прятались в уклоне, а зеркальная ось в `cell_props.merge`
+    (предмет ставился в `+lz` там, где рельеф считает `−lz`) уводила сосны в
+    чанке депо на 7 и 11 метров вниз — и ни одна прежняя проверка этого не
+    видела, потому что меряла вершины земли и путь, а не посадку пропов.
+    """
+    for name, obj in sorted(meshes.items()):
+        if not any(k in name for k in DECOR_KINDS):
+            continue
+        world = [obj.matrix_world @ v.co for v in obj.data.vertices]
+        if not world:
+            continue
+        base = min(p.z for p in world)
+        limit = (CONTACT_SUNK if any(k in name for k in DECOR_SUNK_KINDS)
+                 else CONTACT_SUNK_POSTS)
+        float_n = sunk_n = 0
+        worst_f = 0.0
+        worst_s = 0.0
+        for wp in world:
+            if (wp.z - base > CONTACT_BAND or abs(wp.x) > CONTACT_EDGE
+                    or abs(wp.y) > CONTACT_EDGE):
+                continue
+            top = _floor_top(meshes, obj, wp.x, wp.y, wp.z)
+            if top is None:
+                continue
+            gap = wp.z - top
+            if gap > CONTACT_FLOAT:
+                float_n += 1
+                worst_f = max(worst_f, gap)
+            elif gap < -limit:
+                sunk_n += 1
+                worst_s = min(worst_s, gap)
+        if float_n or sunk_n:
+            problems.append(
+                "%s: %d точек подошвы висят (до %+.2f м над полом), %d "
+                "провалились глубже %.1f м (до %.2f м)"
+                % (name, float_n, worst_f, sunk_n, limit, worst_s))
+
+
 def _check_clusters(meshes, base, problems) -> None:
     if base.startswith("Frontier_Grove"):
         min_tris, min_shells, kind = GROVE_MIN_TRIS, GROVE_MIN_SHELLS, "кластер леса"
@@ -628,6 +724,11 @@ def main() -> int:
 
     _check_not_empty(meshes, problems)
     _check_clusters(meshes, base, problems)
+
+    if base.startswith("WorldCell"):
+        # Клетка мерится целиком: опора предмета может быть плитой соседней
+        # части, и по одному файлу этого не увидеть.
+        _check_ground_contact(meshes, problems)
 
     if base == "Frontier_Ground":
         _check_ground(problems, meshes)

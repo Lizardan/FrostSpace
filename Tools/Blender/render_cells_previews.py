@@ -41,6 +41,8 @@ if HERE not in sys.path:
 
 import depot_parts as DP  # noqa: E402
 import level_lib  # noqa: E402
+import settlement_parts as SP  # noqa: E402
+import station_parts as ST  # noqa: E402
 import transport_parts as TP  # noqa: E402
 import world_cell_parts as C  # noqa: E402
 import world_layout as W  # noqa: E402
@@ -127,6 +129,11 @@ def build_all_cells(materials):
         pieces = [C.build_cell(materials, i, j)]
         pieces += TP.build_cell_transport(materials, i, j)
         pieces += DP.build_cell_depot(materials, i, j)
+        # Поселение — такой же узел-содержимое клетки, как депо: без него
+        # превью показывало бы пустую площадку, и принять кадром огладь,
+        # загоны и посты было бы нечем.
+        pieces += SP.build_cell_settlement(materials, i, j)
+        pieces += ST.build_cell_station(materials, i, j)
         (cx, cz) = W.cell_center(i, j)
         pos = to_blender(cx - W.DEPOT[0], 0.0, cz - W.DEPOT[1])
         for obj in pieces:
@@ -253,6 +260,93 @@ def main() -> int:
                      -DP.SHED_ROOF_TO - 2.0)
     add_camera("shed", eye, aim, 32.0)
     shoot(out, "shed")
+
+    # Поселение (клетка 0,−2): узел стоит на своём месте мира, поэтому камера
+    # идёт через сдвиг `sc` — локальные оси клетки переводятся в оси сцены.
+    (scx, scz) = (W.SETTLEMENT[0] - W.DEPOT[0], W.SETTLEMENT[1] - W.DEPOT[1])
+    sg = SP._ground
+
+    # Косой план узла: видно, что огороженный двор влезает в тёплую площадку,
+    # а обе ноги дороги протыкают ограду воротами, а не обрываются в неё.
+    eye = to_blender(scx - 260.0, W.world_height(W.SETTLEMENT[0], W.SETTLEMENT[1]) + 150.0,
+                     scz - 260.0)
+    aim = to_blender(scx + 10.0, sg(10.0, 10.0), scz + 20.0)
+    add_camera("settlement", eye, aim, 24.0)
+    shoot(out, "settlement")
+
+    # Глаз на подъезде: взгляд сквозь западные ворота внутрь. Этот кадр меряет
+    # то, чего числа не ловят — читается ли ограда как ограда, а не как
+    # изгородь огорода, и видно ли из-за неё вышку и подстанцию.
+    eye = to_blender(scx - 26.0, sg(-26.0, 8.0) + 2.10, scz + 8.0)
+    aim = to_blender(scx + 36.0, sg(36.0, 40.0) + 2.60, scz + 40.0)
+    add_camera("settlement_gate", eye, aim, 30.0)
+    shoot(out, "settlement_gate")
+
+    # Двор изнутри, вдоль въездной ноги: загоны слева, подстанция и метеопост
+    # в глубине, изба справа. Кадр обязан показать три зоны одной линией глаз.
+    eye = to_blender(scx + 4.0, sg(4.0, 6.0) + 1.75, scz + 6.0)
+    aim = to_blender(scx + 20.0, sg(20.0, 44.0) + 2.20, scz + 44.0)
+    add_camera("settlement_yard", eye, aim, 28.0)
+    shoot(out, "settlement_yard")
+
+    # План узла: ортография сверху. Ограды, загоны и посты меряются по плану,
+    # перспектива их спорит.
+    add_camera("settlement_plan", to_blender(scx, 300.0, scz),
+               to_blender(scx, 0.0, scz), ortho=150.0)
+    shoot(out, "settlement_plan")
+
+    # Станция (клетка 0,0). Тот же приём, что у поселения: локальные оси клетки
+    # переводятся в оси сцены сдвигом `tc`, отметки берутся у `station_parts`.
+    # Знак у смещения по X — обратный: клетка в этой сцене лежит в осях
+    # билдера (её вершину `x` никто не зеркалит, зеркало наводит только
+    # `export_static` при выгрузке), а `to_blender` разворачивает камеру как
+    # раз для выгруженного вида. Поэтому «восточнее узла» в камеру подаётся
+    # как `tcx − смещение`. Без этого ворота ангара снимались со стороны
+    # глухой стены, а вид с платформы — со стороны путей.
+    (tcx, tcz) = (ST.STATION_NODE["x"] - W.DEPOT[0],
+                  ST.STATION_NODE["z"] - W.DEPOT[1])
+    tg = ST._ground
+
+    # Косой план узла с юго-запада: одним кадром — комплекс отсеков, посадочную
+    # платформу между ним и путём и ангар восточнее. Кадр отвечает на вопрос,
+    # который числами не мерится: читается ли станция как один комплекс или как
+    # три отдельные постройки, случайно вставшие в одной клетке.
+    eye = to_blender(tcx + 250.0, tg(0.0, 0.0) + 180.0, tcz - 250.0)
+    aim = to_blender(tcx - 10.0, ST.FLOOR, tcz + 10.0)
+    add_camera("station", eye, aim, 24.0)
+    shoot(out, "station")
+
+    # План узла: ортография. Габариты отсеков, ангара и ограды меряются по
+    # плану; в перспективе их спорит наклон.
+    add_camera("station_plan", to_blender(tcx, 420.0, tcz),
+               to_blender(tcx, 0.0, tcz), ortho=260.0)
+    shoot(out, "station_plan")
+
+    # Глаз с настила платформы у южного торца, взгляд вдоль перрона на север:
+    # навесы, фонари, путь слева и буфер в конце обязаны лечь в одну линию.
+    # Этот кадр ловит то, чего не видно сверху, — стоит ли навес на настиле
+    # или висит над ним, и кончается ли путь упором, а не обрывом шпал.
+    eye = to_blender(tcx + 2.0, ST.DECK + 1.75, tcz + ST.PLATFORM[2] + 4.0)
+    aim = to_blender(tcx - 16.0, ST.DECK + 2.20, tcz + ST.PLATFORM[3] + 8.0)
+    add_camera("station_platform", eye, aim, 30.0)
+    shoot(out, "station_platform")
+
+    # Раскрытые ворота ангара: глаз с платформы, взгляд сквозь створ на корпус
+    # корабля. Кадр меряет масштаб — обломок обязан читаться машиной, а не
+    # горбом, и видно ли разрыв обшивки с силовым набором.
+    eye = to_blender(tcx - 20.0, ST.DECK + 2.20, tcz + ST.WRECK_CENTER[1])
+    aim = to_blender(tcx - ST.WRECK_CENTER[0], ST.FLOOR + 4.00,
+                     tcz + ST.WRECK_CENTER[1])
+    add_camera("station_hangar", eye, aim, 26.0)
+    shoot(out, "station_hangar")
+
+    # Вскрытая ремзона: глаз южнее ограды, взгляд внутрь снятой стены. Отсек без
+    # кровли и без южной стены — единственный способ показать станки и
+    # верстаки, не входя в здание; кадр и проверяет, что он работает.
+    eye = to_blender(tcx + 68.0, tg(-68.0, -96.0) + 14.0, tcz - 96.0)
+    aim = to_blender(tcx + 68.0, ST.FLOOR + 1.20, tcz - 30.0)
+    add_camera("station_rooms", eye, aim, 28.0)
+    shoot(out, "station_rooms")
 
     # План двора: ортография сверху, чтобы видеть геометрию съезда, платформы
     # и ворот без искажения перспективы.

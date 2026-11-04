@@ -154,9 +154,23 @@ namespace FrostSpace.Tests
             Assert.That(layout.Lines.Count, Is.EqualTo(10));
             var rail = layout.Lines[0];
             Assert.That(rail.Kind, Is.EqualTo(WorldLineKind.Rail));
-            Assert.That(rail.Points.Length, Is.EqualTo(11));
+            Assert.That(rail.Points.Length, Is.EqualTo(13),
+                "у магистрали 13 узловых точек: съезд из депо, прямая до стрелки " +
+                "и подход к станции, выпрямленный на ось узла");
             Assert.That(rail.Points[0], Is.EqualTo(new Vector2(-1208f, -3300f))
                 .Within(0.01f), "путь приходит из-за края карты, а не изнутри");
+
+            // Тупик стоит на оси узла. Станция держит посадочную платформу
+            // вдоль x = 0, и путь, входящий во двор по диагонали, резал бы
+            // и настил, и угол ремзоны — правка 2026-11-04 (слой E).
+            var terminus = rail.Points[rail.Points.Length - 1];
+            var station = layout.FindNode("station");
+            Assert.That(station, Is.Not.Null, "в раскладке нет узла station");
+            Assert.That(terminus.x - station.Position.x, Is.EqualTo(0f).Within(0.01f),
+                "тупик магистрали сошёл с оси узла: путь во дворе идёт не вдоль " +
+                "платформы");
+            Assert.That(terminus.y - station.Position.y, Is.EqualTo(45f).Within(0.01f),
+                "буферный упор ушёл с z = +45: тупик больше не во дворе станции");
 
             var roads = 0;
             var paths = 0;

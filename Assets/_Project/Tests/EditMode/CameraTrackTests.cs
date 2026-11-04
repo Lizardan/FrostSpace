@@ -34,17 +34,18 @@ namespace FrostSpace.Tests
         // Маршрут игрока в осях сцены: место в вагоне, горловина проёма, порог на
         // платформе, точка на платформе. Отметки — не ноль сцены: депо стало чанком
         // клетки (−2,−2), и головка главного пути напротив этих точек лежит на
-        // −16,343804 м (число из `Tools/Blender/world_layout.py`). Место в вагоне —
-        // корень вагона (+1,00 над головкой) плюс 0,15 локально, порог двери —
-        // верх платформы (+0,60 над головкой).
-        private const float RailHeadAtDoor = -16.343804f;
+        // −1,06 м (число из `Tools/Blender/world_layout.py`; двор ровный, стол на
+        // всём подходе к депо держит ту же отметку). Место в вагоне — корень вагона
+        // (+1,00 над головкой) плюс 0,20 локально, порог и точка на платформе — верх
+        // настила (+1,04 над головкой: плита 0,90 плюс шапка снежного вала 0,14).
+        private const float RailHeadAtDoor = -1.06f;
 
         private static PathCurve PlayerCurve()
             => new PathCurve(DepotArrivalDirector.BuildRoute(
-                new Vector3(-8.6f, RailHeadAtDoor + 1.15f, -1.0f),
-                new Vector3(-5.0f, RailHeadAtDoor + 1.0f, -1.0f),
-                new Vector3(-2.6f, RailHeadAtDoor + 0.6f, -1.0f),
-                new Vector3(0.7f, RailHeadAtDoor + 0.6f, -1.0f)));
+                new Vector3(-8.6f, RailHeadAtDoor + 1.20f, -1.0f),
+                new Vector3(-5.0f, RailHeadAtDoor + 1.00f, -1.0f),
+                new Vector3(-2.6f, RailHeadAtDoor + 1.04f, -1.0f),
+                new Vector3(0.7f, RailHeadAtDoor + 1.04f, -1.0f)));
 
         private static Vector3 PlayerAt(PathCurve route, float elapsed)
         {
