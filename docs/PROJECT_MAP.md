@@ -16,8 +16,11 @@ FrostSpace/
 ├─ docs/                         # документация (этот файл — карта)
 ├─ Tools/
 │  ├─ Agent/                     # LinkAgentSkills.ps1 — мосты к скиллам для всех агентов
+│  ├─ Audio/                     # build_sfx.py — процедурные звуки прибытия
 │  ├─ Blender/                   # сборка роботов, животных и уровня, пробы, мост, ядро
-│  └─ Unity/                     # прямой клиент к мосту Unity MCP
+│  ├─ Unity/                     # прямой клиент к мосту Unity MCP и сниппеты правки сцены
+│  └─ analysis/                  # разбор кадров и палитр: compare_robot_color, pair_studio_game,
+│                                # palette_variants_montage, probe_albedo_transfer
 ├─ AssetSource/                  # сырые архивы ассетов, ВНЕ git и вне Unity
 └─ Assets/
    ├─ .Aura/plans/               # планы работ всех агентов (README — правила); Unity dot-папки не импортирует
@@ -26,7 +29,8 @@ FrostSpace/
    │  ├─ MainMenu.unity          # главное меню с диорамой, build index 1
    │  ├─ CharacterSetup.unity    # выбор из трёх корпусов, build index 2
    │  ├─ Train.unity             # интерьер, переноска, квест, диалоги R13, финал; build index 3
-   │  ├─ Frontier.unity          # депо: прибытие поезда 8×24, боковой проём, охрана, R7; build index 4
+   │  ├─ Frontier.unity          # карта 4,4×4,4 км: депо с прибытием поезда, поселение,
+   │  │                          # станция; build index 4
    │  └─ Game.unity              # прежний уровень, build index 5, вне потока
    ├─ _Project/                  # всё, что пишем мы
    │  ├─ Scripts/                # ЕДИНСТВЕННЫЙ корень C#
@@ -49,7 +53,18 @@ FrostSpace/
    │  │  │  │                    # счётчик FPS), ScanLabelView (одна подпись из пула),
    │  │  │  │                    # QuestTracker (АККУМУЛЯТОРЫ и текущая цель),
    │  │  │  │                    # ExperienceBar (уровни и полоса опыта)
+   │  │  │  ├─ Interior/         # CabinDoor (створки кабины разъезжаются по подходу),
+   │  │  │  │                    # HoloPanel (фазы скан-полосы через MaterialPropertyBlock)
+   │  │  │  ├─ Inventory/        # EquipmentBoard (чистая модель: слоты и ячейки сетки),
+   │  │  │  │                    # EquipmentKind (сонар и карта), EquipmentTarget (тип мишени),
+   │  │  │  │                    # EquipmentInfo (подписи снаряжения), EquipmentScreen (окно по `I`)
    │  │  │  ├─ Locomotion/       # RobotLocomotion (базис WASD), PlayerAimPose, LocomotionDiagnostics
+   │  │  │  ├─ Map/              # WorldLayout + WorldLayoutData (разбор world_layout.json),
+   │  │  │  │                    # WorldGrid (границы клеток по закону середины ADR 0036),
+   │  │  │  │                    # WorldCell + CellMesh (метка геометрии из FBX),
+   │  │  │  │                    # WorldResidency (включает окрестность игрока),
+   │  │  │  │                    # FarLayer (силуэты якорей на 380 м), MiniMap +
+   │  │  │  │                    # MiniMapProjection (миникарта, RD-05)
    │  │  │  ├─ Menu/             # MainMenuScreen, MenuViewSwitch (пять видов меню), MenuCameraOrbit,
    │  │  │  │                    # MenuCameraSweep (проезд равнины, лаборатории и депо), MenuRadarSweep,
    │  │  │  │                    # MenuRobotPose (позы роботов меню), MenuRobotWalker (маршрут),
@@ -85,19 +100,27 @@ FrostSpace/
    │  │  ├─ AnimalAssetPostprocessor.cs  # клипы Idle/Move, loop, sRGB при импорте FBX животных
    │  │  ├─ MechAssetPostprocessor.cs    # клипы Idle/Walk/Run, loop, sRGB при импорте ходунов
    │  │  ├─ LevelAssetPostprocessor.cs   # нормали, sRGB и палитра Level_* для уровня
+   │  │  ├─ AudioArrivalImportPostprocessor.cs # моно 44,1 кГц и петли для Content/Audio/Arrival
    │  │  ├─ BuildWebGL.cs                # сборка WebGL только из CLI (без меню — ADR 0005)
    │  │  ├─ DialogueAssetEditor.cs       # кастомный Inspector диалога: узлы, переходы, валидация
    │  │  ├─ MechPrefabUpdater.cs         # идемпотентная раскладка чисел ходунов из mech_manifest.json
    │  │  └─ HoverbikeModelBuilder.cs     # сборка префаба Hoverbike_Model из FBX (ADR 0012)
    │  ├─ Tests/
-   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode: CameraModeTests, ScanMathTests,
-   │  │                          # RobotVisualPrefabTests, AnimalVisualPrefabTests,
-   │  │                          # MechVisualPrefabTests, ScreenApertureTests, CharacterSelectionTests,
+   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode, 32 файла и 264 теста:
+   │  │                          # CameraModeTests, CameraTrackTests, ScreenApertureTests,
+   │  │                          # ScanMathTests, RobotVisualPrefabTests, AnimalVisualPrefabTests,
+   │  │                          # MechVisualPrefabTests, CharacterSelectionTests,
    │  │                          # DialogueSessionTests, DialogueAssetValidationTests,
    │  │                          # DialogueContentTests, DialogueFontTests, DialogueActionTests,
    │  │                          # QuestLogTests, QuestAssetTests, PlayerExperienceTests,
    │  │                          # PlayerEquipmentTests, ProgressSaveTests, CarrySlotTests,
-   │  │                          # SceneFlowTests (поток сцен по Build Settings)
+   │  │                          # EquipmentBoardTests, EquipmentSceneTests, CabinDoorTests,
+   │  │                          # HoloPanelTests, SceneFlowTests (поток сцен по Build Settings),
+   │  │                          # WorldGridTests, WorldLayoutTests (раскладка и 18 инвариантов),
+   │  │                          # MiniMapProjectionTests (RD-05), FrontierFarLayerTests,
+   │  │                          # FrontierSceneSyncTests (небо и камера сцены),
+   │  │                          # SettlementContentTests, StationContentTests (узлы карты),
+   │  │                          # TrainCrashTests (финал рейса)
    │  └─ Content/
    │     ├─ Animation/Controllers/  # R*.controller; ME_*.controller (ходуны);
    │     │                          # RobotAnimals/<Species>/RA_<Species>.controller
@@ -105,6 +128,10 @@ FrostSpace/
    │     ├─ Models/RobotAnimals/    # <Species>/RA_<Species>.fbx + SOURCE.md (происхождение ригов)
    │     ├─ Models/Mechs/           # ME_*Walker.fbx (4) — наш корпус на ригах Ultimate Space Kit
    │     ├─ Models/Level/           # FBX уровня: рельеф, дом, интерьер, деревья, пропы
+   │     │  └─ Cells/               # 351 часть клетки: `Ground_`, `Fill_`, `Rail_`, `Ties_`,
+   │     │                          # `Signs_`, `Road_<n>_`, `Posts_<n>_`, `Siding_`, `Depot*_`,
+   │     │                          # `Hut_*_` (поселение), `Station_*_` — один объект = один FBX
+   │     │                          # (ADR 0039)
    │     ├─ Models/Train/           # TrainCar (TrainBody: интерьер и кабина 4,2 м;
    │     │                          # TrainDoorL/R — створки торцевой двери;
    │     │                          # TrainSideDoorL/R — створки бокового проёма),
@@ -116,15 +143,20 @@ FrostSpace/
    │     ├─ Prefabs/Ride/           # Hoverbike_Model (корпус, Visual, Cushion),
    │     │                          # Motorcycle_Model (FBX + контроллер, эффекты, свет),
    │     │                          # ME_*_Model (ходун целиком: модель, Mech, кабина)
+   │     ├─ Prefabs/World/          # WorldCell_<i>_<j>.prefab (121) — клетка как префаб из
+   │     │                          # частей, актёры и свет узлов внутри неё (ADR 0039, 0043)
    │     ├─ Materials/Level/        # материалы уровня Level_*
    │     ├─ Materials/Menu/         # материалы диорамы меню
    │     ├─ Materials/VFX/          # материалы эффектов
    │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionDebris, SkyNightStars
+   │     ├─ Audio/Arrival/          # звуки прибытия поезда (настраивает
+   │     │                          # AudioArrivalImportPostprocessor.cs)
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
    │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню;
    │     │                          # Dialogues/*.asset — графы диалогов роботов (ADR 0025);
    │     │                          # Quests/TrainBatteries.asset — квест «Погрузка» (ADR 0027);
-   │     │                          # Characters/ — CharacterCatalog.asset и три RobotProfile
+   │     │                          # Characters/ — CharacterCatalog.asset и три RobotProfile;
+   │     │                          # World/world_layout.json — TextAsset раскладки Stage 3
    │     ├─ Fonts/                  # LiberationSans Cyrillic SDF.asset — TMP-шрифт диалогов
    │     └─ Settings/               # зарезервировано под игровые настройки
    ├─ Settings/                  # URP-ассеты шаблона, не игровые данные
@@ -137,21 +169,11 @@ FrostSpace/
 не сохраняют. Каталога `Assets/ThirdParty/` пока нет — он появится вместе с первым
 импортированным пакетом (`SOURCE.md` обязателен).
 
-## Планируемые пути (ещё не созданы)
-
-По ADR 0026–0029 появятся следующие пути. Это **план**, а не факт: пока файла нет,
-ссылаться на него как на существующий нельзя.
-
-| Путь | Что появится |
-|---|---|
-| `Assets/_Project/Scripts/Features/Map/` | миникарта и маркеры (Stage 3) |
-| `Assets/_Project/Scripts/Features/Inventory/` | доска экипировки и окно по `I` (`DP-06`) |
-
 ## С чего начинается выполнение
 
 Целевой поток — ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier`.
-Ниже — **фактическое** состояние на 2026-10-29; `Frontier` — депо с прибытием поезда
-и сюжетом `DP-01`…`DP-04`.
+Ниже — **фактическое** состояние на 2026-11-05; `Frontier` — депо с прибытием поезда
+и сюжетом `DP-01`…`DP-04`, плюс наполненные поселение и станция.
 
 1. Unity открывает `Assets/Scenes/Boot.unity` (build index 0): корневой `SceneController`
    уходит в `DontDestroyOnLoad`, `BootScreen` три секунды показывает консоль загрузки
@@ -181,23 +203,26 @@ FrostSpace/
    завален), коробка с сорванной кровлей, ангар с обвалённым углом, козловой
    портал над разобранным узлом, поезд `TrainCar` (8×24) с путём, мачта,
    `Player`, `R16_Warden` ×2, `R8_Bulwark`, `R9_Tinker`, `R20_Cogsmith` и
-   `R7_Drifter`. Всё содержимое депо лежит в чанке `WorldCell_-2_-2` (ADR 0037,
+   `R7_Drifter`. Всё содержимое депо лежит в чанке `WorldCell_-2_-2` (ADR 0043,
    0040). `DepotArrival` ведёт прибытие одним непрерывным
    проездом камеры (~16.6 с) по длине дуги: встречаем состав, набирая ход, и в конце
    закручиваемся вокруг уже вышедшего игрока, встаём за спину. Очередь через один
    проём: R13 вперёд-налево и разворот вдоль состава, тележка по прямой дальше,
    игрок последним пару шагов прямо; управление возвращается ровно в позе рига. R7 выдаёт карту и
-   сканер, арка ведёт к дороге.
+   сканер, арка ведёт к дороге. Карта целиком — 121 префаб клетки под корнем
+   `WorldCells` (часть активна по резидентности `WorldResidency`); кроме депо узлы
+   наполнены в поселении (0,−2) и на станции (0,0), остальные клетки — открытая
+   равнина с лесом и валами (ADR 0036, 0039, 0041, 0043).
 6. Сцена `Game` (build index 5, вне потока) — обычный сохранённый ассет: рельеф,
    дом с интерьером, деревья, забор, пропы (FBX из `Content/Models/Level/`), свет, туман,
    камера, `Player`, `NPC`. Меню-пересборки нет (ADR 0005): контент правится вручную в Unity.
 7. `Player` — сценовый актёр: тег `Player`, `CharacterController`, `RobotLocomotion`;
    внутри — визуальный префаб `R1_PolarMechanic_Model`.
-7. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
+8. `NPC` — корень с актёрами `NPC_R2_Furnace`, `NPC_R3_Scout`, `NPC_R4_Hauler`,
    `NPC_R5_Ranger`: кинематический `CharacterController`, `NpcController` (маршрут из
    вейпоинтов), `DialogueSpeaker` (диалог по E, ADR 0025) и визуальный ребёнок; без
    ввода и без обычной физики.
-8. `NPC/Animals` — 13 актёров `AN_<Species>`: наземные с кинематическим
+9. `NPC/Animals` — 13 актёров `AN_<Species>`: наземные с кинематическим
    `CharacterController` и `NpcController`, `AN_Eagle` и `AN_Piranha` — с
    `AirPatrolController` и маршрутом с высотой; визуальный ребёнок —
    `RA_<Species>_Model` (ADR 0009).
@@ -227,7 +252,7 @@ FrostSpace/
 | Модели уровня (FBX) | `Content/Models/Level/`, палитра — `Content/Materials/Level/` |
 | Сборка уровня (Blender) | `Tools/Blender/build_level.py` + `level_layout.py` (позиции), `level_lib.py` (материалы и палитра), `level_parts.py` (геометрия); превью — `AssetSource/Previews/Level/` |
 | Край мира у депо (Blender) | `Tools/Blender/build_frontier.py` (секции `ground/track/grove/prop`) + `frontier_layout.py` (координаты, стек пути, `SCENE_INSTANCES`), `frontier_parts.py` (геометрия); проверка — `check_frontier.py`, превью — `render_frontier_previews.py` → `AssetSource/Previews/Frontier/`; FBX — `Content/Models/Level/Frontier_*.fbx` (ADR 0035) |
-| Клетки мира | `Tools/Blender/world_cell_parts.py` — решётка 15 м ровно по границам клетки, высоты из `world_height`, без исключений; `transport_parts.py` — путь, шпалы, знаки и дороги кусками клетки; `depot_parts.py` — депо (плиты двора, платформа, рампа, коробка, навес, кран, ангар, двор, лес и боковой путь) содержимым клетки (−2,−2); `build_world_cells.py` — сборка частей `Cells/<Часть>_<i>_<j>.fbx` (один объект — один файл) со сверкой каждой вершины с мировым полем, общим ребром соседей (`_edge_check`) и габаритом двора в клетке (`_depot_check`); `render_cells_previews.py` — стык, выемка, двор глазами, выезд через ворота, ортоплан, косой вид на клетку депо, план карты → `AssetSource/Previews/Cells/`; в Unity — `Content/Models/Level/Cells/*.fbx` → `Content/Prefabs/World/WorldCell_*.prefab`, собранный из частей (`WorldCell` на корне, `MeshCollider` на каждую часть), корень `WorldCells` во `Frontier` и `Features/Map/WorldResidency.cs`, который включает только окрестность игрока (ADR 0036 п.2); префаб клетки — владелец содержимого (ADR 0037): актёры депо лежат в `WorldCell_-2_-2.prefab`, поселение — в `WorldCell_0_-2.prefab` (группа `Settlement`), станция — в `WorldCell_0_0.prefab` (группа `Station`); `Tools/Blender/settlement_parts.py` — поселение (ограда с двумя воротами, загоны, электропост, метеоплощадка, изба, мастерская), `Tools/Blender/station_parts.py` — станция (платформа с навесами и буфером вдоль выпрямленной оси узла, пять отсеков, гигантский ангар, обломок корабля, ограда жилого комплекса); содержимое узлов ставят скрипты `Tools/Unity/place_settlement_content.cs` и `Tools/Unity/place_station_content.cs`, тексты диалогов — `Tools/Unity/make_settlement_dialogues.cs` и `Tools/Unity/make_station_dialogues.cs`, проверки узлов — `Tests/EditMode/SettlementContentTests.cs` и `StationContentTests.cs`; `Features/Map/CellMesh.cs` помечает геометрию из FBX, `Tools/Unity/sync_cell_prefabs.cs` обновляет только её и не удаляет авторское |
+| Клетки мира | `Tools/Blender/world_cell_parts.py` — решётка 15 м ровно по границам клетки, высоты из `world_height`, без исключений; `transport_parts.py` — путь, шпалы, знаки и дороги кусками клетки; `depot_parts.py` — депо (плиты двора, платформа, рампа, коробка, навес, кран, ангар, двор, лес и боковой путь) содержимым клетки (−2,−2); `build_world_cells.py` — сборка частей `Cells/<Часть>_<i>_<j>.fbx` (один объект — один файл) со сверкой каждой вершины с мировым полем, общим ребром соседей (`_edge_check`) и габаритом двора в клетке (`_depot_check`); `render_cells_previews.py` — стык, выемка, двор глазами, выезд через ворота, ортоплан, косой вид на клетку депо, план карты → `AssetSource/Previews/Cells/`; в Unity — `Content/Models/Level/Cells/*.fbx` → `Content/Prefabs/World/WorldCell_*.prefab`, собранный из частей (`WorldCell` на корне, `MeshCollider` на каждую часть), корень `WorldCells` во `Frontier` и `Features/Map/WorldResidency.cs`, который включает только окрестность игрока (ADR 0036 п.2); префаб клетки — владелец содержимого (ADR 0043): актёры депо лежат в `WorldCell_-2_-2.prefab`, поселение — в `WorldCell_0_-2.prefab` (группа `Settlement`), станция — в `WorldCell_0_0.prefab` (группа `Station`); `Tools/Blender/settlement_parts.py` — поселение (ограда с двумя воротами, загоны, электропост, метеоплощадка, изба, мастерская), `Tools/Blender/station_parts.py` — станция (платформа с навесами и буфером вдоль выпрямленной оси узла, пять отсеков, гигантский ангар, обломок корабля, ограда жилого комплекса); содержимое узлов ставят скрипты `Tools/Unity/place_settlement_content.cs` и `Tools/Unity/place_station_content.cs`, тексты диалогов — `Tools/Unity/make_settlement_dialogues.cs` и `Tools/Unity/make_station_dialogues.cs`, проверки узлов — `Tests/EditMode/SettlementContentTests.cs` и `StationContentTests.cs`; `Features/Map/CellMesh.cs` помечает геометрию из FBX, `Tools/Unity/sync_cell_prefabs.cs` обновляет только её и не удаляет авторское |
 | Дальний слой | `Tools/Blender/far_parts.py` — профиль силуэта по долям высоты (`STEPS`, `RINGS`, `tier_width`), нормировка габарита `_fit`; `build_far.py` — сборка `Far_*.fbx` со сверкой ширины и высоты с `far_layer()` в допуске 1 см; `render_far_previews.py` — кадры со двора и форма каждой карточки → `AssetSource/Previews/Far/`; в Unity — `Content/Models/Level/Far_*.fbx` и корень `FarLayer` во `Frontier`, который переставляет их за игроком (`Features/Map/FarLayer.cs`), страховка — `Tests/EditMode/FrontierFarLayerTests.cs` (ADR 0036 п.6) |
 | Раскладка мира Stage 3 | `Tools/Blender/world_layout.py` — единственные числа (клетки 400 м, 121 клетка −5…+5, якоря, руины, узлы, линии, тёплый каркас, туман, `ANOMALY`, `far_layer`, клетки, `line_spans` и транспортный стол`) и 18 инвариантов; сборка JSON — `build_world.py`, проверка — `check_world.py`, план и высоты — `render_world_previews.py` → `AssetSource/Previews/World/`; выход в Unity — `Content/Data/World/world_layout.json` как `TextAsset` (ADR 0036) |
 | Наследие и руины (Blender) | `Tools/Blender/heritage_parts.py` (`slide/pylon/crane/span/hangar/tanks/bridge/yard`, общие `_railing`/`_ladder`/`_lamp`/`_drifts`) + `build_heritage.py` (вершина меша сверяется с `world_layout`), проверка — `check_frontier.py` по файлу, превью — `render_heritage_previews.py` → `AssetSource/Previews/Heritage/`; FBX — `Content/Models/Level/Heritage_*.fbx` |

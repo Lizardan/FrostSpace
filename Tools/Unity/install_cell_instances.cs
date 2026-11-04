@@ -7,7 +7,7 @@
 //
 //   python Tools/Unity/run_snippet.py Tools/Unity/install_cell_instances.cs
 //
-// Пересборку самих префабов из FBX делает `rebuild_cell_prefabs.cs` — она
+// Пересборку самих префабов из частей FBX делает `sync_cell_prefabs.cs` — она
 // безопасна и не трогает сцену. Проверка «префаб ↔ FBX ↔ сцена» —
 // `verify_cell_prefabs.cs`.
 //
