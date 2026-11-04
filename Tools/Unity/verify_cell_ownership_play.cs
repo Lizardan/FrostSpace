@@ -16,7 +16,7 @@ var report = new System.Text.StringBuilder();
 // Отметки — от ровного пола: точка возврата стоит на настиле перрона (головка
 // пути −1,06 + 1,04), дальняя клетка — на площадке станции (её пол −5,20) с
 // запасом в три метра, чтобы луч старта не оказался под землёй.
-var far = new UnityEngine.Vector3(1200f, -2.2f, 1200f);
+var far = new UnityEngine.Vector3(800f, -2.2f, 800f);
 var depot = new UnityEngine.Vector3(0.7f, -0.02f, -1.0f);
 int phase = 0;
 int waitFrames = 0;

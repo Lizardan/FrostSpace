@@ -36,12 +36,12 @@ namespace FrostSpace.Tests
         {
             var layout = ParseReal();
 
-            Assert.That(layout.Block, Is.EqualTo(600f), "сторона клетки");
+            Assert.That(layout.Block, Is.EqualTo(400f), "сторона клетки");
             Assert.That(layout.CellMin, Is.EqualTo(-5));
             Assert.That(layout.CellMax, Is.EqualTo(5));
             Assert.That(layout.Grid.CellCount, Is.EqualTo(121));
-            Assert.That(layout.Depot, Is.EqualTo(new Vector2(-1200f, -1200f)));
-            Assert.That(layout.DepotToStation, Is.EqualTo(1697.0563f).Within(0.01f));
+            Assert.That(layout.Depot, Is.EqualTo(new Vector2(-800f, -800f)));
+            Assert.That(layout.DepotToStation, Is.EqualTo(1131.3709f).Within(0.01f));
 
             // Те же числа, что держат сцену: туман из STYLE.md, запас из RD-09.
             Assert.That(layout.FogDensity, Is.EqualTo(0.006f).Within(1e-5f));
@@ -80,7 +80,7 @@ namespace FrostSpace.Tests
 
             var depot = layout.FindNode("depot");
             Assert.That(depot, Is.Not.Null, "в раскладке нет узла depot");
-            Assert.That(depot.Position, Is.EqualTo(new Vector2(-1200f, -1200f)));
+            Assert.That(depot.Position, Is.EqualTo(new Vector2(-800f, -800f)));
             Assert.That(depot.Warm, Is.True, "депо обязано быть тёплым узлом");
             Assert.That(depot.Area.HasValue, Is.True,
                 "у депо нет площадки — миникарта не знает, что рисовать");
@@ -93,7 +93,7 @@ namespace FrostSpace.Tests
             // совпадать с раскладкой, иначе чанк соберётся не туда.
             var settlement = layout.FindNode("settlement");
             Assert.That(settlement, Is.Not.Null, "в раскладке нет узла settlement");
-            Assert.That(settlement.Position, Is.EqualTo(new Vector2(0f, -1200f)));
+            Assert.That(settlement.Position, Is.EqualTo(new Vector2(0f, -800f)));
             Assert.That(settlement.LayoutCell, Is.EqualTo(new Vector2Int(0, -2)),
                 "посёлок стоит в клетке (0,-2) — его чанк называется WorldCell_0_-2");
             Assert.That(settlement.Warm, Is.True,
@@ -150,14 +150,15 @@ namespace FrostSpace.Tests
         {
             var layout = ParseReal();
 
-            // 1 линия пути + 4 дороги + 5 троп, все с реальным числом точек.
-            Assert.That(layout.Lines.Count, Is.EqualTo(10));
+            // 1 линия пути + 5 дорог + 5 троп: подъезд к складу выделен в
+            // отдельную нить, чтобы road 1 заканчивалась у станции.
+            Assert.That(layout.Lines.Count, Is.EqualTo(11));
             var rail = layout.Lines[0];
             Assert.That(rail.Kind, Is.EqualTo(WorldLineKind.Rail));
             Assert.That(rail.Points.Length, Is.EqualTo(13),
                 "у магистрали 13 узловых точек: съезд из депо, прямая до стрелки " +
                 "и подход к станции, выпрямленный на ось узла");
-            Assert.That(rail.Points[0], Is.EqualTo(new Vector2(-1208f, -3300f))
+            Assert.That(rail.Points[0], Is.EqualTo(new Vector2(-808f, -2200f))
                 .Within(0.01f), "путь приходит из-за края карты, а не изнутри");
 
             // Тупик стоит на оси узла. Станция держит посадочную платформу
@@ -184,7 +185,8 @@ namespace FrostSpace.Tests
                     "линия из одной точки — не дорога");
             }
 
-            Assert.That(roads, Is.EqualTo(4));
+            Assert.That(roads, Is.EqualTo(5),
+                "пять дорог: подъезд к складу вынесен в отдельную нить road 4");
             Assert.That(paths, Is.EqualTo(5));
         }
 
@@ -240,9 +242,10 @@ namespace FrostSpace.Tests
                 }
             }
 
-            // Три тысячи метров к северу от двора — уже совсем другая окрестность,
+            // Пять клеток к северу от двора — уже совсем другая окрестность,
             // и она обязана сдвинуться вместе с игроком, а не остаться депо.
-            var north = grid.CellOf(layout.ToWorld(new Vector2(0f, 3000f)));
+            // Смещение берём от стороны клетки, чтобы тест не знал про 600/400.
+            var north = grid.CellOf(layout.ToWorld(new Vector2(0f, 5f * layout.Block)));
             Assert.That(north, Is.EqualTo(new Vector2Int(-2, 3)),
                 "смещение по осям сцены не переведено в мир");
             Assert.That(new HashSet<Vector2Int>(cells).Contains(north), Is.False,
@@ -291,8 +294,9 @@ namespace FrostSpace.Tests
                 }
             }
 
-            Assert.That(drawn, Is.EqualTo(3),
-                "из депо читаются три тела: станция, «Косой» и остов «Южный»");
+            Assert.That(drawn, Is.EqualTo(4),
+                "из депо читаются четыре тела: станция, «Косой», остов «Южный» " +
+                "и «Западный» (при клетке 400 м его контраст вышел из мглы)");
         }
 
         [Test]
@@ -311,7 +315,7 @@ namespace FrostSpace.Tests
 
             // Обрезанный хвост линий: линии не хватило точек — карта всё равно
             // открывается, но на неполной линии не рисует.
-            var truncated = "{\"block\":600.0,\"cells\":[-5,5],\"depot\":[-1200.0,-1200.0]," +
+            var truncated = "{\"block\":400.0,\"cells\":[-5,5],\"depot\":[-800.0,-800.0]," +
                 "\"nodes\":[{\"k\":\"depot\",\"n\":\"Депо\",\"x\":-1200.0,\"z\":-1200.0," +
                 "\"warm\":true,\"cell\":[-2,-2]}]," +
                 "\"roads\":[1.0,2.0,3.0],\"roadCounts\":[3]}";

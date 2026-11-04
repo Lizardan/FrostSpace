@@ -335,12 +335,19 @@ class MeshBuilder:
                     mat,
                     "surface",
                 )
+        # Торцы смотрят в разные стороны: первый — против пути, последний —
+        # по пути. Раньше оба строились одним обходом, и первый торец
+        # смотрел внутрь трубы: снаружи (при Cull Back) его не было видно,
+        # и конец борта/полотна «просвечивал». obхода хватало на знак объёма
+        # (`check_shell_normals` такое не ловит: маленький торец тонет в
+        # боковой поверхности), поэтому дефект жил до живого кадра.
         if caps[0]:
             if fan_caps:
                 for i in range(1, count - 1):
-                    self.add_face((base, base + i, base + i + 1), mat, "cap")
+                    self.add_face((base, base + i + 1, base + i), mat, "cap")
             else:
-                self.add_face([base + i for i in range(count)], mat, "cap")
+                self.add_face([base + i for i in range(count - 1, -1, -1)],
+                              mat, "cap")
         if caps[1]:
             s = base + (len(rings) - 1) * count
             if fan_caps:

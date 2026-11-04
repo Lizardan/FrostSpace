@@ -57,7 +57,7 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Unity MCP | пакет установлен; сервер слушает 6400 или следующий свободный (2026-10-29 — 6401), мост `Tools/Unity/unity_bridge.py` работает | live-проверка 2026-10-29 |
 | Blender | 5.2.3 LTS, аддон `blender_mcp` (протокол 14, сервер 2.2.2) установлен | `--version` и `install-addon` |
 | Пайплайн ассетов | единый вход `Tools/Blender/build_all.py`: сборка → проверки → превью (ADR 0017) | прогон 2026-10-22 |
-| Мир Stage 3 | раскладка 6,6×6,6 км из 121 клетки по 600 м, якоря 320/260 м, восемь руин 15–60 м, тёплый каркас 0,4 % карты (дороги и площадки; рельсовая линия холодна) и запас остывания 90 с — всё числами в `world_layout.py` (18 инвариантов), в Unity приходит `world_layout.json` как `TextAsset`. Небо — почти чёрное, редкие яркие звёзды и одна аномалия (`SkyNightStars`) | `Tools/Blender/world_layout.py`, `Content/Data/World/`, `Content/Models/Level/Heritage_*.fbx`, ADR 0036 |
+| Мир Stage 3 | раскладка 4,4×4,4 км из 121 клетки по 400 м, якоря 320/260 м, восемь руин 15–60 м, тёплый каркас 1,1 % карты (дороги и площадки; рельсовая линия холодна) и запас остывания 90 с — всё числами в `world_layout.py` (18 инвариантов), в Unity приходит `world_layout.json` как `TextAsset`. Небо — почти чёрное, редкие яркие звёзды и одна аномалия (`SkyNightStars`) | `Tools/Blender/world_layout.py`, `Content/Data/World/`, `Content/Models/Level/Heritage_*.fbx`, ADR 0036 |
 | Скиллы | 34 скилла Unity + 2 проектных (`plans`, `frostspace-3d-assets`), мосты для всех агентов | `.Aura/Skills/`, `Tools/Agent/LinkAgentSkills.ps1` |
 
 ## Чего в проекте нет

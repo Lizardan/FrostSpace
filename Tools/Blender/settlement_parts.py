@@ -403,13 +403,39 @@ def _dressing(materials):
     return b.build("Hut_Dressing", recalc=False)
 
 
+def _paths(materials):
+    """Утоптанные тропы внутри двора: от домов к обоим дорожным выходам.
+
+    Владелец 2026-11-04: дороги заканчиваются **до ворот**, а посёлок при
+    этом должен остаться связным — от домов тропы идут и к западным воротам
+    (road 0), и к северным (road 1), и между собой. Лёд внутрь двора не
+    заходит: тропа — утоптанный снег, а не полотно.
+    """
+    b = level_lib.LevelBuilder(materials)
+    routes = (
+        # Западные ворота -> дом (порог смотрит на юг).
+        ((-6.0, 0.0), (8.0, 0.0), (20.0, 8.0), (34.0, 20.0), (40.0, 30.0)),
+        # Дом -> северные ворота.
+        ((40.0, 30.0), (28.0, 38.0), (12.0, 46.0), (0.0, 52.0)),
+        # Мастерская -> общая тропа.
+        ((46.0, 8.0), (34.0, 8.0), (20.0, 8.0)),
+        # Электропост -> путь к северным воротам.
+        ((17.0, 42.0), (12.0, 46.0)),
+    )
+    for (n, pts) in enumerate(routes):
+        # Разные отметки на 1 см: трубы не ложатся в одну плоскость в местах
+        # примыкания, и внутримешная проверка копланарности не даёт ложных пар.
+        CP.trodden(b, list(pts), _ground, width=1.8, lift=0.10 + 0.01 * n)
+    return b.build("Hut_Paths", recalc=False)
+
+
 def build_cell_settlement(materials, i: int, j: int):
     """Объекты поселения клетки: пустой список, если клетка не поселения."""
     if (i, j) != CELL:
         return []
     objs = build_house(materials) + [_fence(materials), _pens(materials),
                                      _power(materials), _mast(materials),
-                                     _dressing(materials)]
+                                     _dressing(materials), _paths(materials)]
     for (n, (lx, lz, seed)) in enumerate(PINES):
         tree = LP.build_pine(materials, seed, name="Hut_Pine_%d" % n)
         (px, py) = _place(lx, lz)

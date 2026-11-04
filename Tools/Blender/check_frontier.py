@@ -292,6 +292,43 @@ def _patch_area(a, b, scale: float) -> float:
     return dims[1] * dims[2]
 
 
+def _faces_overlap_in_plane(fa, fb, normal, eps: float) -> bool:
+    """Пересекаются ли сами две копланарные грани, а не их AABB (SAT).
+
+    У скошенной грани AABB заметно шире её самой: две колеи одной дороги на
+    изломе дают «пятно» в полметра, хотя узкие полосы разнесены на 2,5 м и не
+    касаются друг друга. То же замечание уже есть у `COPANAR_PATCH_SIDE` в
+    межобъектной проверке; здесь оно решается честно — проекцией граней в их
+    общую плоскость и поиском разделяющей оси. Выпуклости достаточно: все
+    грани пайплайна — треугольники и квады.
+    """
+    seed = Vector((1.0, 0.0, 0.0)) if abs(normal.x) < 0.9 else Vector((0.0, 1.0, 0.0))
+    u = seed - normal * seed.dot(normal)
+    if u.length < 1e-6:
+        return True
+    u.normalize()
+    v = normal.cross(u).normalized()
+
+    def project(face):
+        return [(vert.co.dot(u), vert.co.dot(v)) for vert in face.verts]
+
+    pa, pb = project(fa), project(fb)
+    for poly in (pa, pb):
+        for k in range(len(poly)):
+            (x0, y0) = poly[k]
+            (x1, y1) = poly[(k + 1) % len(poly)]
+            (ax, ay) = (-(y1 - y0), x1 - x0)
+            length = math.hypot(ax, ay)
+            if length < 1e-9:
+                continue
+            ax, ay = ax / length, ay / length
+            va = [px * ax + py * ay for (px, py) in pa]
+            vb = [px * ax + py * ay for (px, py) in pb]
+            if min(va) > max(vb) + eps or min(vb) > max(va) + eps:
+                return False
+    return True
+
+
 def coplanar_visible_pairs(obj, tol: float = 0.002,
                            min_area: float = COPANAR_MIN_AREA,
                            min_patch: float = COPANAR_MIN_PATCH):
@@ -316,6 +353,14 @@ def coplanar_visible_pairs(obj, tol: float = 0.002,
         if face.calc_area() * area_scale < min_area:
             continue
         normal = face.normal.copy()
+        # Грань, смотрящая вниз, утоплена в грунт или в свою же плиту и не
+        # конкурирует за пиксель: межобъектная проверка (`COPANAR_UP`) это
+        # правило уже соблюдает, внутримешная — нет, поэтому низы двух ярусов
+        # сосен и донца двух колей давали ложные пары. Нормаль переводим в
+        # мировые оси: FBX поворачивает меш, и локальный «низ» — не мировой.
+        world_normal = (obj.matrix_world.to_3x3() @ normal).normalized()
+        if world_normal.z < COPANAR_UP:
+            continue
         key = ((round(normal.x, 2), round(normal.y, 2), round(normal.z, 2)),
                round(normal.dot(face.calc_center_median()) * scale / tol),
                face.material_index)
@@ -331,6 +376,10 @@ def coplanar_visible_pairs(obj, tol: float = 0.002,
                     continue
                 if check_train._overlap(boxes[i], boxes[j], tol / scale):
                     if _patch_area(boxes[i], boxes[j], scale) < min_patch:
+                        continue
+                    if not _faces_overlap_in_plane(faces[i], faces[j],
+                                                   faces[i].normal,
+                                                   tol / scale):
                         continue
                     pairs.append((faces[i].calc_center_median(),
                                   faces[j].calc_center_median()))
@@ -601,7 +650,7 @@ CONTACT_SUNK_POSTS = 2.00
 CONTACT_BAND = 0.35
 #: Отступ от края клетки: за ним опора у соседнего чанка, а его в этом прогоне
 #: нет.
-CONTACT_EDGE = 300.0
+CONTACT_EDGE = W.BLK * 0.5
 
 
 def _floor_top(meshes, skip, x: float, y: float, z: float):

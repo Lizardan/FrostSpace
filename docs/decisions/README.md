@@ -43,7 +43,7 @@
 | [0033](0033-cabin-autodoor-holopanel.md) | Кабина 2,8 м, две створки с автодверью, водитель и голопанель | Accepted |
 | [0034](0034-cockpit-and-render-depth.md) | Кокпит в кабине 4,2 м, читаемая голопанель, тени и bloom в поезде | Accepted |
 | [0035](0035-scene-placement-is-manual.md) | Край мира набирается таблицей и ставится руками; `LODGroup` не заводим | Accepted |
-| [0036](0036-world-grid-and-residency.md) | Мир 6,6×6,6 км из клеток 600 м; residency внутри одной сцены; числа — в `world_layout.py` | Accepted |
+| [0036](0036-world-grid-and-residency.md) | Мир 4,4×4,4 км из клеток 400 м; residency внутри одной сцены; числа — в `world_layout.py` | Accepted |
 | [0037](0037-cell-prefab-owns-content.md) | Префаб клетки — владелец содержимого; `CellMesh` — граница владения; глобальное — в сцене | Accepted |
 | [0038](0038-road-flushes-on-warm-yard.md) | Дорога сходит на тёплый двор у своего тупика (слой покрытия 10 см, без заноса); сквозная дорога и путь режут всегда | Accepted |
 | [0039](0039-cell-is-a-prefab-of-parts.md) | Клетка — префаб из частей: один объект — один FBX в `Cells/`, префаб собирает `sync_cell_prefabs.cs`; файла-чанка нет | Accepted |

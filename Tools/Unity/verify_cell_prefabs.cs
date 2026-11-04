@@ -173,8 +173,8 @@ for (int i = 0; i < cellsRoot.childCount; i++)
     int ci, cj;
     bool posOk = false;
     if (parts.Length == 3 && int.TryParse(parts[1], out ci) && int.TryParse(parts[2], out cj))
-        posOk = Mathf.Abs(inst.localPosition.x - (ci * 600f + 1200f)) < 0.01f
-             && Mathf.Abs(inst.localPosition.z - (cj * 600f + 1200f)) < 0.01f;
+        posOk = Mathf.Abs(inst.localPosition.x - (ci * 400f + 800f)) < 0.01f
+             && Mathf.Abs(inst.localPosition.z - (cj * 400f + 800f)) < 0.01f;
 
     var wc = inst.GetComponent<FrostSpace.Features.Map.WorldCell>();
     bool indexOk = wc != null;

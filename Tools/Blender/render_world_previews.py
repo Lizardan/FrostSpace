@@ -161,9 +161,9 @@ def plan_svg() -> str:
     # Линейка и заголовок.
     (sx, sy) = _xy(W.BB[0] + 200, W.BB[2] + 220, k)
     out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" '
-               'stroke-width="2"/>' % (sx, sy, sx + 600 * k, sy, TEXT))
-    out.append('<text x="%.1f" y="%.1f" fill="%s" font-size="12">600 м = клетка '
-               'чанка</text>' % (sx, sy - 8, TEXT))
+               'stroke-width="2"/>' % (sx, sy, sx + W.BLK * k, sy, TEXT))
+    out.append('<text x="%.1f" y="%.1f" fill="%s" font-size="12">%.0f м = клетка '
+               'чанка</text>' % (sx, sy - 8, TEXT, W.BLK))
     out.append('<text x="%d" y="%d" fill="%s" font-size="15">Мир: %d x %d м · '
                'клеток %d · с контентом %d · якорей %d · узлов %d</text>'
                % (MARGIN, 26, TEXT, W.BB[1] - W.BB[0], W.BB[3] - W.BB[2],

@@ -92,7 +92,8 @@ for (int g = 0; g < guids.Length; g++)
 
     var inst = (UnityEngine.GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefab);
     inst.transform.SetParent(root.transform, false);
-    inst.transform.localPosition = new UnityEngine.Vector3(ci * 600f + 1200f, 0f, cj * 600f + 1200f);
+    // Смещение сцены: депо (-2,-2) стоит в нуле, поэтому +2*BLK.
+    inst.transform.localPosition = new UnityEngine.Vector3(ci * 400f + 800f, 0f, cj * 400f + 800f);
     inst.transform.localRotation = UnityEngine.Quaternion.identity;
     inst.transform.localScale = UnityEngine.Vector3.one;
 }

@@ -215,7 +215,8 @@ def _bounds_check(pieces, label: str, i: int, j: int, cap: float = 12.0) -> list
     # поселения — нет, и прошлый вариант мерил рельеф депо для чужой клетки.
     (cx, cz) = W.cell_center(i, j)
     hi = max(W.world_height(cx + lx, cz + lz)
-             for lx in (-300.0, 0.0, 300.0) for lz in (-300.0, 0.0, 300.0))
+             for lx in (-W.BLK * 0.5, 0.0, W.BLK * 0.5)
+             for lz in (-W.BLK * 0.5, 0.0, W.BLK * 0.5))
     reach = 0.0
     for obj in pieces:
         for v in obj.data.vertices:

@@ -32,7 +32,7 @@ namespace FrostSpace.Tests
             "Assets/_Project/Content/Data/World/world_layout.json";
 
         /// <summary>Смещение клетки (0,−2) в осях сцены: её центр — (1200, 0).</summary>
-        private const float CellSceneX = 1200f;
+        private const float CellSceneX = 800f;
 
         /// <summary>Пол узла: `PAD_LEVEL0["settlement"]`, ADR 0041.</summary>
         private const float FloorLevel = -0.175f;
