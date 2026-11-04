@@ -122,6 +122,44 @@ def main() -> int:
         print("ЛИСТ z=%6.2f x=%7.2f над_полом=%5.2f полуборт=%5.2f %s" %
               (r[0], r[1], r[2], half, "ВНУТРИ МАССЫ" if buried else ""))
 
+    # Вертикальная колонка над проломом: какие грани меша пересекают луч и на
+    # какой отметке. Единственный способ узнать, чем именно закрыт проём, —
+    # не смотреть на кадр и не рассуждать о профилях.
+    import bmesh  # noqa: PLC0415
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    mats = [s.material.name if s.material else "?"
+            for s in obj.material_slots]
+    print("КОЛОНКИ:")
+    for (qx, qz) in ((-50.0, 6.0), (-44.0, 10.0), (-56.0, 2.0),
+                     (-50.0, -8.0), (-50.0, 18.0)):
+        hits = []
+        for f in bm.faces:
+            pts2 = [(v.co.x, -v.co.y) for v in f.verts]
+            inside = False
+            n = len(pts2)
+            for i in range(n):
+                (x0, z0) = pts2[i]
+                (x1, z1) = pts2[(i + 1) % n]
+                if (z0 > qz) != (z1 > qz):
+                    xi = x0 + (qz - z0) * (x1 - x0) / (z1 - z0)
+                    if qx < xi:
+                        inside = not inside
+            if not inside:
+                continue
+            co = [v.co for v in f.verts]
+            nrm = f.normal
+            if abs(nrm.z) < 1e-6:
+                continue
+            (px, py) = (qx, -qz)
+            h = co[0].z - (nrm.x * (px - co[0].x) +
+                           nrm.y * (py - co[0].y)) / nrm.z
+            hits.append((round(h, 2), mats[f.material_index],
+                         round(f.calc_area(), 2)))
+        hits.sort()
+        print("  (x=%.0f, z=%.0f): %s" % (qx, qz, hits))
+    bm.free()
+
     bpy.context.scene.render.engine = "BLENDER_WORKBENCH"
     shading = bpy.context.scene.display.shading
     shading.light = "STUDIO"
