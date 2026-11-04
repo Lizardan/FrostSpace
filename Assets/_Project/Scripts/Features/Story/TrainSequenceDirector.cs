@@ -11,13 +11,13 @@ namespace FrostSpace.Features.Story
 {
     /// <summary>
     /// Финал вагона (TR-09, TR-10): квест сдан, R13 уходит с грузом к боковому проёму
-    /// и встаёт лицом к будущему выходу, кабина даёт один провал света, издалека входят
-    /// дальние тормоза — звук прибытия начинается ещё до склейки. Камера при этом почти
-    /// стоит: только микро-крейп на одной кривой, без «уезда в окно». Дальше кадр уходит
-    /// в чёрный — и чёрным владеет один <see cref="SceneController"/>.
+    /// и успевает увидеть, что тормоза не держат. Дальше кадром владеет авария
+    /// (<see cref="TrainCrashRig"/>): мир тормозит, корпус падает и кренится, свет
+    /// гаснет с искрой, снег бьёт внутрь, остаётся одна аварийная лампа. Затем кадр
+    /// уходит в чёрный — и чёрным владеет один <see cref="SceneController"/>.
     ///
-    /// Поезд здесь не останавливается: прибытие — событие `Frontier`, а параллакс
-    /// продолжает идти под занавесом, поэтому темнота не выглядит зависанием.
+    /// Поезд не встаёт у платформы целым: он дотягивает до депо уже подбитым, и
+    /// прибытие — событие `Frontier`.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-20)]
@@ -34,8 +34,7 @@ namespace FrostSpace.Features.Story
         [Tooltip("R13: после сдачи уходит к проёму — доставка видна, а не рассказана")]
         [SerializeField] private Transform _r13;
         [SerializeField] private Animator _r13Animator;
-        [Tooltip("Шаги кабины: один провал света = сменилось состояние машины")]
-        [SerializeField] private Light[] _lamps = new Light[0];
+
 
         [Header("Финал")]
         [SerializeField] private string _nextScene = "Frontier";
@@ -45,21 +44,14 @@ namespace FrostSpace.Features.Story
         [SerializeField] private float _r13Seconds = 3.2f;
         [Tooltip("Скорость шага клипа Walk, м/с")]
         [SerializeField] private float _r13ClipSpeed = 0.912f;
-        [Tooltip("Насколько камера наезжает за финал, м. Микро-крейп, а не маршрут")]
-        [SerializeField] private float _creepMeters = 0.6f;
-        [Tooltip("Сколько длится наезд, с")]
-        [SerializeField] private float _creepSeconds = 2.0f;
-        [Tooltip("Длительность провала света кабины, с")]
-        [SerializeField] private float _lampDipSeconds = 0.5f;
-        [Tooltip("До какой доли яркости гаснут лампы")]
-        [SerializeField, Range(0f, 1f)] private float _lampDipLevel = 0.25f;
+        [Tooltip("Авария: торможение, удар, тьма. Пусто — спокойная остановка")]
+        [SerializeField] private TrainCrashRig _crash;
         [Tooltip("Сколько держим последний кадр до занавеса, с")]
         [SerializeField] private float _holdSeconds = 0.8f;
 
         [Header("Звук прибытия заранее")]
         [Tooltip("Дальние тормоза: входят до склейки, а не после")]
         [SerializeField] private AudioClip _brakes;
-        [SerializeField] private AudioClip _stopThud;
         [SerializeField, Range(0f, 1f)] private float _farVolume = 0.3f;
 
         [Header("Титул")]
@@ -133,21 +125,20 @@ namespace FrostSpace.Features.Story
                 yield break;
             }
 
-            // Движение кадра — в субъекте и в мире: R13 уходит к проёму, кабина
-            // гаснет на мгновение, издалека входят тормоза. Камера только наезжает
-            // на полметра по одной кривой и больше ничего не делает.
+            // R13 успевает дойти до проёма и увидеть, что тормоза не держат.
+            // Дальше кадром владеет авария: она же тормозит мир за окнами.
             StartCoroutine(ExitR13());
-            StartCoroutine(LampDipRoutine());
-            PlayFar(_brakes, 0.8f, 0.72f);
+            PlayFar(_brakes, 0.9f, 0.72f);
 
-            yield return Creep(camera);
+            if (_crash != null)
+                yield return _crash.Play(camera);
+            else
+                yield return new WaitForSecondsRealtime(1.5f);
 
             // Последний кадр держится неподвижно: без паузы занавес закрывается на
             // середине движения и переход читается обрывом, а не концом.
             if (_holdSeconds > 0f)
                 yield return new WaitForSecondsRealtime(_holdSeconds);
-
-            PlayFar(_stopThud, 1f, 0.6f);
 
             var controller = SceneController.Instance;
             if (controller == null)
@@ -168,30 +159,6 @@ namespace FrostSpace.Features.Story
             _running = false;
         }
 
-        /// <summary>
-        /// Микро-крейп вдоль текущего взгляда: поворот и поле зрения не меняются,
-        /// поэтому наезда хватает, чтобы кадр «дышал», но не хватает на скачок скорости.
-        /// </summary>
-        private IEnumerator Creep(Camera camera)
-        {
-            var cameraTransform = camera.transform;
-            var start = cameraTransform.position;
-            var delta = cameraTransform.forward * _creepMeters;
-            var rotation = cameraTransform.rotation;
-            var elapsed = 0f;
-
-            while (elapsed < _creepSeconds)
-            {
-                elapsed += Time.deltaTime;
-                cameraTransform.position =
-                    start + delta * CameraTrack.Ease(Mathf.Clamp01(elapsed / _creepSeconds));
-                cameraTransform.rotation = rotation;
-                yield return null;
-            }
-
-            cameraTransform.position = start + delta;
-        }
-
         private IEnumerator ExitR13()
         {
             if (_r13 == null)
@@ -200,46 +167,6 @@ namespace FrostSpace.Features.Story
             yield return CutsceneMover.Walk(_r13,
                 new[] { _r13.position, _r13WalkTo },
                 _r13Seconds, _r13Animator, _r13ClipSpeed);
-        }
-
-        /// <summary>Один провал света кабины туда и обратно, без мигалки.</summary>
-        private IEnumerator LampDipRoutine()
-        {
-            if (_lamps.Length == 0 || _lampDipSeconds <= 0f)
-                yield break;
-
-            var from = new float[_lamps.Length];
-            for (var i = 0; i < _lamps.Length; i++)
-                from[i] = _lamps[i] != null ? _lamps[i].intensity : 0f;
-
-            var elapsed = 0f;
-            var half = _lampDipSeconds * 0.5f;
-
-            while (elapsed < half)
-            {
-                elapsed += Time.deltaTime;
-                var k = CameraTrack.Ease(Mathf.Clamp01(elapsed / half));
-                for (var i = 0; i < _lamps.Length; i++)
-                    if (_lamps[i] != null)
-                        _lamps[i].intensity = Mathf.LerpUnclamped(
-                            from[i], from[i] * _lampDipLevel, k);
-                yield return null;
-            }
-
-            while (elapsed < _lampDipSeconds)
-            {
-                elapsed += Time.deltaTime;
-                var k = CameraTrack.Ease(Mathf.Clamp01((elapsed - half) / half));
-                for (var i = 0; i < _lamps.Length; i++)
-                    if (_lamps[i] != null)
-                        _lamps[i].intensity = Mathf.LerpUnclamped(
-                            from[i] * _lampDipLevel, from[i], k);
-                yield return null;
-            }
-
-            for (var i = 0; i < _lamps.Length; i++)
-                if (_lamps[i] != null)
-                    _lamps[i].intensity = from[i];
         }
 
         /// <summary>Дальний звук прибытия: тихо и пониже — он за бортом, а не в вагоне.</summary>

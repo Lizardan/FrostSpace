@@ -17,7 +17,9 @@
 дороги (`transport_parts`), в клетке депо — двор (`depot_parts`), в клетке
 станции — поселение (`settlement_parts`). Каждый объект выгружается в свой FBX
 в `Cells/`: `Ground_<i>_<j>`, `Rail_<i>_<j>`, `Ties_<i>_<j>`, `Road_0_<i>_<j>`,
-`Signs_<i>_<j>`, `DepotApron_<i>_<j>`, `Hut_<i>_<j>` и так далее.
+`Signs_<i>_<j>`, `DepotApron_<i>_<j>`, `Hut_<i>_<j>`, `Fill_<i>_<j>` и так
+далее. Наполнение (лес, наносы, валуны, шипы) — `cell_fill.py`, отдельной
+частью: выключить лес, не трогая дорогу, — это один выключенный объект.
 
 **Чанк — это префаб, а не файл.** `Assets/_Project/Content/Prefabs/World/
 WorldCell_<i>_<j>.prefab` собирается из этих частей
@@ -50,6 +52,7 @@ if HERE not in sys.path:
 import bpy  # noqa: E402
 
 import level_lib  # noqa: E402
+import cell_fill as CF  # noqa: E402
 import depot_parts as DP  # noqa: E402
 import settlement_parts as SP
 import station_parts as ST  # noqa: E402
@@ -289,6 +292,17 @@ def main() -> int:
             problems = _bounds_check(station, "станция", i, j, cap=22.0)
             if problems:
                 print("FAIL станция: %s" % "; ".join(problems))
+                return 1
+        # Наполнение (слой D): лес, наносы, валуны и шипы по всей клетке.
+        # Предел высоты здесь страховка, а не критерий: предметы стоят на самом
+        # рельефе, а не на полу двора, и «верх» в `_bounds_check` меряется от
+        # максимума по углам клетки — на склоне сосна законно выше него.
+        fill = CF.build_cell_fill(mats, i, j)
+        pieces += fill
+        if fill:
+            problems = _bounds_check(fill, "наполнение", i, j, cap=60.0)
+            if problems:
+                print("FAIL наполнение: %s" % "; ".join(problems))
                 return 1
         tris = sum(len(p.vertices) - 2 for o in pieces for p in o.data.polygons)
         print("WorldCell_%d_%d: квадов %d, объектов %d, трис %d%s" % (

@@ -70,7 +70,7 @@ FrostSpace/
    │  │  │  ├─ Scan/             # ObjectScanner (Q-сонар + ближайшая и прицельная детекция),
    │  │  │  │                    # ScanTarget (маркер и реестр целей), ScanPulse (кольцо по земле),
    │  │  │  │                    # ScanMath (чистая математика)
-   │  │  │  └─ Story/            # TrainMotionRig (параллакс и снег), TrainSequenceDirector
+   │  │  │  └─ Story/            # TrainMotionRig (параллакс и снег), TrainSequenceDirector, TrainCrashRig (авария финала)
    │  │  │                       # (финал рейса без отъезда к окну), TitleCardScreen (текст,
    │  │  │                       # снег и гул поверх чужого чёрного), TitleSnow (снег титра),
    │  │  │                       # CutsceneMover (проводка актёра по кривой), DepotArrivalDirector

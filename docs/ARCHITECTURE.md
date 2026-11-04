@@ -171,7 +171,7 @@ R7 и выдача карты со сканером. `SceneController` и нак
 `Rebind*` в камере и силуэте; подбор, перенос и слоты; `QuestAsset`, `QuestLog`,
 `QuestDirector`, действия `AcceptQuest`/`CompleteQuest` в узлах диалога и
 `QuestTracker`; работает `Progression` — `PlayerExperience` и полоса опыта;
-`Story` закрывает финал `Train` (`TrainSequenceDirector`, `TitleCardScreen`), прибытие
+`Story` закрывает финал `Train` (`TrainSequenceDirector`, `TrainCrashRig`, `TitleCardScreen`), прибытие
 в депо (`DepotArrivalDirector`) и выдачу снаряжения (`PlayerEquipment`). `Map` не начат.
 Таблица фиксирует границы, чтобы реализации не разъехались; данные и правила — в
 `GAME_DESIGN.md`, причины — в ADR 0026–0029.

@@ -56,6 +56,16 @@ namespace FrostSpace.Features.Story
             _stopping = true;
         }
 
+        /// <summary>
+        /// Торможение за своё время. Аварии нужен короткий, резкий сброс хода:
+        /// штатные три секунды читаются как обычная остановка у платформы.
+        /// </summary>
+        public void Stop(float seconds)
+        {
+            _stopSeconds = Mathf.Max(0.01f, seconds);
+            _stopping = true;
+        }
+
         /// <summary>Снова ехать на полной скорости (для отладки и повтора сцены).</summary>
         public void Resume()
         {

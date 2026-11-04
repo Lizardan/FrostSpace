@@ -58,8 +58,11 @@ def main() -> int:
     # Полотное и борт дороги больше не константы модуля: их отметка зависит от
     # самой дороги (`road_crown`), поэтому проверка берёт профиль с базовой
     # кроной.
+    # Кромки дороги — два профиля (левая и правая), а не одна лента через всю
+    # дорогу: именно из-за ленты снег ложился поверх льда.
     road = ((TP.pave_profile(TP.W.PAVE_CROWN), "pave_profile"),
-            (TP.bank_profile(TP.W.PAVE_CROWN), "bank_profile"),
+            (TP.rim_profile(TP.W.PAVE_CROWN, 1.0), "rim_profile R"),
+            (TP.rim_profile(TP.W.PAVE_CROWN, -1.0), "rim_profile L"),
             (TP.track_profile(TP.W.PAVE_CROWN), "track_profile"))
     print("--- сырая намотка (recalc=False), как в клетках ---")
     for prof, nm in ((FP.RAIL_PROFILE, "RAIL_PROFILE"),

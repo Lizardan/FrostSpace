@@ -42,7 +42,7 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 224 теста:
+Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 264 теста:
 проверки префабов и клипов роботов, животных и ходунов (carry и jump у трёх корпусов),
 выбор корпуса и `PlayerPrefs`, `ViewBlend`,
 экранный вырез, математика сканера, граф диалогов и его контент, порядок целей квеста,
@@ -154,6 +154,7 @@ python Tools/Blender/gui_session.py stop     # закрыть, если сесс
 | Тесты Unity | `run_tests` + `get_test_job` | 200 тестов: `succeeded`, 200 passed, 0 skipped (2026-11-02, после неба и наследия Stage 3) |
 | Тесты Unity | `run_tests` + `get_test_job` | 211 тестов: `succeeded`, 211 passed, 0 skipped (2026-11-02, `Features/Map`: разбор `world_layout.json` и сетка клеток) |
 | Тесты Unity | `run_tests` + `get_test_job` | 224 теста: `succeeded`, 224 passed, 0 skipped (2026-11-02, миникарта: проекция, отсечение по кругу, перевод осей сцены) |
+| Сюжет депо | MCP: `Tools/Unity/play_depot_quest.cs` — прибытие, пятеро говорящих, выдача карты и сканера, Q, дальний слой | PASS (2026-11-04): управление на 16,6 с, R13 и тележка вне вагона, 5 диалогов без действий, R7 выдаёт `GrantMap`+`GrantScanner` идемпотентно, Q пускает волну, курсор захвачен, снос дальнего слоя 0,000 м, Console 0 ошибок |
 | Play-проверка среза «Поезд» | MCP: диалог R13 → `AcceptQuest` → 4 слота → `TrainCompanion_Done` → `CompleteQuest` | PASS (2026-10-29): трекер `ПОГРУЗИТЬ АККУМУЛЯТОРЫ 0/4`, цель доставки закрывается, R13 меняет диалог, Console 0 ошибок |
 | Play-проверка UI | MCP: главное меню, пауза, журнал, настройки-шестерёнка, трекер | PASS (2026-10-29): русские подписи, журнал с целями, шестерёнка и прогресс-бар; Console 0 ошибок |
 | Гейт переноски | MCP: `FindNearestItem` до и после `AcceptQuest` | PASS (2026-10-29): до квеста `none`, после — `Prop_Battery_1` |

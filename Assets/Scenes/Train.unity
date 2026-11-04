@@ -6664,7 +6664,6 @@ MonoBehaviour:
   _locomotion: {fileID: 0}
   _rig: {fileID: 1498862677}
   _localView: {fileID: 0}
-  _silhouette: {fileID: 0}
   _aimPose: {fileID: 0}
   _visualParent: {fileID: 0}
 --- !u!114 &783711651
@@ -6730,7 +6729,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.View.PlayerLocalView
   _rig: {fileID: 0}
   _headBone: {fileID: 0}
-  _silhouette: {fileID: 0}
   _isLocalPlayer: 1
   _headCollapse: 0.001
 --- !u!114 &783711655
@@ -6971,6 +6969,7 @@ GameObject:
   m_Component:
   - component: {fileID: 807522709}
   - component: {fileID: 807522708}
+  - component: {fileID: 807522710}
   m_Layer: 0
   m_Name: TrainSequence
   m_TagString: Untagged
@@ -6998,21 +6997,13 @@ MonoBehaviour:
   _xpBar: {fileID: 783711663}
   _r13: {fileID: 444037578}
   _r13Animator: {fileID: 444037577}
-  _lamps:
-  - {fileID: 153698848}
-  - {fileID: 565362753}
-  - {fileID: 1203050508}
   _nextScene: Frontier
   _r13WalkTo: {x: 3.1, y: 0, z: 1}
   _r13Seconds: 4
   _r13ClipSpeed: 0.912
-  _creepMeters: 0.6
-  _creepSeconds: 2
-  _lampDipSeconds: 0.5
-  _lampDipLevel: 0.25
+  _crash: {fileID: 807522710}
   _holdSeconds: 1.4
   _brakes: {fileID: 8300000, guid: f974d7dedeb6f9140b66d6439ecbc293, type: 3}
-  _stopThud: {fileID: 8300000, guid: 443f66c7e72925c41be342665fef456a, type: 3}
   _farVolume: 0.3
   _titleFadeIn: 0.5
   _titleFadeOut: 0.5
@@ -7033,6 +7024,38 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &807522710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 807522707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af154643e059c5340b58ca07a9e789bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FrostSpace.Features::FrostSpace.Features.Story.TrainCrashRig
+  _body: {fileID: 1821661109}
+  _lamps:
+  - {fileID: 565362753}
+  - {fileID: 153698848}
+  - {fileID: 1203050508}
+  _motion: {fileID: 493898835}
+  _snow:
+  - {fileID: 1340113315}
+  - {fileID: 104262838}
+  _impact: {fileID: 8300000, guid: 443f66c7e72925c41be342665fef456a, type: 3}
+  _groan: {fileID: 8300000, guid: 86980060dcdf01a449fe069d1ae31cd9, type: 3}
+  _volume: 0.9
+  _dropMeters: 0.14
+  _rollDegrees: 7
+  _pitchDegrees: 2
+  _shakeMeters: 0.11
+  _shakeRollDegrees: 2.2
+  _emergencyColor: {r: 1, g: 0.62, b: 0.25, a: 1}
+  _emergencyIntensity: 0.28
+  _snowBurst: 90
 --- !u!1 &808392503
 GameObject:
   m_ObjectHideFlags: 0
