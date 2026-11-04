@@ -43,17 +43,18 @@ namespace FrostSpace.Features.Story
 
         /// <summary>
         /// Точка, на которую наведён кадр, пока очередь не вышла: горловина проёма
-        /// на уровне головы выходящих. Прежняя высота 1,3 м оказалась ниже камеры на
-        /// метр, и кадр на 12-й секунде упирался в платформу — «смотрит в пол».
+        /// на уровне головы выходящих. Отметка держит головку пути напротив проёма
+        /// (−16,29 м) плюс прежние 1,85 м над ней: раньше это было 1,25 м над
+        /// перроном 0,60 м, теперь перрон грузовой (0,90 м), и цель едет вместе с ним.
         /// </summary>
         /// <remarks>
         /// Отсчёт здесь не от нуля сцены: депо — чанк клетки (−2,−2), и головка
-        /// главного пути у платформы лежит на −16,34 м (числа держит
+        /// главного пути у перрона лежит на −16,29 м (числа держит
         /// `Tools/Blender/world_layout.py`). Все высоты кадра — отметка головки
         /// напротив этой точки плюс прежнее смещение над ней, поэтому кадр
-        /// пережил перенос депо в мир без изменения композиции.
+        /// пережил и перенос депо в мир, и смену высоты перрона.
         /// </remarks>
-        public static readonly Vector3 DefaultDoorAim = new(-3.20f, -14.493804f, -1.0f);
+        public static readonly Vector3 DefaultDoorAim = new(-3.20f, -14.193804f, -1.0f);
 
         /// <summary>Момент начала передачи цели от проёма к игроку, с от старта кадра.</summary>
         /// <remarks>
@@ -133,13 +134,15 @@ namespace FrostSpace.Features.Story
         [Header("Очередь выхода")]
         [Tooltip("Точка внутри проёма в локальных координатах вагона")]
         [SerializeField] private Vector3 _doorInside = new(3.0f, 0f, 1.0f);
-        [Tooltip("Точка снаружи проёма в локальных координатах вагона; y — уровень платформы")]
-        [SerializeField] private Vector3 _doorOutside = new(5.4f, -0.4f, 1.0f);
+        [Tooltip("Точка снаружи проёма в локальных координатах вагона; y — уровень " +
+                 "перрона: пол вагона лежит в 1,00 м над головкой рельса, грузовой " +
+                 "перрон — в 0,90 м, значит со ступеньки вниз 0,10 м")]
+        [SerializeField] private Vector3 _doorOutside = new(5.4f, -0.1f, 1.0f);
         [Tooltip("Куда уходит R13: из двери вперёд и налево (по ходу выхода), затем " +
                  "разворачивается вдоль состава — туда, откуда проезд начинался")]
-        [SerializeField] private Vector3 _r13Exit = new(-0.8f, -15.873889f, 1.6f);
+        [SerializeField] private Vector3 _r13Exit = new(-0.8f, -15.573889f, 1.6f);
         [Tooltip("Туда же разворачивается корпус R13 после остановки")]
-        [SerializeField] private Vector3 _r13Face = new(0.6f, -14.999259f, -8.6f);
+        [SerializeField] private Vector3 _r13Face = new(0.6f, -14.699259f, -8.6f);
         [Tooltip("Сколько R13 идёт, с. Скорость = путь/время, она согласована у всей очереди")]
         [SerializeField] private float _r13Seconds = 6.1f;
         [Tooltip("Скорость шага клипа Walk, м/с: Animator.speed подгоняется под путь")]
@@ -150,7 +153,7 @@ namespace FrostSpace.Features.Story
                  "его разворот у проёма")]
         [SerializeField] private float _cartDelay = 1.2f;
         [Tooltip("Куда выезжает тележка: строго по прямой из проёма, дальше R13 от борта")]
-        [SerializeField] private Vector3 _cartExit = new(3.4f, -15.743804f, -1.0f);
+        [SerializeField] private Vector3 _cartExit = new(3.4f, -15.443804f, -1.0f);
         [Tooltip("Сколько тележка идёт, с")]
         [SerializeField] private float _cartSeconds = 8.2f;
         [Tooltip("Точка тележки перед проёмом в локальных координатах вагона")]
@@ -160,7 +163,7 @@ namespace FrostSpace.Features.Story
         [SerializeField] private float _playerDelay = 0.9f;
         [Tooltip("Куда выходит игрок: прямо из проёма, пару шагов, без поворота в бок. " +
                  "От этой точки считается поза рига")]
-        [SerializeField] private Vector3 _playerExit = new(0.7f, -15.743804f, -1.0f);
+        [SerializeField] private Vector3 _playerExit = new(0.7f, -15.443804f, -1.0f);
         [Tooltip("Сколько игрок идёт до точки, с")]
         [SerializeField] private float _playerSeconds = 9.8f;
         [Tooltip("Скорость шага клипа игрока, м/с")]
@@ -762,33 +765,41 @@ namespace FrostSpace.Features.Story
         /// что была в принятом кадре, поэтому перенос депо в мир не тронул ни
         /// композицию, ни метры дуги.
         /// </summary>
+        /// <summary>
+        /// Ключи проезда. Высота всех точек поднята на 0,30 м вместе с грузовым
+        /// перроном, а первые две опущены ещё на 0,25 м и сдвинуты к составу:
+        /// начало кадра идёт низко вдоль борта, закрытый проём занимает центр
+        /// кадра, и двор открывается в момент, когда створки разъезжаются.
+        /// К западу дальше -2,15 м камера не уходит: `CameraTrackTests` бережёт
+        /// полтора метра до борта вагона, и сжимать их ради кадра нельзя.
+        /// </summary>
         public static CameraKey[] DefaultPath()
         {
             return new[]
             {
                 new CameraKey
                 {
-                    Position = new Vector3(0.50f, -12.938041f, -10.00f), Fov = 44f
+                    Position = new Vector3(0.05f, -12.888041f, -10.00f), Fov = 44f
                 },
                 new CameraKey
                 {
-                    Position = new Vector3(-0.10f, -13.036750f, -8.20f), Fov = 45f
+                    Position = new Vector3(-0.55f, -12.986750f, -8.20f), Fov = 45f
                 },
                 new CameraKey
                 {
-                    Position = new Vector3(-0.70f, -13.155459f, -6.40f), Fov = 46f
+                    Position = new Vector3(-1.15f, -12.855459f, -6.40f), Fov = 46f
                 },
                 new CameraKey
                 {
-                    Position = new Vector3(-1.10f, -13.256677f, -5.00f), Fov = 47f
+                    Position = new Vector3(-1.55f, -12.956677f, -5.00f), Fov = 47f
                 },
                 new CameraKey
                 {
-                    Position = new Vector3(-1.45f, -13.354778f, -3.90f), Fov = 49f
+                    Position = new Vector3(-1.90f, -13.054778f, -3.90f), Fov = 49f
                 },
                 new CameraKey
                 {
-                    Position = new Vector3(-1.70f, -13.448741f, -2.90f), Fov = 50f
+                    Position = new Vector3(-2.15f, -13.148741f, -2.90f), Fov = 50f
                 }
             };
         }

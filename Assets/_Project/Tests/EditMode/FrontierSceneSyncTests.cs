@@ -165,7 +165,8 @@ namespace FrostSpace.Tests
                 var actors = new[]
                 {
                     "DepotTrain", "R7_Drifter", "R16_Warden_A", "R16_Warden_B",
-                    "R8_Bulwark", "DepotLamp", "DepotDoorSpill", "DepotDoorFill",
+                    "R8_Bulwark", "R9_Tinker", "R20_Cogsmith",
+                    "DepotLamp", "DepotDoorSpill", "DepotDoorFill",
                     "DepotArrival", "R13_Prospector", "Prop_GravCart"
                 };
 
@@ -189,6 +190,53 @@ namespace FrostSpace.Tests
                     "режиссёр прибытия — содержимое депо и должен лежать в чанке");
                 Assert.That(PrefabUtility.IsPartOfPrefabInstance(director.gameObject), Is.True,
                     "режиссёр прибытия не часть префаба клетки — выгрузка его не погасит");
+            }
+            finally
+            {
+                Restore(original);
+            }
+        }
+
+        /// <summary>
+        /// Ремонтники двора: R9_Tinker и R20_Cogsmith сканируются и говорят, но
+        /// ничего не заводят. Реплика без действия — часть замысла (владелец выбрал
+        /// короткие реплики, а не квест), и тест бережёт именно это: если на их
+        /// диалог навесить действие, проверка упадёт, а не промолчит.
+        /// </summary>
+        [Test]
+        public void DepotRepairRobotsAreScannedAndSpeakWithoutQuest()
+        {
+            var scene = OpenFrontier(out var original);
+
+            try
+            {
+                var cells = GameObject.Find("WorldCells");
+                Assert.That(cells, Is.Not.Null, "в Frontier нет корня WorldCells");
+
+                var cell = cells.transform.Find("WorldCell_-2_-2");
+                Assert.That(cell, Is.Not.Null, "нет инстанса клетки депо");
+
+                foreach (var name in new[] { "R9_Tinker", "R20_Cogsmith" })
+                {
+                    var actor = FindDeep(cell, name);
+                    Assert.That(actor, Is.Not.Null, name + " должен стоять в чанке депо");
+
+                    var target = actor.GetComponent<FrostSpace.Features.Scan.ScanTarget>();
+                    Assert.That(target, Is.Not.Null, name + " не сканируется на Q");
+
+                    var speaker =
+                        actor.GetComponent<FrostSpace.Features.Dialogue.DialogueSpeaker>();
+                    Assert.That(speaker, Is.Not.Null, name + " не говорит по E");
+                    Assert.That(speaker.Dialogue, Is.Not.Null, name + " без ассета диалога");
+                    Assert.That(speaker.Dialogue.Nodes.Count, Is.GreaterThan(0),
+                        name + ": диалог пуст");
+
+                    foreach (var node in speaker.Dialogue.Nodes)
+                    {
+                        Assert.That(node.HasAction, Is.False,
+                            name + ": узел с действием — ремонтники квест не выдают");
+                    }
+                }
             }
             finally
             {

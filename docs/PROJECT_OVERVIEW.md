@@ -34,13 +34,13 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Ввод | только Input System | `activeInputHandler: 1` |
 | Сериализация | Force Text | `ProjectSettings/EditorSettings.asset` |
 | Play Mode | domain reload выключен, scene reload включён | `m_EnterPlayModeOptionsEnabled: 1`, `m_EnterPlayModeOptions: 1` |
-| Игровая сцена | `Assets/Scenes/Frontier.unity`, build index 4 — депо: прибытие поезда, выход R13, охрана и R7; `Game.unity` — build index 5, прежний срез, вне потока | `EditorBuildSettings.asset`, Unity MCP |
+| Игровая сцена | `Assets/Scenes/Frontier.unity`, build index 4 — депо: прибытие поезда, выход R13, двор в капитальной стене с аркой, грузовой перрон с доками, охрана, ремонтники и R7; `Game.unity` — build index 5, прежний срез, вне потока | `EditorBuildSettings.asset`, Unity MCP, ADR 0040 |
 | Сюжет и целевой поток | `docs/GAME_DESIGN.md`: робот-курьер, `MainMenu → CharacterSetup → Train → Frontier`; реализованы выбор корпуса, переноска, квест «Погрузка», диалоги R13, финал `Train` и сюжет депо `DP-01`…`DP-04` | `docs/GAME_DESIGN.md`, ADR 0026–0029 |
 | Содержимое Game | земля, дом, деревья, забор, камера, `Player`, `NPC` с роботами и животными | сцена `Assets/Scenes/Game.unity` |
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (17 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Inventory, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story, Map), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (247 тестов) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (17 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Inventory, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story, Map), `FrostSpace.Editor` (8 файлов), `FrostSpace.Tests.EditMode` (248 тестов) | `Assets/_Project/`, `run_tests` |
 | Поезд среза | один вагон `TrainCar.fbx` 8×24 м на обе сцены (ADR 0032, 0033, 0034): интерьер, кабина 4,2 м с кокпитом, водителем и голопанелью, боковой проём, автодверь, раздвижные створки, тележки, фары | `Assets/_Project/Content/Models/Train/`, `Tools/Blender/build_train.py` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
