@@ -42,7 +42,7 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
-Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 264 теста:
+Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 267 тестов:
 проверки префабов и клипов роботов, животных и ходунов (carry и jump у трёх корпусов),
 выбор корпуса и `PlayerPrefs`, `ViewBlend`,
 экранный вырез, математика сканера, граф диалогов и его контент, порядок целей квеста,
@@ -155,6 +155,10 @@ python Tools/Blender/gui_session.py stop     # закрыть, если сесс
 | Тесты Unity | `run_tests` + `get_test_job` | 211 тестов: `succeeded`, 211 passed, 0 skipped (2026-11-02, `Features/Map`: разбор `world_layout.json` и сетка клеток) |
 | Тесты Unity | `run_tests` + `get_test_job` | 224 теста: `succeeded`, 224 passed, 0 skipped (2026-11-02, миникарта: проекция, отсечение по кругу, перевод осей сцены) |
 | Тесты Unity | `run_tests` + `get_test_job` | 264 теста: `succeeded`, 264 passed, 0 skipped (2026-11-05, живой редактор через мост; консоль — 0 ошибок и 0 предупреждений) |
+| Тесты Unity | `run_tests` + `get_test_job` | 267 тестов: `succeeded`, 267 passed, 0 skipped (2026-11-05, после аварии 0044 и вставки прибытия 0045: `Jolt`, `DriftOffset`, `ArrivalScheduleEndsWithTheCamera`) |
+| Авария в вагоне | MCP: `Tools/Unity/check_crash_look.cs` — Play на `Train`, кадры из штатной камеры по фазам | PASS (2026-11-05): дым 128→159 частиц, пыль 23, искры 28, корпус после удара без крена; кадры `Logs/verify/2026-11-05/crash_*.png` |
+| Прибытие в депо | MCP: `Tools/Unity/check_arrival_shot.cs` — Play на `Frontier`, 10 кадров по расписанию | PASS (2026-11-05): вставка 6,0 с, склейка на 6,0, состав встаёт к 10,5, дым на стоянке 50/38 частиц, предупреждений про очередь нет; `Logs/verify/2026-11-05/arrival_*.png` |
+| Тесты Unity (batch) | `Unity.exe -runTests -batchmode -testPlatform EditMode -testResults Logs/editmode.xml` | 267 тестов: `result="Passed"`, 267 passed, 0 failed, 0 skipped (2026-11-05, при закрытом редакторе — после двух его падений в Play) |
 | Сюжет депо | MCP: `Tools/Unity/play_depot_quest.cs` — прибытие, пятеро говорящих, выдача карты и сканера, Q, дальний слой | PASS (2026-11-04): управление на 16,6 с, R13 и тележка вне вагона, 5 диалогов без действий, R7 выдаёт `GrantMap`+`GrantScanner` идемпотентно, Q пускает волну, курсор захвачен, снос дальнего слоя 0,000 м, Console 0 ошибок |
 | Play-проверка среза «Поезд» | MCP: диалог R13 → `AcceptQuest` → 4 слота → `TrainCompanion_Done` → `CompleteQuest` | PASS (2026-10-29): трекер `ПОГРУЗИТЬ АККУМУЛЯТОРЫ 0/4`, цель доставки закрывается, R13 меняет диалог, Console 0 ошибок |
 | Play-проверка UI | MCP: главное меню, пауза, журнал, настройки-шестерёнка, трекер | PASS (2026-10-29): русские подписи, журнал с целями, шестерёнка и прогресс-бар; Console 0 ошибок |

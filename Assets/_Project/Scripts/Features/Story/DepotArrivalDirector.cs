@@ -35,6 +35,13 @@ namespace FrostSpace.Features.Story
         /// <summary>Длительность проезда: он же момент возврата управления.</summary>
         public const float PathSeconds = 16.6f;
 
+        /// <summary>
+        /// Внешний кадр подхода перед проездом. За это время состав проходит путь от
+        /// южного путевого разрыва до середины двора, и склейка приходится на середину
+        /// движения: зритель видит, откуда приехал поезд, а не встречает его стоящим.
+        /// </summary>
+        public const float InsertSeconds = 6f;
+
         /// <summary>Последние секунды: поза пути плавно садится в позу рига.</summary>
         public const float SettleSeconds = 2.2f;
 
@@ -124,9 +131,12 @@ namespace FrostSpace.Features.Story
         [Header("Прибытие")]
         [Tooltip("Пауза перед началом, с")]
         [SerializeField] private float _startDelay = 0.1f;
-        [Tooltip("Откуда выезжает вагон относительно места остановки, м")]
-        [SerializeField] private Vector3 _trainStartOffset = new(0f, 0f, -44f);
-        [Tooltip("Сколько вагон идёт до платформы, с")]
+        [Tooltip("Откуда выезжает вагон относительно места остановки, м. По оси Z это " +
+                 "южнее южной стены двора (z = −145): состав появляется за стеной и " +
+                 "проходит путевой разрыв на глазах у зрителя")]
+        [SerializeField] private Vector3 _trainStartOffset = new(0f, 0f, -158f);
+        [Tooltip("Сколько вагон идёт до платформы внутри главного кадра, с. Полная " +
+                 "длина заезда — _insertSeconds + _trainSeconds")]
         [SerializeField] private float _trainSeconds = 3.6f;
         [Tooltip("Пауза после остановки, с")]
         [SerializeField] private float _doorSettle = 0.3f;
@@ -190,10 +200,30 @@ namespace FrostSpace.Features.Story
         [Tooltip("Длительность перехода цели от проёма к игроку, с")]
         [SerializeField] private float _aimBlendSeconds = AimBlendSeconds;
 
+        [Header("Вставка: внешний кадр подхода")]
+        [Tooltip("Сколько живёт кадр сверху перед проездом, с. 0 — вставки нет, " +
+                 "прибытие начинается сразу с главного кадра")]
+        [SerializeField] private float _insertSeconds = InsertSeconds;
+        [Tooltip("Путь камеры вставки: выше настила перрона, повёрнут к южному путевому " +
+                 "разрыву, откуда приходит состав")]
+        [SerializeField] private CameraKey[] _insertPath = DefaultInsertPath();
+        [Tooltip("Локальная точка вагона, за которой ведёт кадр вставка: голова состава. " +
+                 "Направление задаёт субъект, а не сплайн по точкам взгляда — по той же " +
+                 "причине, что и главный проезд")]
+        [SerializeField] private Vector3 _insertAim = new(0f, 1.7f, 14f);
+
+        [Header("Дымный состав")]
+        [Tooltip("Дым из-под крыши и из-под вагона: тот же сюжет, что в финале рейса — " +
+                 "в депо приезжает подбитый состав, а не целый")]
+        [SerializeField] private ParticleSystem[] _trainSmoke = new ParticleSystem[0];
+        [Tooltip("Плотность на подходе, частиц/с на систему")]
+        [SerializeField] private float _smokeApproachRate = 55f;
+        [Tooltip("Плотность после остановки: состав тлеет, пока стоит в депо")]
+        [SerializeField] private float _smokeIdleRate = 12f;
+
         [Header("Звук")]
         [Tooltip("Ветер в депо: стартует под чёрным занавесом и остаётся после сцены")]
-        [SerializeField] private AudioClip _wind;
-        [SerializeField] private AudioClip _railRumble;
+        [SerializeField] private AudioClip _wind;        [SerializeField] private AudioClip _railRumble;
         [SerializeField] private AudioClip _brakes;
         [SerializeField] private AudioClip _doors;
         [SerializeField] private AudioClip _stepMetal;
@@ -207,6 +237,7 @@ namespace FrostSpace.Features.Story
 
         private Animator _playerAnimator;
         private PathCurve _curve;
+        private PathCurve _insertCurve;
         private CameraPose _settlePose;
         private bool _settleHas;
         private float _baseFov = 50f;
@@ -233,6 +264,15 @@ namespace FrostSpace.Features.Story
             if (_path == null || _path.Length == 0)
                 _path = DefaultPath();
             _curve = new PathCurve(_path);
+
+            // Путь вставки считается только когда вставка включена: нулевой
+            // _insertSeconds означает «прибытие начинается с главного кадра».
+            if (_insertSeconds > 0.01f)
+            {
+                if (_insertPath == null || _insertPath.Length < 2)
+                    _insertPath = DefaultInsertPath();
+                _insertCurve = new PathCurve(_insertPath);
+            }
 
             _windSource = NewSource(true);
             _railSource = NewSource(true);
@@ -280,6 +320,7 @@ namespace FrostSpace.Features.Story
 
             BeginShot();
             LoadCargo();
+            SetSmoke(_smokeApproachRate);
 
             var trainRest = _train != null ? _train.position : Vector3.zero;
             if (_train != null)
@@ -287,19 +328,41 @@ namespace FrostSpace.Features.Story
 
             var camera = _rig != null ? _rig.ViewCamera : Camera.main;
 
-            // Проезд стартует вместе с проявлением из чёрного: первые секунды
-            // поезд идёт в метели за кадром, и занавес открывается уже на движении.
+            // Вставка стартует вместе с проявлением из чёрного: первые секунды
+            // поезд идёт по линии за стеной, и занавес открывается уже на движении.
             WarnIfActorsOutrunPath();
-            var cameraRoutine = StartCoroutine(CameraPath(camera));
+            var insertRoutine = HasInsert() ? StartCoroutine(InsertPath(camera)) : null;
 
             yield return Wait(_startDelay);
 
+            Coroutine trainRun = null;
             if (_train != null)
             {
                 StartCoroutine(RailRoutine());
                 StartCoroutine(BrakesRoutine());
-                yield return MoveTrain(_train, trainRest + _trainStartOffset, trainRest, _trainSeconds);
+
+                // Заезд идёт через оба кадра: вставка показывает подход и въезд через
+                // путевой разрыв, главный кадр принимает последние метры и остановку.
+                // Отсчёт — от `_startDelay`, поэтому длина = вставка + главный участок.
+                var run = (insertRoutine != null ? _insertSeconds : 0f) + _trainSeconds;
+                trainRun = StartCoroutine(MoveTrain(_train, trainRest + _trainStartOffset, trainRest, run));
+            }
+
+            if (insertRoutine != null)
+                yield return insertRoutine;
+
+            // Главный кадр начинается с первой позы своего пути: склейка двух кадров
+            // разные, и продолжения у вставки нет намеренно.
+            var cameraRoutine = StartCoroutine(CameraPath(camera));
+
+            if (trainRun != null)
+            {
+                yield return trainRun;
                 PlayOneShot(_stopThud);
+
+                // Состав остаётся тлеть: дым не гаснет вместе с проездом, иначе
+                // депо приняло бы целый поезд.
+                SetSmoke(_smokeIdleRate);
             }
 
             yield return Wait(_doorSettle);
@@ -356,32 +419,85 @@ namespace FrostSpace.Features.Story
         }
 
         /// <summary>
-        /// Актёры длиннее проезда — кто-то ещё в проёме к возврату управления.
-        /// Игрок обязан закончить ровно на конце проезда: на этом держится
-        /// бесшовная посадка камеры в геймплейную позу.
+        /// Расписание заставки: моменты в секундах от её начала. Один расчёт для
+        /// страховки и для теста — раньше очередь складывалась внутри `Play`, и
+        /// правка длины вставки требовала помнить все формулы сразу.
+        /// </summary>
+        public readonly struct ArrivalSchedule
+        {
+            public readonly float TrainEndsAt;
+            public readonly float DoorsOpenAt;
+            public readonly float R13DoneAt;
+            public readonly float CartDoneAt;
+            public readonly float PlayerDoneAt;
+            public readonly float CameraEndsAt;
+
+            public ArrivalSchedule(float trainEndsAt, float doorsOpenAt, float r13DoneAt,
+                float cartDoneAt, float playerDoneAt, float cameraEndsAt)
+            {
+                TrainEndsAt = trainEndsAt;
+                DoorsOpenAt = doorsOpenAt;
+                R13DoneAt = r13DoneAt;
+                CartDoneAt = cartDoneAt;
+                PlayerDoneAt = playerDoneAt;
+                CameraEndsAt = cameraEndsAt;
+            }
+        }
+
+        /// <summary>
+        /// Состав едет через оба кадра: длина заезда = вставка плюс последние метры
+        /// главного кадра, старт — на `_startDelay`. При нулевой вставке остаётся
+        /// прежний порядок, чтобы выключенная вставка не двигала числа.
+        /// </summary>
+        public static ArrivalSchedule BuildSchedule(
+            float insertSeconds, float startDelay, float trainSeconds, float doorSettle,
+            float doorSeconds, float r13Seconds, float cartDelay, float cartSeconds,
+            float playerDelay, float playerSeconds, float pathSeconds)
+        {
+            var lead = insertSeconds > 0.01f ? insertSeconds : 0f;
+            var trainRun = lead > 0f ? lead + trainSeconds : trainSeconds;
+            var trainEndsAt = startDelay + trainRun;
+            var doorsOpenAt = trainEndsAt + doorSettle + doorSeconds;
+
+            return new ArrivalSchedule(
+                trainEndsAt,
+                doorsOpenAt,
+                doorsOpenAt + r13Seconds,
+                doorsOpenAt + cartDelay + cartSeconds,
+                doorsOpenAt + cartDelay + playerDelay + playerSeconds,
+                lead + pathSeconds);
+        }
+
+        /// <summary>Расписание по числам сцены — тот же расчёт, что у страховки.</summary>
+        public ArrivalSchedule Schedule() =>
+            BuildSchedule(HasInsert() ? _insertSeconds : 0f, _startDelay, _trainSeconds,
+                _doorSettle, _doorSeconds, _r13Seconds, _cartDelay, _cartSeconds,
+                _playerDelay, _playerSeconds, _seconds);
+
+        /// <summary>
+        /// Актёры длиннее кадра — кто-то ещё в проёме к возврату управления. Игрок
+        /// обязан закончить ровно на конце кадра: на этом держится бесшовная посадка
+        /// камеры в геймплейную позу.
         /// </summary>
         private void WarnIfActorsOutrunPath()
         {
-            var total = _seconds;
-            var doorsAt = _startDelay + _trainSeconds + _doorSettle + _doorSeconds;
-            var r13At = doorsAt + _r13Seconds;
-            var cartAt = doorsAt + _cartDelay + _cartSeconds;
-            var playerAt = doorsAt + _cartDelay + _playerDelay + _playerSeconds;
+            var s = Schedule();
 
-            if (r13At > total)
+            if (s.R13DoneAt > s.CameraEndsAt)
                 Debug.LogWarning(string.Format(
-                    "[DepotArrivalDirector] R13 заканчивает на {0:0.00} с, а проезд — {1:0.00} с",
-                    r13At, total), this);
+                    "[DepotArrivalDirector] R13 заканчивает на {0:0.00} с, а кадр — {1:0.00} с",
+                    s.R13DoneAt, s.CameraEndsAt), this);
 
-            if (cartAt > total)
+            if (s.CartDoneAt > s.CameraEndsAt)
                 Debug.LogWarning(string.Format(
-                    "[DepotArrivalDirector] тележка заканчивает на {0:0.00} с, а проезд — {1:0.00} с",
-                    cartAt, total), this);
+                    "[DepotArrivalDirector] тележка заканчивает на {0:0.00} с, а кадр — {1:0.00} с",
+                    s.CartDoneAt, s.CameraEndsAt), this);
 
-            if (!Mathf.Approximately(playerAt, total))
+            if (!Mathf.Approximately(s.PlayerDoneAt, s.CameraEndsAt))
                 Debug.LogWarning(string.Format(
-                    "[DepotArrivalDirector] игрок заканчивает на {0:0.00} с, проезд — {1:0.00} с: " +
-                    "поза рига на финальном ключе разойдётся с живой", playerAt, total), this);
+                    "[DepotArrivalDirector] игрок заканчивает на {0:0.00} с, кадр — {1:0.00} с: " +
+                    "поза рига на финальном ключе разойдётся с живой",
+                    s.PlayerDoneAt, s.CameraEndsAt), this);
         }
 
         /// <summary>
@@ -394,6 +510,27 @@ namespace FrostSpace.Features.Story
             Vector3 start, Vector3 doorInside, Vector3 doorOutside, Vector3 exit)
         {
             return new[] { start, doorInside, doorOutside, exit };
+        }
+
+        /// <summary>
+        /// Плотность дыма состава. Системы живут в префабе клетки и гаснут вместе с
+        /// ней, поэтому повторный заход в депо поднимает их с той же тлеющей
+        /// плотностью, на которой они остались.
+        /// </summary>
+        private void SetSmoke(float rate)
+        {
+            for (var i = 0; i < _trainSmoke.Length; i++)
+            {
+                var ps = _trainSmoke[i];
+                if (ps == null)
+                    continue;
+
+                var emission = ps.emission;
+                emission.enabled = true;
+                emission.rateOverTime = rate;
+                if (!ps.isPlaying)
+                    ps.Play();
+            }
         }
 
         /// <summary>Точка в локальных координатах вагона — в мировые.</summary>
@@ -476,7 +613,9 @@ namespace FrostSpace.Features.Story
                 return;
 
             _baseFov = camera.fieldOfView;
-            ApplyPose(camera, FramePose(0f), CameraTrack.FovAlong(_path, 0f));
+            var first = HasInsert() ? InsertPose(0f) : FramePose(0f);
+            ApplyPose(camera, first,
+                CameraTrack.FovAlong(HasInsert() ? _insertPath : _path, 0f));
             _xpBar?.SetVisible(false, 0.4f);
         }
 
@@ -533,6 +672,44 @@ namespace FrostSpace.Features.Story
 
             ApplyPose(camera, PoseAlong(_seconds, settleFrom),
                 CameraTrack.FovAlong(_path, 1f));
+        }
+
+        /// <summary>
+        /// Есть ли внешний кадр подхода: выключается нулём в сцене. Предикат смотрит
+        /// только на сериализованные данные — кривая пути строится в `Awake`, а
+        /// расписание должны уметь прочитать и редактор, и тест без запуска сцены.
+        /// </summary>
+        private bool HasInsert() =>
+            _insertSeconds > 0.01f && _insertPath != null && _insertPath.Length > 1;
+
+        /// <summary>
+        /// Кадр вставки: позиция с отдельного пути, направление — за головой состава.
+        /// Субъект, а не сплайн точек взгляда: тот же запрет, что у главного проезда,
+        /// иначе на стыках ключёв рыскание получало бы мгновенный пинок.
+        /// </summary>
+        private CameraPose InsertPose(float elapsed)
+        {
+            var t01 = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, _insertSeconds));
+            var position = _insertCurve.PointAtMeters(PathTime(t01) * _insertCurve.TotalMeters);
+            var aim = _train != null ? _train.TransformPoint(_insertAim) : position + Vector3.forward;
+            return new CameraPose(position, CameraTrack.Aim(position, aim));
+        }
+
+        private IEnumerator InsertPath(Camera camera)
+        {
+            if (camera == null || !HasInsert())
+                yield break;
+
+            var elapsed = 0f;
+            while (elapsed < _insertSeconds)
+            {
+                elapsed += Time.deltaTime;
+                var t01 = Mathf.Clamp01(elapsed / _insertSeconds);
+                ApplyPose(camera, InsertPose(elapsed), CameraTrack.FovAlong(_insertPath, t01));
+                yield return null;
+            }
+
+            ApplyPose(camera, InsertPose(_insertSeconds), CameraTrack.FovAlong(_insertPath, 1f));
         }
 
         private CameraPose PoseAlong(float elapsed, float settleFrom)
@@ -778,6 +955,35 @@ namespace FrostSpace.Features.Story
         /// К западу дальше -2,15 м камера не уходит: `CameraTrackTests` бережёт
         /// полтора метра до борта вагона, и сжимать их ради кадра нельзя.
         /// </summary>
+        /// <summary>
+        /// Внешний кадр подхода: камера над грузовым перроном в 4,5 м над настилом,
+        /// повёрнута к южному путевому разрыву, откуда приходит состав. Позиции
+        /// снимались кадром 2026-11-05 с реальными объектами сцены; путь короткий
+        /// (11,5 м), поэтому доворот ведёт состав, а не камера.
+        /// </summary>
+        public static CameraKey[] DefaultInsertPath()
+        {
+            return new[]
+            {
+                new CameraKey
+                {
+                    Position = new Vector3(10.60f, 6.48f, -11.00f), Fov = 45f
+                },
+                new CameraKey
+                {
+                    Position = new Vector3(10.00f, 6.48f, -12.50f), Fov = 45f
+                },
+                new CameraKey
+                {
+                    Position = new Vector3(8.60f, 6.48f, -14.50f), Fov = 46f
+                },
+                new CameraKey
+                {
+                    Position = new Vector3(7.50f, 6.48f, -16.00f), Fov = 48f
+                },
+            };
+        }
+
         public static CameraKey[] DefaultPath()
         {
             return new[]

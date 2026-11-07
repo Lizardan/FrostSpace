@@ -74,5 +74,58 @@ namespace FrostSpace.Tests
             Assert.Greater(TrainCrashRig.Ease(0.5f), 0.5f,
                 "просадка корпуса обязана начинаться резко, а не линейно");
         }
+
+        /// <summary>
+        /// Корпус после удара обязан встать ровно: наклон переживал бы занавес и
+        /// расходился с составом, который приезжает в депо без крена.
+        /// </summary>
+        [Test]
+        public void JoltStartsAtFullDropAndReturnsToLevel()
+        {
+            Assert.AreEqual(1f, TrainCrashRig.Jolt(0f, 4.2f, 1.6f), 1e-6f);
+            Assert.AreEqual(0f, TrainCrashRig.Jolt(1f, 4.2f, 1.6f), 1e-6f,
+                "к концу отскока корпус обязан стоять в уровне");
+
+            var max = 0f;
+            var min = float.MaxValue;
+            var late = 0f;
+            for (var i = 0; i <= 400; i++)
+            {
+                var v = TrainCrashRig.Jolt(i / 400f, 4.2f, 1.6f);
+                max = Mathf.Max(max, v);
+                min = Mathf.Min(min, v);
+                if (i > 320)
+                    late = Mathf.Max(late, Mathf.Abs(v));
+
+                Assert.LessOrEqual(Mathf.Abs(v), 1.0001f,
+                    "отскок не должен превышать первую просадку");
+            }
+
+            Assert.Greater(max, 0.9f);
+            Assert.Less(min, 0f, "подвеска должна и подпускать корпус выше уровня");
+            Assert.Less(late, 0.05f, "качания обязаны погаснуть, а не перейти в раскачку");
+        }
+
+        [Test]
+        public void DriftGrowsToTheAuthoredOffsetAndOnlyThere()
+        {
+            var drift = new Vector3(0.18f, -0.12f, 0.34f);
+
+            var start = TrainCrashRig.DriftOffset(0f, 0.9f, drift);
+            Assert.That(start.magnitude, Is.LessThan(1e-6f),
+                "в начале оседания камера ещё на своей позе");
+
+            var end = TrainCrashRig.DriftOffset(0.9f, 0.9f, drift);
+            Assert.That(Vector3.Distance(end, drift), Is.LessThan(1e-5f),
+                "к концу оседания камера обязана дойти до заданного смещения");
+
+            var beyond = TrainCrashRig.DriftOffset(3f, 0.9f, drift);
+            Assert.That(Vector3.Distance(beyond, drift), Is.LessThan(1e-5f),
+                "за пределами оседания сдвиг не растёт");
+
+            var mid = TrainCrashRig.DriftOffset(0.45f, 0.9f, drift);
+            Assert.Greater(mid.magnitude, 0f);
+            Assert.Less(mid.magnitude, drift.magnitude);
+        }
     }
 }

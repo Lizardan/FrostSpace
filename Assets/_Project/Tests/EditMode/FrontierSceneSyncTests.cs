@@ -84,6 +84,71 @@ namespace FrostSpace.Tests
                 Assert.That(Read(type, director, "_aimBlendSeconds"),
                     Is.EqualTo(DepotArrivalDirector.AimBlendSeconds).Within(1e-4f),
                     "_aimBlendSeconds разошёлся с AimBlendSeconds");
+
+                var insertPath = (CameraKey[])Read(type, director, "_insertPath");
+                Assert.That(insertPath, Is.Not.Null, "_insertPath не сериализован");
+
+                var expectedInsert = DepotArrivalDirector.DefaultInsertPath();
+                Assert.That(insertPath.Length, Is.EqualTo(expectedInsert.Length),
+                    "точек вставки в сцене " + insertPath.Length + ", в коде " + expectedInsert.Length);
+                for (var i = 0; i < expectedInsert.Length; i++)
+                {
+                    Assert.That(Delta(insertPath[i].Position, expectedInsert[i].Position),
+                        Is.LessThan(1e-3f),
+                        "I" + i + ": позиция вставки не совпадает с DefaultInsertPath()");
+                    Assert.That(insertPath[i].Fov, Is.EqualTo(expectedInsert[i].Fov).Within(1e-3f),
+                        "I" + i + ": FOV вставки не совпадает с DefaultInsertPath()");
+                }
+
+                Assert.That(Read(type, director, "_insertSeconds"),
+                    Is.EqualTo(DepotArrivalDirector.InsertSeconds).Within(1e-4f),
+                    "_insertSeconds разошёлся с InsertSeconds");
+
+                // Южная стена двора стоит на z = −145: старт раньше неё — единственное,
+                // что делает «поезд заезжает в депо» видимым, а не подразумеваемым.
+                Assert.That(((Vector3)Read(type, director, "_trainStartOffset")).z,
+                    Is.LessThan(-150f),
+                    "состав обязан стартовать за южной стеной, иначе въезд через разрыв не виден");
+            }
+            finally
+            {
+                Restore(original);
+            }
+        }
+
+        /// <summary>
+        /// Расписание заставки проверяется как единое число: внешний кадр добавлен
+        /// перед проездом, и если очередь актёров закончится раньше камеры, игрок
+        /// получит управление на середине шага, а посадка в позу рига разойдётся.
+        /// </summary>
+        [Test]
+        public void ArrivalScheduleEndsWithTheCamera()
+        {
+            var scene = OpenFrontier(out var original);
+
+            try
+            {
+                Assert.That(scene.IsValid(), Is.True, "сцена не открылась");
+
+                var director = Object.FindAnyObjectByType<DepotArrivalDirector>();
+                Assert.That(director, Is.Not.Null, "в Frontier нет DepotArrivalDirector");
+
+                var s = director.Schedule();
+                var total = DepotArrivalDirector.InsertSeconds + DepotArrivalDirector.PathSeconds;
+
+                Assert.That(s.CameraEndsAt, Is.EqualTo(total).Within(1e-3f),
+                    "весь кадр = вставка плюс проезд");
+                Assert.That(s.TrainEndsAt, Is.GreaterThan(DepotArrivalDirector.InsertSeconds),
+                    "состав должен доходить до платформы уже внутри главного кадра");
+                Assert.That(s.DoorsOpenAt, Is.GreaterThan(s.TrainEndsAt),
+                    "створки обязаны открываться после остановки");
+                Assert.That(s.R13DoneAt, Is.LessThanOrEqualTo(s.CameraEndsAt + 0.01f),
+                    "R13 обязан выйти до конца кадра");
+                Assert.That(s.CartDoneAt, Is.LessThanOrEqualTo(s.CameraEndsAt + 0.01f),
+                    "тележка обязана выехать до конца кадра");
+                Assert.That(s.PlayerDoneAt, Is.EqualTo(s.CameraEndsAt).Within(0.01f),
+                    "игрок обязан заканчивать ровно с концом кадра: на этом держится "
+                    + "бесшовная передача управления");
             }
             finally
             {

@@ -29,7 +29,7 @@ Unity-проект на ранней стадии: есть играбельны
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model`, движение kinematic |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` |
 | Мир Stage 3 | раскладка 4,4×4,4 км из 121 клетки по 400 м числами в `Tools/Blender/world_layout.py` (18 инвариантов), восемь руин 15–60 м и якоря 320/260 м, небо почти чёрное с редкими звёздами и одной аномалией — ADR 0036 |
-| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` (17 фич, включая `Map` с раскладкой мира и `Inventory` с окном экипировки) + `FrostSpace.Editor`, 264 EditMode-теста |
+| Код и тесты | `FrostSpace.Core` + `FrostSpace.Features` (17 фич, включая `Map` с раскладкой мира и `Inventory` с окном экипировки) + `FrostSpace.Editor`, 267 EditMode-тестов |
 
 ## С чего начать
 

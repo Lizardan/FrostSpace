@@ -106,7 +106,7 @@ FrostSpace/
    │  │  ├─ MechPrefabUpdater.cs         # идемпотентная раскладка чисел ходунов из mech_manifest.json
    │  │  └─ HoverbikeModelBuilder.cs     # сборка префаба Hoverbike_Model из FBX (ADR 0012)
    │  ├─ Tests/
-   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode, 32 файла и 264 теста:
+   │  │  └─ EditMode/            # сборка FrostSpace.Tests.EditMode, 32 файла и 267 тестов:
    │  │                          # CameraModeTests, CameraTrackTests, ScreenApertureTests,
    │  │                          # ScanMathTests, RobotVisualPrefabTests, AnimalVisualPrefabTests,
    │  │                          # MechVisualPrefabTests, CharacterSelectionTests,
@@ -148,9 +148,12 @@ FrostSpace/
    │     ├─ Materials/Level/        # материалы уровня Level_*
    │     ├─ Materials/Menu/         # материалы диорамы меню
    │     ├─ Materials/VFX/          # материалы эффектов
-   │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionDebris, SkyNightStars
-   │     ├─ Audio/Arrival/          # звуки прибытия поезда (настраивает
-   │     │                          # AudioArrivalImportPostprocessor.cs)
+   │     ├─ VFX/Shaders/            # OcclusionReveal, OcclusionDebris, SkyNightStars,
+   │     │                          # ScanHighlight, ScanPulse, HoverCushion, HoloPanel,
+   │     │                          # MenuAurora, MenuLightCone, Smoke (дым/пыль/искры)
+   │     ├─ Audio/Arrival/          # звуки прибытия и аварии (настраивает
+   │     │                          # AudioArrivalImportPostprocessor.cs; источник —
+   │     │                          # Tools/Audio/build_sfx.py)
    │     ├─ Audio/Resources/Music/  # Music_FrostSpaceTheme.mp3 (фоновая музыка через Resources)
    │     ├─ Data/                   # MenuOpenVolume.asset — Volume открытого вида меню;
    │     │                          # Dialogues/*.asset — графы диалогов роботов (ADR 0025);
@@ -270,6 +273,8 @@ FrostSpace/
 | Мотоцикл | `Motorcycle` + `MotorcycleRideVisual` в `Features/Ride/`, поза наездника — `RiderPose`; префаб — `Content/Prefabs/Ride/Motorcycle_Model`; FBX — `Tools/Blender/build_motorcycle.py` (ADR 0013) |
 | Ездовые ходуны | `Mech` + `MechSeat` + `RideCameraProfile` в `Features/Ride/`; префабы — `Content/Prefabs/Ride/ME_*_Model` (корень — сразу транспорт: `Animator`, `CharacterController`, `Mech`, `ScanTarget` категории `WALKER`, `RiderCockpit`; дочерние `Seat` с якорями `Seat Point`/`Grip L/R`/`Foot L/R` и `ExitPoint`); клипы — `Content/Animation/Controllers/ME_*.controller`; сборка — `Tools/Blender/build_mechs.py`, регистр — `Tools/Blender/mech_manifest.json` (ADR 0024) |
 | Виды главного меню | `MenuViewSwitch` на `MenuFlow` (массив видов: корень + камера + подпись), правая вертикальная карусель `01 STORAGE … 05 RIDE` — `MenuViewCarousel`, собирается `MainMenuScreen` (ADR 0018); открытый вид — `MenuCameraSweep` + `Content/Data/MenuOpenVolume.asset` (ADR 0013); склад, депо и проезд — `Tools/Blender/build_menu_storage.py` / `build_menu_train.py` / `build_menu_ride.py` через `build_all.py` (ADR 0017, 0018); цикл поезда — `MenuTrainCycle`, прокрутка местности — `MenuRideScroll`, ходьба роботов — `MenuRobotWalker` (носильщик R18 играет `CarryWalk`) |
+| Живая проверка постановочных кадров | `Tools/Unity/check_arrival_shot.cs` (прибытие, 10 кадров по расписанию заставки) и `Tools/Unity/check_crash_look.cs` (авария, кадры из штатной камеры по фазам); вывод — `Logs/verify/<дата>/`, ловушки метода — `UNITY_EDITOR.md` §5 (ADR 0044, 0045) |
+| Дым, пыль и искры | шейдер `Content/VFX/Shaders/Smoke.shader` (процедурная кромка, без текстур), материалы `SmokeDark` / `SmokeGrey` / `DustSnow` / `SparkWarm`; системы аварии — в `Train.unity` под `TrainCar` (`CrashSmoke*`, `CrashDust`, `CrashSparks`), дым состава — в `WorldCell_-2_-2.prefab` на `DepotTrain` (`TrainSmoke*`); постановка — `TrainCrashRig`, переключение плотности — `DepotArrivalDirector.SetSmoke` (ADR 0044, 0045, `STYLE.md` §«Дым, пыль и искры») |
 | Скрытие перекрытий | `CameraOcclusionFader` (только в режиме прицела) + `OcclusionRevealDebris`, шейдеры `Content/VFX/Shaders/`, группы — `CameraOcclusionFadeGroup` (ADR 0008, 0010) |
 | Теги и слои | `ProjectSettings/TagManager.asset` (используется стандартный тег `Player`) |
 | Roslyn для MCP | `Assets/Plugins/Roslyn/` |

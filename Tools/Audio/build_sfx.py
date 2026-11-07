@@ -246,6 +246,69 @@ def build_drone(rng: np.random.Generator, duration: float) -> np.ndarray:
     return make_loop(normalize_peak(remove_dc((low + air) * breathe)), duration)
 
 
+def build_crash_click(rng: np.random.Generator, duration: float) -> np.ndarray:
+    """Короткое замыкание: треск, щелчок и гудение оставшегося тока.
+
+    Клик нужен короткий и резкий — он ставит точку в момент вспышки. Атака
+    короче 4 мс иначе «щелчок» превращается в «шлепок».
+    """
+    n = seconds(duration)
+    time = np.arange(n) / SR
+
+    crack = band_noise(rng, n, 1500.0, 8000.0) * envelope(n, 0.002, 0.09, 4.0)
+    snap = (
+        np.sin(2.0 * np.pi * 2400.0 * time)
+        + 0.7 * np.sin(2.0 * np.pi * 3700.0 * time + 0.9)
+    ) * envelope(n, 0.002, 0.05, 5.0)
+    buzz = np.sin(2.0 * np.pi * 118.0 * time) * envelope(n, 0.004, 0.22, 2.2)
+    body = band_noise(rng, n, 90.0, 620.0) * envelope(n, 0.003, 0.14, 3.0)
+
+    mix = 0.85 * crack + 0.5 * snap + 0.35 * buzz + 0.4 * body
+    return fade_edges(normalize_peak(remove_dc(mix)))
+
+
+def build_crash_steam(rng: np.random.Generator, duration: float) -> np.ndarray:
+    """Шипение пара из разбитой магистрали: средняя полоса и шорох клапана.
+
+    Петля, потому что дым идёт всё оседание и тишину: обрывистый клип читался бы
+    как «шипение закончилось», хотя дым в кадре остаётся.
+    """
+    n = seconds(duration + 0.4)
+    time = np.arange(n) / SR
+
+    hiss = band_noise(rng, n, 800.0, 3200.0)
+    valve = band_noise(rng, n, 1900.0, 2700.0)
+    # Медленное дыхание: пар то сильнее, то слабее — ровный шум звучит как фен.
+    breathe = 0.72 + 0.28 * np.sin(2.0 * np.pi * 0.31 * time + 0.5)
+    puff = np.clip(np.sin(2.0 * np.pi * 0.13 * time) * 0.5 + 0.5, 0.0, 1.0) ** 2
+
+    # Свист — полосовой шум, а не тон: детерминированный синус на 2,1 кГц даёт
+    # большой шаг между соседними отсчётами и рвёт стык петли по проверке.
+    mix = 0.9 * hiss * breathe + 0.35 * valve * (0.6 + puff)
+    return make_loop(normalize_peak(remove_dc(mix)), duration)
+
+
+def build_crash_thud(rng: np.random.Generator, duration: float) -> np.ndarray:
+    """Тяжёлый удар металла о металл: корпус вагона принимает удар на себя.
+
+    Отличается от stop_thud длинным лязгом: stop_thud — остановка состава,
+    этот — удар, и после него корпус должен «звенеть».
+    """
+    n = seconds(duration)
+    time = np.arange(n) / SR
+
+    body = np.sin(2.0 * np.pi * 38.0 * time) * envelope(n, 0.008, 0.9, 2.4)
+    body += 0.7 * np.sin(2.0 * np.pi * 57.0 * time + 0.4) * envelope(n, 0.008, 0.6, 2.8)
+    clang = band_noise(rng, n, 320.0, 3400.0) * envelope(n, 0.006, 1.1, 3.0)
+    ring = (
+        np.sin(2.0 * np.pi * 214.0 * time)
+        + 0.5 * np.sin(2.0 * np.pi * 486.0 * time + 1.3)
+    ) * envelope(n, 0.01, 1.3, 3.4)
+
+    mix = 0.95 * body + 0.55 * clang + 0.3 * ring
+    return fade_edges(normalize_peak(remove_dc(mix)))
+
+
 LIBRARY = {
     "wind_loop": (12.0, True, build_wind),
     "rail_rumble_loop": (10.0, True, build_rail),
@@ -256,6 +319,9 @@ LIBRARY = {
     "stop_thud": (1.6, False, build_thud),
     "cart_hum_loop": (6.0, True, build_cart_hum),
     "title_drone_loop": (8.0, True, build_drone),
+    "crash_click": (0.35, False, build_crash_click),
+    "crash_steam_loop": (4.0, True, build_crash_steam),
+    "crash_thud": (1.8, False, build_crash_thud),
 }
 
 

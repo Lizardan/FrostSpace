@@ -40,7 +40,7 @@ WebGL (единственная, подтверждена сборкой). Ба�
 | Сцена меню | `Assets/Scenes/MainMenu.unity`, build index 1: диорама `MenuDiorama`, облётная камера, `MenuScreen` UI | сцена `Assets/Scenes/MainMenu.unity` |
 | Стартовая сцена | `Assets/Scenes/Boot.unity`, build index 0: `SceneController` (переход) + `BootFlow` (`BootScreen`) — загрузка сервисов → `MainMenu` | Unity MCP `manage_scene` |
 | Переход между сценами | `Assets/_Project/Scripts/Core/SceneController.cs` — персистентный `DontDestroyOnLoad` с белым занавесом (ADR 0011) | `FrostSpace.Core` |
-| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (17 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Inventory, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story, Map), `FrostSpace.Editor` (9 файлов), `FrostSpace.Tests.EditMode` (264 теста) | `Assets/_Project/`, `run_tests` |
+| Код | `FrostSpace.Core` (3 файла), `FrostSpace.Features` (17 фич: Boot, Camera, Carry, Character, Dialogue, Hud, Interior, Inventory, Locomotion, Menu, Npc, Progression, Quest, Ride, Scan, Story, Map), `FrostSpace.Editor` (9 файлов), `FrostSpace.Tests.EditMode` (267 тестов) | `Assets/_Project/`, `run_tests` |
 | Поезд среза | один вагон `TrainCar.fbx` 8×24 м на обе сцены (ADR 0032, 0033, 0034): интерьер, кабина 4,2 м с кокпитом, водителем и голопанелью, боковой проём, автодверь, раздвижные створки, тележки, фары | `Assets/_Project/Content/Models/Train/`, `Tools/Blender/build_train.py` |
 | Роботы | 20 FBX (R1–R20), визуальные префабы `R*_Model` — варианты моделей | `Assets/_Project/Content/` |
 | Робо-животные | 13 FBX (`RA_<Species>`), визуальные префабы `RA_<Species>_Model` — варианты моделей | `Assets/_Project/Content/`, ADR 0009 |
@@ -70,7 +70,7 @@ WebGL (единственная, подтверждена сборкой). Ба�
 - Собственного баланса и игровых правил: дизайн-параметры живут в `[SerializeField]`
   прямо на компонентах. Исключение — авторские данные: `DialogueAsset` и `QuestAsset`
   (ScriptableObject), потому что это данные, а не состояние.
-- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 264 шт.).
+- PlayMode-тестов: тесты только EditMode (`Assets/_Project/Tests/EditMode/`, 267 шт.).
 - Локализации: подписи меню и HUD намеренно латинские, `com.unity.localization`
   не подключён; реплики диалогов — русские и лежат прямо в ассетах.
 - Импортированных сторонних моделей: каталога `Assets/ThirdParty/` нет, исходники —
