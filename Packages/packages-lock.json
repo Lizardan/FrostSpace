@@ -32,15 +32,16 @@
         "com.unity.inputsystem": "1.1.1",
         "com.unity.cloud.gltfast": "6.12.1"
       },
-      "hash": "03e0b4533fe1fcf25ab03ed7691145dbc62efc16"
+      "hash": "f7786a8ecbff7d7d427d84e36bb0235e1432d529"
     },
     "com.ramenvr.autopilot": {
-      "version": "file:com.ramenvr.autopilot-1.0.1.tgz",
+      "version": "https://github.com/ramenvr/autopilot.git?path=/plugin/unity/com.ramenvr.autopilot#9e0fbb0f2a5ae18d68d1f1f5d6ec17aceb15a1d5",
       "depth": 0,
-      "source": "local-tarball",
+      "source": "git",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.11.6"
-      }
+      },
+      "hash": "9e0fbb0f2a5ae18d68d1f1f5d6ec17aceb15a1d5"
     },
     "com.unity.2d.animation": {
       "version": "16.0.1",
