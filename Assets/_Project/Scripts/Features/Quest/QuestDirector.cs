@@ -57,8 +57,7 @@ namespace FrostSpace.Features.Quest
         /// <summary>
         /// Завершённый квест из сохранения сообщаем после всех <c>OnEnable</c>:
         /// финал вагона подписывается на <see cref="QuestCompleted"/> и должен
-        /// услышать событие, иначе «Продолжить» после сдачи квеста ведёт в тупик.
-        /// Опыт при восстановлении не начисляется — он уже был выдан в прошлой сессии.
+        /// услышать событие, иначе «Продолжить» после закрытия квеста ведёт в тупик.
         /// </summary>
         private void Start()
         {
@@ -114,7 +113,8 @@ namespace FrostSpace.Features.Quest
                 ? CharacterSelection.Current.Id
                 : CharacterSelection.SavedId;
             var scene = gameObject.scene.name;
-            ProgressSave.Write(scene, characterId, _quest.QuestId, _log.Snapshot());
+            ProgressSave.Write(scene, characterId, _quest.QuestId, _log.Snapshot(),
+                _experience?.Level ?? 1, _experience?.Experience ?? 0);
         }
 
         private void OnEnable()
@@ -160,7 +160,9 @@ namespace FrostSpace.Features.Quest
             switch (action)
             {
                 case DialogueAction.AcceptQuest:
-                    if (!_log.Activate())
+                    // Сохранение может восстановить уже Active первую цель. Повторный
+                    // Accept обязан закрыть её Talk, иначе квест нельзя продолжить.
+                    if (!_log.Activate() && !(_log.IsActive && _log.ObjectiveIndex == 0))
                         return;
                     CompleteTalkObjective();
                     Persist();
@@ -214,11 +216,12 @@ namespace FrostSpace.Features.Quest
 
             var wasCompleted = _log.IsCompleted;
             _log.Apply(questEvent);
+            if (!wasCompleted && _log.IsCompleted)
+                _experience?.AddExperience(_completionExperience);
             Persist();
             if (wasCompleted || !_log.IsCompleted)
                 return;
 
-            _experience?.AddExperience(_completionExperience);
             QuestCompleted?.Invoke(_log);
         }
     }

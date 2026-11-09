@@ -464,7 +464,7 @@ namespace FrostSpace.Features.Inventory
             if (dest.Kind == EquipmentTargetKind.Slot)
                 _equipment.SetEquipped(item.Value, true);
             else
-                _equipment.Board.MoveToCell(item.Value, dest.CellIndex);
+                _equipment.MoveToCell(item.Value, dest.CellIndex);
 
             _focus = item;
             Refresh();

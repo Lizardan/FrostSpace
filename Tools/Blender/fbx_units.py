@@ -1,4 +1,4 @@
-"""Реальные значения UnitScaleFactor из бинарного FBX.
+"""Единицы и take-клипы из бинарного FBX: разбор и обязательная проверка.
 
 Зачем свой разборщик: имя свойства встречается в файле дважды — сначала в
 шаблоне Properties70 (там лежит описание типа, а не число), потом в самой
@@ -8,6 +8,13 @@
 Формат: заголовок 27 байт, дальше записи узлов до нулевой записи.
 Узел = EndOffset, NumProperties, PropertyListLen, NameLen, Name, свойства,
 затем вложенные узлы до EndOffset. До версии 7500 смещения 4-байтные.
+
+Контракт единиц — ADR 0002 и `docs/ASSETS.md`: 1 unit = 1 м, экспорт с
+`apply_unit_scale=True` и `global_scale=1.0`. Замер выходных FBX проекта дал
+`UnitScaleFactor=1.0` у всех файлов (строка «Что проверено» в `docs/BLENDER.md`).
+Поэтому проверка обязательная: нет свойства, оно не число или число другое —
+ошибка и код 1, а не справочная строка. Тот же разборщик отдаёт имена take
+(`take_names`) — сборке роботов нужно сверить клипы выгруженного файла.
 
 Использование:
     python fbx_units.py <файл.fbx> [<файл.fbx> ...]
@@ -31,6 +38,16 @@ _SCALARS = {
     b"L": ("<q", 8),
 }
 _ARRAYS = (b"f", b"i", b"d", b"l", b"b")
+
+#: Контракт метров: 1 unit = 1 м (ADR 0002, `docs/ASSETS.md`). Экспорт идёт с
+#: `apply_unit_scale=True` и `global_scale=1.0`, поэтому в файле обязано быть
+#: ровно 1.0. Замер всех выходных FBX проекта это подтвердил; иное значение —
+#: не «другая конвенция», а масштаб, который Unity примет за сантиметры.
+EXPECTED_UNIT_SCALE = 1.0
+
+#: Допуск сравнения: свойство хранится как double, и единица может приехать как
+#: 0.9999999999. Это погрешность представления, а не другая единица измерения.
+UNIT_SCALE_TOL = 1e-6
 
 
 class Node:
@@ -144,6 +161,39 @@ def unit_records(path: str) -> dict:
     return out
 
 
+def check_unit_scale(value) -> float:
+    """Проверить UnitScaleFactor против контракта метров и вернуть число.
+
+    Бросает `ValueError`, если свойства нет, оно не число или отличается от
+    `EXPECTED_UNIT_SCALE`. Печать без исключения оставляла бы сломанный
+    масштаб в шаге `--check` с кодом 0, то есть с виду прошедшим пайплайном.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("UnitScaleFactor отсутствует или не число: %r" % (value,))
+    if abs(float(value) - EXPECTED_UNIT_SCALE) > UNIT_SCALE_TOL:
+        raise ValueError("UnitScaleFactor=%s, ожидается %s (1 unit = 1 м, ADR 0002)"
+                         % (value, EXPECTED_UNIT_SCALE))
+    return float(value)
+
+
+def take_names(path: str) -> list[str]:
+    """Имена take-клипов бинарного FBX: узел `Takes` → дочерние `Take`.
+
+    Сборке нужно сверить выгруженный файл с обязательным набором клипов, а
+    обратный импорт в Blender ради имён — лишний тяжёлый шаг. Запись `Current`
+    клипом не является: она хранит имя текущего take, поэтому не попадает
+    в список. Нет узла `Takes` — пустой список (клипов в файле нет).
+    """
+    nodes, _version = parse(path)
+    for node in nodes:
+        if node.name != "Takes":
+            continue
+        return [child.props[0] for child in node.children
+                if child.name == "Take" and child.props
+                and isinstance(child.props[0], str)]
+    return []
+
+
 def main() -> int:
     configure_stdout()
     targets = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
@@ -160,14 +210,25 @@ def main() -> int:
             continue
         try:
             info = unit_records(path)
-        except Exception as exc:  # разборщик — диагностика, падать нельзя
+        except Exception as exc:  # noqa: BLE001
+            # Разборщик не роняет весь прогон: файл помечается ошибкой,
+            # остальные проверяются. Код возврата всё равно ненулевой.
             print("  %-46s ОШИБКА РАЗБОРА: %s" % (target, exc))
             failed += 1
             continue
+        scale = _scalar(info["records"].get("UnitScaleFactor"))
+        # OriginalUnitScaleFactor — справка: контракт метров (ADR 0002)
+        # фиксирует UnitScaleFactor, его и проверяем обязательно.
         print("  %-46s FBX v%d  UnitScaleFactor=%s  OriginalUnitScaleFactor=%s"
-              % (target, info["version"],
-                 _scalar(info["records"].get("UnitScaleFactor")),
+              % (target, info["version"], scale,
                  _scalar(info["records"].get("OriginalUnitScaleFactor"))))
+        try:
+            check_unit_scale(scale)
+        except ValueError as exc:
+            print("     НЕВЕРНЫЕ ЕДИНИЦЫ: %s" % exc)
+            failed += 1
+    if failed:
+        print("ПРОВАЛ: %d файл(ов) не прошли проверку единиц" % failed)
     return 1 if failed else 0
 
 

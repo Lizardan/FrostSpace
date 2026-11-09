@@ -17,10 +17,14 @@ namespace FrostSpace.Tests
         private RobotProfile _mechanic;
         private RobotProfile _courier;
         private CharacterCatalog _catalog;
+        private bool _hadSelection;
+        private string _savedSelection;
 
         [SetUp]
         public void SetUp()
         {
+            _hadSelection = PlayerPrefs.HasKey(Key);
+            _savedSelection = PlayerPrefs.GetString(Key);
             PlayerPrefs.DeleteKey(Key);
             CharacterSelection.Clear();
 
@@ -32,8 +36,12 @@ namespace FrostSpace.Tests
         [TearDown]
         public void TearDown()
         {
-            PlayerPrefs.DeleteKey(Key);
             CharacterSelection.Clear();
+            if (_hadSelection)
+                PlayerPrefs.SetString(Key, _savedSelection);
+            else
+                PlayerPrefs.DeleteKey(Key);
+            PlayerPrefs.Save();
 
             Object.DestroyImmediate(_catalog);
             Object.DestroyImmediate(_mechanic);

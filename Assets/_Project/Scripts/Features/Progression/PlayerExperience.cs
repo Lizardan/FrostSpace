@@ -1,3 +1,4 @@
+using FrostSpace.Features.Quest;
 using UnityEngine;
 
 namespace FrostSpace.Features.Progression
@@ -24,9 +25,7 @@ namespace FrostSpace.Features.Progression
         public int Experience => _experience;
 
         /// <summary>Сколько опыта нужно до следующего уровня.</summary>
-        public int ExperienceToNextLevel =>
-            Mathf.Max(1, Mathf.RoundToInt(
-                _baseRequirement * Mathf.Pow(_growth, Mathf.Max(0, _level - 1))));
+        public int ExperienceToNextLevel => RequirementFor(_level);
 
         /// <summary>Заполнение полосы от 0 до 1.</summary>
         public float Progress01 =>
@@ -45,6 +44,31 @@ namespace FrostSpace.Features.Progression
                 _level++;
             }
         }
+
+        /// <summary>
+        /// Восстанавливает счётчик из сохранения. Нулевой уровень читается как первый:
+        /// так старые записи без полей опыта остаются совместимыми.
+        /// </summary>
+        public bool Restore(int level, int experience)
+        {
+            var restoredLevel = level < 1 ? 1 : level;
+            if (experience < 0 || experience >= RequirementFor(restoredLevel))
+                return false;
+
+            _level = restoredLevel;
+            _experience = experience;
+            return true;
+        }
+
+        private void Awake()
+        {
+            if (ProgressSave.TryLoad(out var data))
+                Restore(data.level, data.experience);
+        }
+
+        private int RequirementFor(int level) =>
+            Mathf.Max(1, Mathf.RoundToInt(
+                _baseRequirement * Mathf.Pow(_growth, Mathf.Max(0, level - 1))));
 
         private void OnValidate()
         {

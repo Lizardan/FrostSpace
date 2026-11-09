@@ -13,23 +13,43 @@ namespace FrostSpace.Tests
         private const string CharacterId = "R15_Courier";
         private const string QuestId = "train_batteries";
 
+        private bool _hadSave;
+        private string _savedValue;
+
         [SetUp]
         public void SetUp()
         {
+            _hadSave = PlayerPrefs.HasKey(ProgressSave.Key);
+            _savedValue = PlayerPrefs.GetString(ProgressSave.Key);
             PlayerPrefs.DeleteKey(ProgressSave.Key);
         }
 
         [TearDown]
         public void TearDown()
         {
-            PlayerPrefs.DeleteKey(ProgressSave.Key);
+            if (_hadSave)
+                PlayerPrefs.SetString(ProgressSave.Key, _savedValue);
+            else
+                PlayerPrefs.DeleteKey(ProgressSave.Key);
+            PlayerPrefs.Save();
         }
 
         private static QuestSnapshot Active(int objective, int progress) =>
             new(QuestState.Active, objective, progress);
 
-        private static string ValidJson(int version = ProgressSave.CurrentVersion) =>
+        private static string ValidJson(int version = ProgressSave.CurrentVersion, int level = 1, int experience = 0) =>
             "{\"version\":" + version + "," +
+            "\"scene\":\"Train\"," +
+            "\"characterId\":\"" + CharacterId + "\"," +
+            "\"questId\":\"" + QuestId + "\"," +
+            "\"state\":\"Active\"," +
+            "\"objective\":1," +
+            "\"progress\":2," +
+            "\"level\":" + level + "," +
+            "\"experience\":" + experience + "}";
+
+        private static string LegacyJson() =>
+            "{\"version\":1," +
             "\"scene\":\"Train\"," +
             "\"characterId\":\"" + CharacterId + "\"," +
             "\"questId\":\"" + QuestId + "\"," +
@@ -55,7 +75,7 @@ namespace FrostSpace.Tests
         [Test]
         public void Write_ThenLoad_RoundTrips()
         {
-            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(1, 2));
+            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(1, 2), 2, 250);
 
             Assert.IsTrue(ProgressSave.HasSave);
             Assert.IsTrue(ProgressSave.TryLoad(out var data));
@@ -66,6 +86,8 @@ namespace FrostSpace.Tests
             Assert.AreEqual("Active", data.state);
             Assert.AreEqual(1, data.objective);
             Assert.AreEqual(2, data.progress);
+            Assert.AreEqual(2, data.level);
+            Assert.AreEqual(250, data.experience);
             Assert.AreEqual(ProgressSave.TrainScene, ProgressSave.SavedScene);
         }
 
@@ -74,7 +96,7 @@ namespace FrostSpace.Tests
         {
             ProgressSave.Write(
                 ProgressSave.TrainScene, CharacterId, QuestId,
-                new QuestSnapshot(QuestState.Completed, 3, 0));
+                new QuestSnapshot(QuestState.Completed, 3, 0), 1, 0);
 
             Assert.IsTrue(ProgressSave.TryLoad(out var data));
             Assert.IsTrue(ProgressSave.TryGetState(data, out var state));
@@ -84,7 +106,7 @@ namespace FrostSpace.Tests
         [Test]
         public void Write_EmptyQuestId_IsIgnored()
         {
-            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, " ", Active(0, 0));
+            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, " ", Active(0, 0), 1, 0);
 
             Assert.IsFalse(ProgressSave.HasSave);
         }
@@ -92,7 +114,7 @@ namespace FrostSpace.Tests
         [Test]
         public void Write_UnknownScene_FallsBackToTrain()
         {
-            ProgressSave.Write("Game", CharacterId, QuestId, Active(0, 0));
+            ProgressSave.Write("Game", CharacterId, QuestId, Active(0, 0), 1, 0);
 
             Assert.IsTrue(ProgressSave.TryLoad(out var data));
             Assert.AreEqual(ProgressSave.TrainScene, data.scene);
@@ -101,7 +123,7 @@ namespace FrostSpace.Tests
         [Test]
         public void Clear_RemovesSave()
         {
-            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(0, 0));
+            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(0, 0), 1, 0);
             ProgressSave.Clear();
 
             Assert.IsFalse(ProgressSave.HasSave);
@@ -164,7 +186,7 @@ namespace FrostSpace.Tests
         [Test]
         public void MarkScene_MovesSaveToFrontier_KeepingProgress()
         {
-            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(1, 3));
+            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(1, 3), 2, 300);
 
             Assert.IsTrue(ProgressSave.MarkScene(ProgressSave.FrontierScene));
             Assert.IsTrue(ProgressSave.TryLoad(out var data));
@@ -172,6 +194,8 @@ namespace FrostSpace.Tests
             Assert.AreEqual(QuestId, data.questId);
             Assert.AreEqual(1, data.objective);
             Assert.AreEqual(3, data.progress);
+            Assert.AreEqual(2, data.level);
+            Assert.AreEqual(300, data.experience);
         }
 
         [Test]
@@ -184,10 +208,39 @@ namespace FrostSpace.Tests
         [Test]
         public void MarkScene_UnknownScene_IsIgnored()
         {
-            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(0, 0));
+            ProgressSave.Write(ProgressSave.TrainScene, CharacterId, QuestId, Active(0, 0), 1, 0);
 
             Assert.IsFalse(ProgressSave.MarkScene("Game"));
             Assert.AreEqual(ProgressSave.TrainScene, ProgressSave.SavedScene);
+        }
+
+        [Test]
+        public void LegacySave_WithoutExperienceFields_LoadsWithDefaults()
+        {
+            PutRaw(LegacyJson());
+
+            Assert.IsTrue(ProgressSave.TryLoad(out var data));
+            Assert.AreEqual(0, data.level);
+            Assert.AreEqual(0, data.experience);
+            Assert.IsTrue(PlayerPrefs.HasKey(ProgressSave.Key));
+        }
+
+        [Test]
+        public void NegativeExperience_IsStripped()
+        {
+            PutRaw(ValidJson(experience: -1));
+
+            Assert.IsFalse(ProgressSave.TryLoad(out _));
+            Assert.IsFalse(PlayerPrefs.HasKey(ProgressSave.Key));
+        }
+
+        [Test]
+        public void NegativeLevel_IsStripped()
+        {
+            PutRaw(ValidJson(level: -1));
+
+            Assert.IsFalse(ProgressSave.TryLoad(out _));
+            Assert.IsFalse(PlayerPrefs.HasKey(ProgressSave.Key));
         }
 
         [Test]

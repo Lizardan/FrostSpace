@@ -109,6 +109,7 @@ namespace FrostSpace.Features.View
         private readonly HashSet<Renderer> _blocking = new();
         private readonly HashSet<Renderer> _wasBlocking = new();
         private readonly List<Renderer> _lost = new();
+        private readonly List<Material> _revealMaterials = new();
         private readonly Vector3[] _points = new Vector3[13];
         private readonly Vector3[] _hitPoints = new Vector3[13];
         private readonly Vector3[] _hitNormals = new Vector3[13];
@@ -423,6 +424,7 @@ namespace FrostSpace.Features.View
 
             copy.SetFloat(RevealStrengthId, 0f);
             copy.renderQueue = (int)RenderQueue.Geometry;
+            _revealMaterials.Add(copy);
             return copy;
         }
 
@@ -454,6 +456,11 @@ namespace FrostSpace.Features.View
                     End(entry);
             }
 
+            foreach (var material in _revealMaterials)
+                if (material != null)
+                    Destroy(material);
+
+            _revealMaterials.Clear();
             _entries.Clear();
             _targets.Clear();
             _blocking.Clear();

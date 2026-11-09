@@ -26,8 +26,8 @@ WebGL (единственная, подтверждена сборкой). Ба�
 
 | Параметр | Значение | Источник |
 |---|---|---|
-| Unity | 6000.6.7f1 | `ProjectSettings/ProjectVersion.txt` |
-| Редактор | `F:\Unity\Editor\6000.6.7f1\Editor\Unity.exe` | Unity Hub / фактический запуск |
+| Unity | 6000.6.8f1 | `ProjectSettings/ProjectVersion.txt` |
+| Редактор | `F:\Unity\Editor\6000.6.8f1\Editor\Unity.exe` | Unity Hub / фактический запуск |
 | Render pipeline | URP 17.6.0 | `Packages/manifest.json`, `Assets/Settings/*_RPAsset` |
 | Качество | один уровень `Default`, один URP-ассет | `ProjectSettings/QualitySettings.asset` (ADR 0016) |
 | Цветовое пространство | Linear | `ProjectSettings/ProjectSettings.asset` |

@@ -65,6 +65,19 @@ PALETTE = {
 #: playback speed в Unity, чтобы стопы не скользили.
 CLIP_SPEEDS = {"walk": 1.3 / (40.0 / 30.0), "sprint": 5.5 / (20.0 / 30.0)}
 
+#: Базовые take каждого робота: их ждёт `RobotAssetPostprocessor` (Walk/Idle/Sprint).
+BASE_TAKES = ("walk_loop", "idle_loop", "sprint_loop")
+
+#: Группы клипов сверх базовых. Имена take — контракт Unity, поэтому таблица
+#: одна на сборку (`load_rig`) и на сверку набора (`robot_designs.required_takes`).
+#: `carry_idle` в паке ActionForge нет: его строит `_make_carry_idle` из позы
+#: переноски. Кому какая группа обязательна — данные робота в `robot_designs`.
+CLIP_GROUPS = {
+    "jump": ("jump_start", "jump_loop", "jump_land"),
+    "carry": ("walk_carry_loop",),
+    "carry_idle": ("carry_idle",),
+}
+
 #: Читаемость палитры в игровом свете (2026-10-18). В игре видимая сторона
 #: робота получает примерно половину альбедо (часть граней освещена только
 #: ambient), а снег занимает верх диапазона кадра — корпус читается почти
@@ -372,25 +385,30 @@ def load_rig(include_jump: bool = False, include_carry: bool = False,
     Оригинальные FBX/GLB не меняются — правка идёт только в памяти Blender.
 
     `include_jump=True` добавляет три клипа того же пака — jump_start,
-    jump_loop, jump_land. Они нужны только игроку (R1), поэтому сборка без
-    флага остаётся ровно прежней.
+    jump_loop, jump_land. Они нужны трём выбираемым корпусам игрока (ADR 0028).
 
-    `include_carry=True` добавляет walk_carry_loop — клип переноски ящика для
-    складского носильщика (R18). Остальным роботам он не нужен и раздувал бы
-    каждый FBX.
+    `include_carry=True` добавляет walk_carry_loop — клип переноски ящика.
+    Нужен тем же трём корпусам и складскому носильщику R18; остальным NPC он
+    не нужен и раздувал бы каждый FBX.
 
     `include_carry_idle=True` добавляет carry_idle — стойку с грузом. Клипа
     в паке нет, он собирается из позы walk_carry_loop (см. `_make_carry_idle`).
     Нужен трём выбираемым корпусам, поэтому подразумевает carry.
+
+    Флаги — явный запрос добавить клипы, а не разрешение урезать набор:
+    обязательные группы каждого робота лежат в `robot_designs.REQUIRED_CLIPS`,
+    и вызывающий (`build_robots.py`) передаёт сюда их объединение по выборке.
+    Иначе штатная пересборка без флагов удалила бы take, которые ждёт
+    `RobotAssetPostprocessor`.
     """
     clear_scene()
     bpy.context.scene.render.fps = 30
 
-    clips = ["walk_loop", "idle_loop", "sprint_loop"]
+    clips = list(BASE_TAKES)
     if include_jump:
-        clips += ["jump_start", "jump_loop", "jump_land"]
+        clips += list(CLIP_GROUPS["jump"])
     if include_carry or include_carry_idle:
-        clips += ["walk_carry_loop"]
+        clips += list(CLIP_GROUPS["carry"])
 
     base = None
     actions = {}
@@ -454,7 +472,17 @@ def bind(obj, arm):
     return obj
 
 
-def export_fbx(arm, mesh, path, global_scale=1.0):
+def export_fbx(arm, mesh, path, global_scale=1.0, takes=None):
+    """Выгрузить меш и арматуру в FBX; клипы берутся из NLA-дорожек рига.
+
+    `takes` — имена дорожек, которым позволено попасть в файл. Риг один на
+    прогон и несёт объединение клипов всех выбранных роботов, поэтому лишние
+    дорожки глушатся на время экспорта: экспортёр пропускает `track.mute`
+    (`io_scene_fbx/export_fbx_bin.py`, `fbx_animations`). Без этого каждый NPC
+    получил бы jump и carry — вариант, отклонённый ADR 0028. Состояние дорожек
+    возвращается и при ошибке экспорта. `takes=None` — прежнее поведение:
+    выгружаются все дорожки (так собираются животные и ходуны).
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     meshes = list(mesh) if isinstance(mesh, (list, tuple)) else [mesh]
     bpy.ops.object.select_all(action="DESELECT")
@@ -463,21 +491,31 @@ def export_fbx(arm, mesh, path, global_scale=1.0):
         item.select_set(True)
     bpy.context.view_layer.objects.active = arm
     arm.animation_data.action = None
-    bpy.ops.export_scene.fbx(
-        filepath=path,
-        use_selection=True,
-        object_types={"ARMATURE", "MESH"},
-        global_scale=global_scale,
-        apply_unit_scale=True,
-        bake_space_transform=True,
-        mesh_smooth_type="FACE",
-        add_leaf_bones=False,
-        bake_anim=True,
-        bake_anim_use_all_bones=True,
-        bake_anim_use_nla_strips=True,
-        bake_anim_use_all_actions=False,
-        bake_anim_force_startend_keying=True,
-    )
+    muted = []
+    if takes is not None:
+        wanted = set(takes)
+        for track in arm.animation_data.nla_tracks:
+            muted.append((track, track.mute))
+            track.mute = track.name not in wanted
+    try:
+        bpy.ops.export_scene.fbx(
+            filepath=path,
+            use_selection=True,
+            object_types={"ARMATURE", "MESH"},
+            global_scale=global_scale,
+            apply_unit_scale=True,
+            bake_space_transform=True,
+            mesh_smooth_type="FACE",
+            add_leaf_bones=False,
+            bake_anim=True,
+            bake_anim_use_all_bones=True,
+            bake_anim_use_nla_strips=True,
+            bake_anim_use_all_actions=False,
+            bake_anim_force_startend_keying=True,
+        )
+    finally:
+        for track, was_muted in muted:
+            track.mute = was_muted
     if not os.path.exists(path):
         raise RuntimeError("FBX не создан: %s" % path)
     print("EXPORT %s (%d bytes)" % (path, os.path.getsize(path)))

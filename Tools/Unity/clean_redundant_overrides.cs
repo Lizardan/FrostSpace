@@ -10,8 +10,12 @@
 // значением 1, совпадающим с префабом.
 //
 // Скрипт снимает ТОЛЬКО те override, значение которых совпадает со значением
-// в исходном префабе. Ничего другого он не трогает: позиции, слои, имена и
-// любые другие override остаются как есть.
+// в исходном префабе И чей `target` — ровно тот проверенный объект (сам
+// GameObject для m_IsActive, сам компонент для m_Enabled). Модификация с
+// чужим target — это включение другого child/component, и её снятие по одному
+// лишь пути свойства молча погасило бы важный объект. Объекты вне префаб-
+// инстанса сцены пропускаются. Ничего другого скрипт не трогает: позиции, слои,
+// имена и любые другие override остаются как есть.
 //
 // Запуск:
 //     python Tools/Unity/run_snippet.py Tools/Unity/clean_redundant_overrides.cs
@@ -30,6 +34,10 @@ foreach (var root in scene.GetRootGameObjects())
     {
         var go = t.gameObject;
 
+        // Только объекты внутри префаб-инстанса сцены: внешний корень подтверждает,
+        // что это инстанс, а не ассет префаба или произвольный объект без источника.
+        if (UnityEditor.PrefabUtility.GetOutermostPrefabInstanceRoot(go) == null) continue;
+
         // 1. Активность объекта.
         var goMods = UnityEditor.PrefabUtility.GetPropertyModifications(go);
         if (goMods != null && goMods.Length > 0)
@@ -41,7 +49,8 @@ foreach (var root in scene.GetRootGameObjects())
                 for (int i = 0; i < goMods.Length; i++)
                 {
                     checkedMods++;
-                    if (goMods[i].propertyPath == "m_IsActive" && goMods[i].value == "1")
+                    if (goMods[i].propertyPath == "m_IsActive" && goMods[i].value == "1" &&
+                        goMods[i].target == go)
                     {
                         removed++;
                         sb.AppendLine(string.Format("снят m_IsActive: {0} (значение 1 совпадает с префабом)", go.name));
@@ -73,7 +82,8 @@ foreach (var root in scene.GetRootGameObjects())
             for (int k = 0; k < compMods.Length; k++)
             {
                 checkedMods++;
-                if (compMods[k].propertyPath == "m_Enabled" && compMods[k].value == "1")
+                if (compMods[k].propertyPath == "m_Enabled" && compMods[k].value == "1" &&
+                    compMods[k].target == comp)
                 {
                     removed++;
                     sb.AppendLine(string.Format("снят m_Enabled: {0} на {1} (значение 1 совпадает с префабом)",

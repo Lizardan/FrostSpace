@@ -1,15 +1,23 @@
-// Установка 121 инстанса клеток в сцену `Frontier`.
+// Установка инстансов клеток в сцену `Frontier` из существующих префабов.
 //
 // ВНИМАНИЕ: скрипт РАЗРУШАЮЩИЙ — он удаляет всех детей корня `WorldCells` и
-// создаёт их заново. Запускать только когда сцену действительно надо собрать
-// с нуля (пустой корень, чужая раскладка инстансов). Обычная правка мира
-// делается без него: префабы клеток пересобираются отдельно.
+// расставляет инстансы заново. Запускать только когда сцену действительно надо
+// собрать с нуля (пустой корень, чужая раскладка инстансов). Обычная правка мира
+// делается без него.
 //
 //   python Tools/Unity/run_snippet.py Tools/Unity/install_cell_instances.cs
 //
-// Пересборку самих префабов из частей FBX делает `sync_cell_prefabs.cs` — она
-// безопасна и не трогает сцену. Проверка «префаб ↔ FBX ↔ сцена» —
+// Источник клетки — существующий префаб `Prefabs/World/WorldCell_<i>_<j>.prefab`
+// (ADR 0043): скрипт только расставляет его инстансы и НЕ пересоздаёт префаб —
+// авторское содержимое префаба неприкосновенно. Пересборку геометрии из частей
+// FBX делает `sync_cell_prefabs.cs`; проверка «префаб ↔ FBX ↔ сцена» —
 // `verify_cell_prefabs.cs`.
+//
+// Комплект и координаты берутся из раскладки `world_layout.json` через
+// `WorldLayout` (ADR 0036): ожидаемый набор — все клетки сетки, позиция инстанса
+// в осях сцены — центр клетки минус смещение депо. Полный комплект проверяется
+// ДО первого изменения сцены: при неполном или битом наборе сцена не меняется и
+// не сохраняется.
 //
 // История: выполнен 2026-11-03 при переходе на чанки; тогда же сцена была
 // пересобрана и проверена — 121 инстанс, 121 префаб, индексы клеток и
@@ -33,91 +41,103 @@ if (root == null) return "нет корня WorldCells — сначала ста
 var player = UnityEngine.GameObject.Find("Player");
 if (player == null) return "нет Player";
 
-// Старые инстансы клеток (эпоха «одна сетка на клетку») удаляются: меши в
-// префабе теперь другие, и смешивать два поколения в одном корне значит
-// получить два слоя земли на одной клетке.
+// Раскладка — единственный источник комплекта клеток и их координат.
+const string layoutPath = "Assets/_Project/Content/Data/World/world_layout.json";
+var layoutAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.TextAsset>(layoutPath);
+FrostSpace.Features.Map.WorldLayout layout;
+if (!FrostSpace.Features.Map.WorldLayout.TryParse(layoutAsset, out layout))
+    return "раскладка не читается: " + layoutPath + " — сцена не тронута";
+var grid = layout.Grid;
+const string prefabDir = "Assets/_Project/Content/Prefabs/World";
+
+// Фаза 1: полный ожидаемый комплект ДО первого изменения сцены. Префаб должен
+// существовать, загружаться и нести WorldCell с индексом, совпадающим с именем:
+// резидентность узнаёт клетку по индексу, и битый префаб молча сломал бы её.
+var prefabs = new System.Collections.Generic.List<UnityEngine.GameObject>();
+var positions = new System.Collections.Generic.List<UnityEngine.Vector3>();
+var issues = new System.Text.StringBuilder();
+for (int cj = grid.CellMin; cj <= grid.CellMax; cj++)
+{
+    for (int ci = grid.CellMin; ci <= grid.CellMax; ci++)
+    {
+        var cellName = "WorldCell_" + ci + "_" + cj;
+        var prefabPath = prefabDir + "/" + cellName + ".prefab";
+        var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(prefabPath);
+        if (prefab == null) { issues.AppendLine(cellName + ": нет префаба " + prefabPath); continue; }
+        var wc = prefab.GetComponent<FrostSpace.Features.Map.WorldCell>();
+        if (wc == null) { issues.AppendLine(cellName + ": в префабе нет WorldCell"); continue; }
+        if (wc.Cell.x != ci || wc.Cell.y != cj)
+        { issues.AppendLine(cellName + ": индекс WorldCell " + wc.Cell + " не совпадает с именем"); continue; }
+
+        // Центр клетки в мировых осях минус смещение депо = позиция в осях сцены
+        // (ноль сцены — двор депо). При текущей раскладке это ci*400+800.
+        var center = grid.CenterOf(new UnityEngine.Vector2Int(ci, cj));
+        var scenePos = center - layout.Depot;
+        prefabs.Add(prefab);
+        positions.Add(new UnityEngine.Vector3(scenePos.x, 0f, scenePos.y));
+    }
+}
+if (issues.Length > 0)
+{
+    sb.AppendLine("комплект неполон — сцена НЕ изменена и НЕ сохранена:");
+    sb.Append(issues.ToString());
+    sb.AppendLine("ожидалось клеток: " + grid.CellCount + ", годных префабов: " + prefabs.Count);
+    return sb.ToString();
+}
+
+// Фаза 2: комплект полный — пересобираем расстановку. Старые инстансы удаляются:
+// смешивать два поколения в одном корне значит получить два слоя земли.
 int removed = 0;
 for (int i = root.transform.childCount - 1; i >= 0; i--)
 {
-    var c = root.transform.GetChild(i);
-    UnityEngine.Object.DestroyImmediate(c.gameObject);
+    UnityEngine.Object.DestroyImmediate(root.transform.GetChild(i).gameObject);
     removed++;
 }
 
-string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Model WorldCell_",
-    new string[] { "Assets/_Project/Content/Models/Level" });
-if (guids.Length != 121)
-    sb.AppendLine("ВНИМАНИЕ: клеток в проекте " + guids.Length + ", ожидалось 121");
-
-int made = 0, colliders = 0, bad = 0;
-for (int g = 0; g < guids.Length; g++)
+int made = 0;
+bool failed = false;
+for (int i = 0; i < prefabs.Count; i++)
 {
-    var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[g]);
-    var model = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(path);
-    if (model == null) { bad++; continue; }
-
-    var name = System.IO.Path.GetFileNameWithoutExtension(path);
-    var parts = name.Split('_');
-    int ci, cj;
-    if (parts.Length != 3 || !int.TryParse(parts[1], out ci) || !int.TryParse(parts[2], out cj))
-    { bad++; continue; }
-
-    var prefabPath = "Assets/_Project/Content/Prefabs/World/" + name + ".prefab";
-    var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(prefabPath);
-    // Префаб пересобирается всегда, а не «если чего-то не хватает»: FBX клетки
-    // теперь несёт несколько мешей (земля, путь, шпалы, дороги, двор), и у
-    // префаба прошлого поколения этих детей нет вовсе — он молча показывал бы
-    // только землю.
+    var inst = UnityEditor.PrefabUtility.InstantiatePrefab(prefabs[i]) as UnityEngine.GameObject;
+    if (inst == null)
     {
-        var temp = (UnityEngine.GameObject)UnityEngine.Object.Instantiate(model);
-        temp.name = name;
-        var cell = temp.GetComponent<FrostSpace.Features.Map.WorldCell>();
-        if (cell == null) cell = temp.AddComponent<FrostSpace.Features.Map.WorldCell>();
-        cell.Setup(new UnityEngine.Vector2Int(ci, cj));
-        // Коллайдер на каждый меш клетки: земля, путь, шпалы, дороги, двор.
-        // Ходовая часть игрока должна идти по рельсу и упираться в стену
-        // коробки, а не проходить сквозь них, как сквозь декорацию.
-        foreach (var mf in temp.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
-        {
-            if (mf.sharedMesh == null) continue;
-            var go = mf.gameObject;
-            if (go.GetComponent<UnityEngine.MeshCollider>() == null)
-                go.AddComponent<UnityEngine.MeshCollider>();
-            colliders++;
-        }
-        prefab = UnityEditor.PrefabUtility.SaveAsPrefabAsset(temp, prefabPath);
-        UnityEngine.Object.DestroyImmediate(temp);
-        made++;
+        failed = true;
+        sb.AppendLine("не удалось создать инстанс " + prefabs[i].name + " — расстановка прервана");
+        break;
     }
-
-    var inst = (UnityEngine.GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefab);
     inst.transform.SetParent(root.transform, false);
-    // Смещение сцены: депо (-2,-2) стоит в нуле, поэтому +2*BLK.
-    inst.transform.localPosition = new UnityEngine.Vector3(ci * 400f + 800f, 0f, cj * 400f + 800f);
+    inst.transform.localPosition = positions[i];
     inst.transform.localRotation = UnityEngine.Quaternion.identity;
     inst.transform.localScale = UnityEngine.Vector3.one;
+    made++;
 }
 
-var res = root.GetComponent<FrostSpace.Features.Map.WorldResidency>();
-if (res == null) res = root.AddComponent<FrostSpace.Features.Map.WorldResidency>();
-var so = new UnityEditor.SerializedObject(res);
-so.FindProperty("_layout").objectReferenceValue =
-    UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.TextAsset>(
-        "Assets/_Project/Content/Data/World/world_layout.json");
-so.FindProperty("_player").objectReferenceValue = player.transform;
-so.ApplyModifiedPropertiesWithoutUndo();
+bool saved = false;
+if (!failed && made == prefabs.Count)
+{
+    var res = root.GetComponent<FrostSpace.Features.Map.WorldResidency>();
+    if (res == null) res = root.AddComponent<FrostSpace.Features.Map.WorldResidency>();
+    var so = new UnityEditor.SerializedObject(res);
+    so.FindProperty("_layout").objectReferenceValue = layoutAsset;
+    so.FindProperty("_player").objectReferenceValue = player.transform;
+    so.ApplyModifiedPropertiesWithoutUndo();
 
-UnityEditor.AssetDatabase.SaveAssets();
-UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
-bool saved = UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+    saved = UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+}
+else
+{
+    sb.AppendLine("расстановка неполна — сцена НЕ сохранена; перезагрузите сцену, чтобы вернуть прежнее состояние");
+}
+
 int tris = 0;
 foreach (var mf in root.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
 {
     if (mf.sharedMesh == null) continue;
     tris += mf.sharedMesh.triangles.Length / 3;
 }
-sb.AppendLine(string.Format("удалено старых инстансов={0} префабов пересобрано={1} битых={2}",
-    removed, made, bad));
-sb.AppendLine(string.Format("детей у WorldCells={0} коллайдеров поставлено={1} трис в клетках={2} сохранено={3}",
-    root.transform.childCount, colliders, tris, saved));
+sb.AppendLine(string.Format("удалено старых инстансов={0} расставлено={1} ожидалось={2}",
+    removed, made, grid.CellCount));
+sb.AppendLine(string.Format("детей у WorldCells={0} трис в клетках={1} сохранено={2}",
+    root.transform.childCount, tris, saved));
 return sb.ToString();

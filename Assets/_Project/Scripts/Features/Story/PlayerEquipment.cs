@@ -128,6 +128,21 @@ namespace FrostSpace.Features.Story
         }
 
         /// <summary>
+        /// Перекладывает предмет в заданную ячейку и синхронизирует снаряжение.
+        /// Экран вызывает этот метод, а не доску напрямую: снятый перетаскиванием
+        /// сканер обязан так же отключиться, как снятый кнопкой.
+        /// </summary>
+        public bool MoveToCell(EquipmentKind kind, int cell)
+        {
+            if (!Board.MoveToCell(kind, cell))
+                return false;
+
+            SyncScanner();
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>
         /// Единственный источник истины для сканера: он работает тогда и только
         /// тогда, когда сонар надет.
         /// </summary>

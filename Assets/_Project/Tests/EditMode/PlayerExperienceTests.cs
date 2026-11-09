@@ -74,5 +74,41 @@ namespace FrostSpace.Tests
             Assert.AreEqual(1, _experience.Level);
             Assert.AreEqual(0, _experience.Experience);
         }
+
+        [Test]
+        public void Restore_ValidValues_ReplacesState()
+        {
+            Assert.IsTrue(_experience.Restore(2, 300));
+
+            Assert.AreEqual(2, _experience.Level);
+            Assert.AreEqual(300, _experience.Experience);
+        }
+
+        [Test]
+        public void Restore_ZeroLevel_ReadsAsFirst()
+        {
+            Assert.IsTrue(_experience.Restore(0, 250));
+
+            Assert.AreEqual(1, _experience.Level);
+            Assert.AreEqual(250, _experience.Experience);
+        }
+
+        [Test]
+        public void Restore_NegativeExperience_IsRejected()
+        {
+            _experience.AddExperience(100);
+
+            Assert.IsFalse(_experience.Restore(1, -5));
+            Assert.AreEqual(1, _experience.Level);
+            Assert.AreEqual(100, _experience.Experience);
+        }
+
+        [Test]
+        public void Restore_ExperienceAtRequirement_IsRejected()
+        {
+            Assert.IsFalse(_experience.Restore(1, 1000));
+            Assert.AreEqual(1, _experience.Level);
+            Assert.AreEqual(0, _experience.Experience);
+        }
     }
 }

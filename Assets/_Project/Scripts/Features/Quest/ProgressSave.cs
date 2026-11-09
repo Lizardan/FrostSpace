@@ -6,7 +6,7 @@ namespace FrostSpace.Features.Quest
     /// <summary>
     /// Сохранение прогресса демо: один ключ <see cref="PlayerPrefs"/> и JSON
     /// (ADR 0031). Хранится только то, что нельзя вывести из сцены — сцена,
-    /// корпус, квест и его счётчик. Позиция игрока и предметы не сохраняются:
+    /// корпус, квест, его счётчик и опыт игрока. Позиция игрока и предметы не сохраняются:
     /// каждая сцена стартует со своей точки появления.
     ///
     /// Запись идёт сразу через <see cref="PlayerPrefs.Save"/>: в WebGL вкладку
@@ -75,7 +75,8 @@ namespace FrostSpace.Features.Quest
         /// <see cref="TrainScene"/>, чтобы «Продолжить» не вело в пустоту.
         /// </summary>
         public static void Write(
-            string scene, string characterId, string questId, QuestSnapshot snapshot)
+            string scene, string characterId, string questId, QuestSnapshot snapshot,
+            int level, int experience)
         {
             if (string.IsNullOrWhiteSpace(questId))
                 return;
@@ -89,6 +90,8 @@ namespace FrostSpace.Features.Quest
                 state = snapshot.State.ToString(),
                 objective = snapshot.ObjectiveIndex,
                 progress = snapshot.Progress,
+                level = level,
+                experience = experience,
             };
 
             PlayerPrefs.SetString(Key, JsonUtility.ToJson(data));
@@ -152,6 +155,8 @@ namespace FrostSpace.Features.Quest
                 return false;
             if (string.IsNullOrWhiteSpace(data.questId))
                 return false;
+            if (data.level < 0 || data.experience < 0)
+                return false;
 
             return TryGetState(data, out _);
         }
@@ -171,5 +176,7 @@ namespace FrostSpace.Features.Quest
         public string state;
         public int objective;
         public int progress;
+        public int level;
+        public int experience;
     }
 }

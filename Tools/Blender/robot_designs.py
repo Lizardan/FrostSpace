@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import math
 
-from robot_lib import PartMesh, make_materials, rig_points
+from robot_lib import BASE_TAKES, CLIP_GROUPS, PartMesh, make_materials, rig_points
 
 
 def _bolts(p: PartMesh, points, mat, bone, size=0.018):
@@ -1806,6 +1806,51 @@ def build_robot_20(arm):
               rot=(0, 0, math.degrees(a)))
     p.sphere((0, -0.02, 1.90), 0.04, glow, "Head", subdivisions=1)
     return name, p.build(name, mats), mats
+
+
+#: Обязательные группы клипов конкретного робота (ADR 0028). Те же id знает
+#: `RobotAssetPostprocessor`: три выбираемых корпуса прыгают и носят, `R18` —
+#: складский носильщик меню только с переноской, остальные 16 — базовый набор.
+#: Ключ — id робота (`R1` = `R1_PolarMechanic`), значение — группы `CLIP_GROUPS`.
+#: Это данные дизайна, а не флаги сборки: флаг может добавить клипы сверх
+#: набора, но не урезать его — иначе пересборка без `--jump/--carry` отдаст
+#: Unity файл без take, и постпроцессор соберёт пустые клипы и состояния.
+REQUIRED_CLIPS = {
+    "R1": ("jump", "carry", "carry_idle"),
+    "R10": ("jump", "carry", "carry_idle"),
+    "R15": ("jump", "carry", "carry_idle"),
+    "R18": ("carry",),
+}
+
+
+def required_takes(name: str) -> tuple[str, ...]:
+    """Полный обязательный набор take робота по имени его FBX без расширения."""
+    takes = list(BASE_TAKES)
+    for group in REQUIRED_CLIPS.get(name.split("_", 1)[0], ()):
+        takes.extend(CLIP_GROUPS[group])
+    return tuple(takes)
+
+
+def required_groups(selected=()) -> set[str]:
+    """Группы клипов, обязательные для выборки роботов (`--ids`).
+
+    Риг на прогон один, поэтому в него идёт объединение наборов всех выбранных.
+    Пустая выборка — все роботы реестра. Токен совпадает с id (`R1`) или с
+    полным именем (`R1_PolarMechanic`) — то же правило, что у фильтра сборки,
+    и `R1` не затягивает `R10`.
+    """
+    tokens = {str(token).lower() for token in selected}
+    groups: set[str] = set()
+    for robot_id, needed in REQUIRED_CLIPS.items():
+        rid = robot_id.lower()
+        if not tokens or any(t == rid or t.startswith(rid + "_") for t in tokens):
+            groups.update(needed)
+    return groups
+
+
+def robots_requiring(group: str) -> tuple[str, ...]:
+    """id роботов, которым обязательна группа: выборка для флага без `--ids`."""
+    return tuple(rid for rid, needed in REQUIRED_CLIPS.items() if group in needed)
 
 
 BUILDERS = [build_robot_01, build_robot_02, build_robot_03,

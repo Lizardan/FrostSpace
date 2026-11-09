@@ -4,8 +4,8 @@
 
 | Компонент | Значение | Проверено |
 |---|---|---|
-| Unity | 6000.6.7f1 | да |
-| Редактор | `F:\Unity\Editor\6000.6.7f1\Editor\Unity.exe` | да |
+| Unity | 6000.6.8f1 | да |
+| Редактор | `F:\Unity\Editor\6000.6.8f1\Editor\Unity.exe` | да |
 | Проект | `F:\Unity Projects\FrostSpace` | да |
 | Python | 3.14.3 (для `Tools/`) | да |
 | Скиллы | `.Aura/Skills/` + мост `.agents/skills/` | настроены `Tools/Agent/LinkAgentSkills.ps1` |
@@ -33,13 +33,13 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 Проверка импорта/компиляции:
 
 ```powershell
-& "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -batchmode -quit -projectPath "F:/Unity Projects/FrostSpace" -logFile "F:/Unity Projects/FrostSpace/Temp/batch-import.log"
+& "F:/Unity/Editor/6000.6.8f1/Editor/Unity.exe" -batchmode -quit -projectPath "F:/Unity Projects/FrostSpace" -logFile "F:/Unity Projects/FrostSpace/Temp/batch-import.log"
 ```
 
 Тесты EditMode (не добавляй `-quit`: `-runTests` завершает процесс сам):
 
 ```powershell
-& "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
+& "F:/Unity/Editor/6000.6.8f1/Editor/Unity.exe" -runTests -batchmode -projectPath "F:/Unity Projects/FrostSpace" -testPlatform EditMode -testResults "F:/Unity Projects/FrostSpace/Temp/editmode.xml"
 ```
 
 Тестов PlayMode в проекте нет — только EditMode (сборка `FrostSpace.Tests.EditMode`, 267 тестов:
@@ -110,7 +110,7 @@ Batch требует, чтобы редактор был **закрыт**: ин�
 - **Локальная проверка** (редактор должен быть закрыт, иначе `Temp/UnityLockfile`):
 
   ```powershell
-  & "F:/Unity/Editor/6000.6.7f1/Editor/Unity.exe" -quit -batchmode -projectPath "F:/Unity Projects/FrostSpace" -buildTarget WebGL -executeMethod FrostSpace.Editor.BuildWebGL.PerformBuild
+  & "F:/Unity/Editor/6000.6.8f1/Editor/Unity.exe" -quit -batchmode -projectPath "F:/Unity Projects/FrostSpace" -buildTarget WebGL -executeMethod FrostSpace.Editor.BuildWebGL.PerformBuild
   ```
 
 ## Blender

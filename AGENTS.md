@@ -61,7 +61,7 @@ MiniMax, WorkBuddy, Freebuff, Qoder и любой следующий): **всё,
 
 | Параметр | Значение |
 |---|---|
-| Unity | **6000.6.7f1**, редактор `F:\Unity\Editor\6000.6.7f1\Editor\Unity.exe` |
+| Unity | **6000.6.8f1**, редактор `F:\Unity\Editor\6000.6.8f1\Editor\Unity.exe` |
 | Render pipeline | URP **17.6.0**, Quality `Default` (единый) |
 | Цвет | Linear |
 | Input | только Input System (`Assets/InputSystem_Actions.inputactions`) |

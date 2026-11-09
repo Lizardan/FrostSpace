@@ -452,16 +452,38 @@ def _target_name(target) -> str:
     return os.path.basename(target or "-")
 
 
+#: Координатный токен клетки — `i:j`, как его принимает `build_world_cells.py`.
+#: В имени файла та же клетка записана суффиксом `_<i>_<j>` (`Ground_0_-2`,
+#: `Road_0_0_-2`), поэтому токен переводится в координаты, а не ищется как
+#: подстрока: раньше `--ids 0:-2` не совпадал ни с одним файлом и проверки
+#: молча пропускались.
+_CELL_ID = re.compile(r"^\s*(-?\d+):(-?\d+)\s*$")
+
+
+def _id_pattern(item: str):
+    """Шаблон имени файла для одного токена `--ids`.
+
+    Координаты якорятся по концу имени и по границе `_`: `0:-2` — это клетка
+    (0,−2), а не хвост другого числа (`…_10_-2` ей не является). Строковые ids
+    (`R1`, `ground`, `Wolf`) ищутся по границам `_`, как раньше: `R1` не должен
+    затянуть `R10_Pipewright`.
+    """
+    cell = _CELL_ID.match(item)
+    if cell:
+        return re.compile(r"(?:^|_)%d_%d$" % (int(cell.group(1)), int(cell.group(2))),
+                          re.IGNORECASE)
+    return re.compile(r"(?:^|_)%s(?:_|$)" % re.escape(item), re.IGNORECASE)
+
+
 def filter_by_ids(files: list[str], ids: list[str]) -> list[str]:
     """Ограничить превью и проверки выбранными именами (`--ids`).
 
-    Сравнение идёт по имени файла без расширения и по границам `_`: `R1` не должен
-    затянуть `R10_Pipewright`.
+    Сравнение идёт по имени файла без расширения: строковые ids — по границам
+    `_`, координатный токен клетки `i:j` — по суффиксу `_<i>_<j>`.
     """
     if not ids:
         return files
-    patterns = [re.compile(r"(?:^|_)%s(?:_|$)" % re.escape(item), re.IGNORECASE)
-                for item in ids]
+    patterns = [_id_pattern(item) for item in ids]
     picked = []
     for path in files:
         base = os.path.splitext(os.path.basename(path))[0]
@@ -504,7 +526,8 @@ def main() -> int:
     parser.add_argument("--all", action="store_true", help="все ассеты реестра")
     parser.add_argument("--list", action="store_true", help="показать реестр и выйти")
     parser.add_argument("--ids", nargs="+", default=[], metavar="NAME",
-                        help="имена/секции для скрипта сборки (после --)")
+                        help="имена/секции для скрипта сборки (после --); "
+                             "для cells — координаты клетки i:j")
     parser.add_argument("--jump", action="store_true",
                         help="прокинуть --jump в build_robots.py (клипы прыжка)")
     parser.add_argument("--carry", action="store_true",
@@ -619,6 +642,20 @@ def main() -> int:
                     targets = group_by_cell(filter_by_ids(files, args.ids))
                 else:
                     targets = [None]
+                if step["per"] in ("file", "cell") and not targets:
+                    # Проверка, которой нечего проверять, — не PASS: молчаливый
+                    # пропуск прятал и неверный `--ids`, и пустой выход после
+                    # неудачной сборки. В dry-run до первой сборки файлов ещё
+                    # нет, поэтому там пропуск не ошибка.
+                    if files or not args.dry_run:
+                        note = ("нет файлов под --ids: %s" % ", ".join(args.ids)
+                                if args.ids else "нет файлов для проверки")
+                        print("  ОШИБКА: %s (%s)" % (note, step["script"]))
+                        results.append((name + ":проверка", False, note))
+                        continue
+                    print("[%s] проверка: %s — файлов нет (dry-run)"
+                          % (name, step["script"]))
+                    continue
                 print("[%s] проверка: %s" % (name, step["script"]))
                 for target in targets:
                     cmd = _command(blender, step, step["args"], target, python)

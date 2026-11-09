@@ -5,6 +5,11 @@
     blender --background --factory-startup --python Tools/Blender/build_animals.py
 
 Без аргументов собираются все типы из `animal_lib.SPECIES` плюс паук.
+
+Манифест `animal_manifest.json` — регистр всей партии: записи сливаются по
+видам, незатронутые и неудачные виды сохраняют прежние данные, файл заменяется
+атомарно. Прогон с ошибкой сборки возвращает ненулевой код, даже если часть
+видов собрана и манифест обновлён.
 """
 
 from __future__ import annotations
@@ -25,6 +30,61 @@ import animal_lib  # noqa: E402
 import robot_lib  # noqa: E402
 
 MANIFEST = os.path.join(HERE, "animal_manifest.json")
+
+
+def read_manifest() -> list:
+    """Прежний регистр партии: нет файла — пустой список, повреждённый — ошибка.
+
+    Молча начинать с нуля при нечитаемом JSON значило бы стереть партию тем же
+    дефектом, который правим, поэтому повреждение не проглатывается.
+    """
+    if not os.path.exists(MANIFEST):
+        return []
+    with open(MANIFEST, "r", encoding="utf-8") as handle:
+        entries = json.load(handle)
+    if not isinstance(entries, list):
+        raise RuntimeError("манифест %s: ожидался список записей, получен %s"
+                           % (MANIFEST, type(entries).__name__))
+    return entries
+
+
+def merge_manifest(previous: list, results: list) -> list:
+    """Слить свежие записи с прежними по `species`, сохранив порядок реестра.
+
+    Манифест — регистр всей партии, его читает `check_animal_clips.py`.
+    Выборочный прогон (`-- Wolf`) обновляет только свой вид, а неудачная сборка
+    оставляет виду прежнюю запись: терять остальные 12 видов нельзя.
+    """
+    merged = list(previous)
+    index = {entry["species"]: pos for pos, entry in enumerate(merged)
+             if isinstance(entry, dict) and "species" in entry}
+    for entry in results:
+        key = entry["species"]
+        if key in index:
+            merged[index[key]] = entry
+        else:
+            index[key] = len(merged)
+            merged.append(entry)
+    return merged
+
+
+def write_manifest(entries: list) -> None:
+    """Атомарная замена: читатель не должен увидеть половину JSON.
+
+    Приём тот же, что у `level_lib.export_static`: временный файл рядом и
+    `os.replace`. Право переименования в каталоге есть даже когда файл занят.
+    """
+    os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
+    tmp = os.path.join(os.path.dirname(MANIFEST),
+                       "." + os.path.basename(MANIFEST) + ".tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump(entries, handle, ensure_ascii=False, indent=2)
+        os.replace(tmp, MANIFEST)
+    except OSError:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
 
 
 def _unity_scale(meta):
@@ -101,10 +161,12 @@ def main() -> int:
         raise RuntimeError("ни один тип не выбран: %s" % args)
 
     results = []
+    failed = []
     for item in species:
         try:
             results.append(build(item))
         except Exception:  # noqa: BLE001
+            failed.append(item)
             print("FAILED", item)
             traceback.print_exc()
 
@@ -115,11 +177,15 @@ def main() -> int:
             r["unity_scale"], r["clip_speed_unity"]))
 
     if results:
-        os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
-        with open(MANIFEST, "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
-        print("MANIFEST", MANIFEST)
-    if len(results) != len(species):
+        merged = merge_manifest(read_manifest(), results)
+        write_manifest(merged)
+        print("MANIFEST %s: записей %d, обновлено %d"
+              % (MANIFEST, len(merged), len(results)))
+    if failed:
+        # Прежние записи неудачных и незатронутых видов остаются в регистре,
+        # но сам прогон обязан считаться упавшим.
+        print("ПРОВАЛ сборки: %s (прежние записи манифеста сохранены)"
+              % ", ".join(failed))
         return 1
     return 0
 

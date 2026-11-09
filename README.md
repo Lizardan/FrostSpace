@@ -22,7 +22,7 @@ Unity-проект на ранней стадии: есть играбельны
 
 | Параметр | Значение |
 |---|---|
-| Unity | 6000.6.7f1 |
+| Unity | 6000.6.8f1 |
 | Render pipeline | URP 17.6.0 |
 | Ввод | Input System |
 | Сцены | Факт: `Boot` (0) → `MainMenu` (1) → `CharacterSetup` (2) → `Train` (3, интерьер, переноска, квест и финал) → `Frontier` (4, депо: прибытие поезда, выход R13, охрана, R7 и снаряжение) → `Game` (5, вне потока); целевой поток по ADR 0026: `Boot → MainMenu → CharacterSetup → Train → Frontier` |
@@ -55,7 +55,7 @@ Unity-проект на ранней стадии: есть играбельны
 
 ## Требования
 
-- Unity **6000.6.7f1** (редактор установлен в `F:\Unity\Editor`).
+- Unity **6000.6.8f1** (редактор установлен в `F:\Unity\Editor`).
 - Blender **5.2.3 LTS** — только если работаешь с 3D-ассетами; для Unity-разработки
   он не обязателен. Все ассеты собираются единым входом
   `python Tools/Blender/build_all.py` (см. [docs/BLENDER.md](docs/BLENDER.md)).

@@ -96,6 +96,7 @@ namespace FrostSpace.Features.Menu
         }
 
         private GameObject _root;
+        private bool _scannerWasEnabled;
         private GameObject _overviewPanel;
         private GameObject _journalPanel;
         private GameObject _settingsPanel;
@@ -157,7 +158,9 @@ namespace FrostSpace.Features.Menu
         /// <summary>Открывает паузу. Публичный: паузу может включить не только Esc.</summary>
         public void Open()
         {
-            if (IsPaused)
+            // Диалог, экипировка и катсцена уже держат риг. Пауза не должна
+            // перехватить блокировку, а Resume — снять её раньше владельца.
+            if (IsPaused || (_rig != null && _rig.IsPaused))
                 return;
 
             IsPaused = true;
@@ -166,7 +169,10 @@ namespace FrostSpace.Features.Menu
             if (_rig != null)
                 _rig.SetPaused(true);
             if (_scanner != null)
+            {
+                _scannerWasEnabled = _scanner.enabled;
                 _scanner.enabled = false;
+            }
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -185,7 +191,7 @@ namespace FrostSpace.Features.Menu
             Time.timeScale = 1f;
 
             if (_scanner != null)
-                _scanner.enabled = true;
+                _scanner.enabled = _scannerWasEnabled;
             if (_rig != null)
                 _rig.SetPaused(false);
 
