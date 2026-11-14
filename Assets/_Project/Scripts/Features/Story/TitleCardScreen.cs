@@ -71,61 +71,57 @@ namespace FrostSpace.Features.Story
         }
 
         /// <summary>
-        /// Показывает титул поверх занавеса и держит его, пока режиссёр не погасит:
-        /// собственного фона у титула нет, поэтому длительность темноты задаёт один
-        /// <see cref="Core.SceneController"/> и вход в неё равняется выходу.
+        /// Титр целиком внутри чёрного: проявление, держание, уход. Занавес запускает
+        /// эту рутину между «закрыт» и «проявление» и ждёт её конца, поэтому титр не
+        /// делит кадр ни с аварией, ни с двором. Собственного фона у титра нет —
+        /// чёрным владеет один <see cref="Core.SceneController"/>.
         /// </summary>
-        public void Play(float fadeIn = 0.35f)
+        /// <remarks>
+        /// Гул гаснет отдельной корутиной уже в новой сцене: если ждать активации
+        /// внутри этой рутины, получится кольцо — занавес ждёт титр, а титр ждёт
+        /// сцену, которую занавес ещё не активировал.
+        /// </remarks>
+        public IEnumerator PlayInsideBlack(string nextScene, float fadeIn, float hold,
+            float fadeOut, float droneOut, float timeout)
         {
             if (_playing)
-                return;
+                yield break;
 
             _playing = true;
-            StartCoroutine(Show(fadeIn));
-            StartDrone(fadeIn);
+
+            yield return Fade(0f, 1f, fadeIn);
+
+            if (hold > 0f)
+                yield return new WaitForSecondsRealtime(hold);
+
+            yield return Fade(_group.alpha, 0f, fadeOut);
+
+            StartCoroutine(DroneOut(nextScene, droneOut, timeout));
         }
 
         /// <summary>
-        /// Гасит титул, дождавшись своей сцены. Ждать обязан сам титул:
-        /// он на `DontDestroyOnLoad`, а режиссёр финала живёт в старой сцене
-        /// и уничтожается раньше, чем новая станет активной.
+        /// Гул переживает склейку и гаснет под проявлением депо, пока ветер набирает
+        /// громкость: на стыке не остаётся немой дыры. Ждать сцену обязан сам титр —
+        /// он на `DontDestroyOnLoad`, а режиссёр финала умирает вместе со старой сценой.
         /// </summary>
-        public void FadeOutWhenScene(string sceneName, float seconds = 0.9f,
-            float timeout = 6f)
-        {
-            if (!_playing)
-                return;
-
-            StartCoroutine(HideWhenScene(sceneName, seconds, timeout));
-        }
-
-        private IEnumerator HideWhenScene(string sceneName, float seconds, float timeout)
+        private IEnumerator DroneOut(string nextScene, float seconds, float timeout)
         {
             var startedAt = Time.realtimeSinceStartup;
-            while (SceneManager.GetActiveScene().name != sceneName &&
+            while (SceneManager.GetActiveScene().name != nextScene &&
                    Time.realtimeSinceStartup - startedAt < timeout)
             {
                 yield return null;
             }
 
-            yield return Hide(seconds);
-        }
-
-        private IEnumerator Show(float fadeIn)
-        {
-            _group.alpha = 0f;
-            yield return Fade(0f, 1f, fadeIn);
-        }
-
-        private IEnumerator Hide(float seconds)
-        {
-            var fade = StartCoroutine(Fade(_group.alpha, 0f, seconds));
             yield return FadeDrone(seconds, 0f);
-            yield return fade;
             Destroy(gameObject);
         }
 
-        private void StartDrone(float seconds)
+        /// <summary>
+        /// Гул стартует вместе с занавесом, а не с титром: под чёрным пар вагона ещё
+        /// звучит, и гул входит поверх него, а не в тишину.
+        /// </summary>
+        public void StartDrone(float seconds)
         {
             if (_drone == null)
                 return;

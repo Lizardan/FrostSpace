@@ -180,7 +180,8 @@ namespace FrostSpace.Core
         /// сценам: чёрный титр требует чёрного занавеса, иначе на стыке вспыхивает белый.
         /// Пустая строка — без текста; значения по умолчанию возвращаются после перехода.
         /// </summary>
-        public void LoadScene(string sceneName, Color curtainColor, string statusText)
+        public void LoadScene(string sceneName, Color curtainColor, string statusText,
+            Blackout blackout = default)
         {
             if (IsBusy)
                 return;
@@ -195,7 +196,37 @@ namespace FrostSpace.Core
             if (_statusLabel != null)
                 _statusLabel.text = string.IsNullOrEmpty(statusText) ? string.Empty : statusText;
 
-            StartCoroutine(LoadRoutine(sceneName));
+            StartCoroutine(LoadRoutine(sceneName, blackout));
+        }
+
+        /// <summary>
+        /// Чёрная пауза одного перехода: что живёт между закрытым занавесом и
+        /// проявлением новой сцены. Содержимое передаётся рутиной, а не типом:
+        /// занавес лежит в <c>Core</c> и о титре из <c>Features</c> не знает.
+        /// Нули и пустая рутина — обычный переход без паузы.
+        /// </summary>
+        public readonly struct Blackout
+        {
+            /// <summary>Пауза в чёрном до содержимого, с.</summary>
+            public readonly float LeadSeconds;
+
+            /// <summary>Пауза в чёрном после содержимого, с.</summary>
+            public readonly float TailSeconds;
+
+            /// <summary>Проявление новой сцены, с. 0 — взять общее.</summary>
+            public readonly float RevealSeconds;
+
+            /// <summary>Содержимое чёрного; занавес ждёт его конца.</summary>
+            public readonly System.Func<IEnumerator> Segment;
+
+            public Blackout(float leadSeconds, float tailSeconds, float revealSeconds,
+                System.Func<IEnumerator> segment)
+            {
+                LeadSeconds = leadSeconds;
+                TailSeconds = tailSeconds;
+                RevealSeconds = revealSeconds;
+                Segment = segment;
+            }
         }
 
         /// <summary>
@@ -205,7 +236,7 @@ namespace FrostSpace.Core
         /// собранном WebGL, а разница остаётся только в том, сколько белый держится в
         /// ожидании загрузки сцены.
         /// </summary>
-        private IEnumerator LoadRoutine(string sceneName)
+        private IEnumerator LoadRoutine(string sceneName, Blackout blackout)
         {
             IsBusy = true;
 
@@ -235,6 +266,23 @@ namespace FrostSpace.Core
             if (_whiteHoldSeconds > 0f)
                 yield return new WaitForSecondsRealtime(_whiteHoldSeconds);
 
+            // Чёрное содержимое живёт строго между закрытым занавесом и проявлением:
+            // занавес уже непрозрачен, новая сцена ещё не активирована, поэтому титр
+            // не делит кадр ни с уходящей сценой, ни с приходящей.
+            if (blackout.LeadSeconds > 0f)
+                yield return new WaitForSecondsRealtime(blackout.LeadSeconds);
+
+            if (blackout.Segment != null)
+                yield return StartCoroutine(blackout.Segment());
+
+            if (blackout.TailSeconds > 0f)
+                yield return new WaitForSecondsRealtime(blackout.TailSeconds);
+
+            var blackAt = Time.realtimeSinceStartup;
+
+            // Загрузка ждётся после чёрного содержимого, а не до него: титр всегда
+            // играет свою длину целиком, а загрузка прячется под ним. Наружу торчит
+            // только то, что длиннее паузы.
             var loadWaitStart = Time.realtimeSinceStartup;
             while (operation.progress < 0.9f)
                 yield return null;
@@ -244,9 +292,10 @@ namespace FrostSpace.Core
                 // Отчёт по фазам в секундах: по этой строке в консоли браузера (F12) видно,
                 // что тайминги в сборке те же, что в редакторе.
                 Debug.Log(string.Format(
-                    "SceneController: '{0}' фазы от старта: занавес {1:0.00}s, строка закрыта {2:0.00}s, ожидание загрузки {3:0.00}s, подмена {4:0.00}s",
+                    "SceneController: '{0}' фазы от старта: занавес {1:0.00}s, строка закрыта {2:0.00}s, чёрное {3:0.00}s, ожидание загрузки {4:0.00}s, подмена {5:0.00}s",
                     sceneName, curtainAt - startedAt, statusAt - startedAt,
-                    Time.realtimeSinceStartup - loadWaitStart, Time.realtimeSinceStartup - startedAt));
+                    blackAt - statusAt, Time.realtimeSinceStartup - loadWaitStart,
+                    Time.realtimeSinceStartup - startedAt));
             }
 
             // Страховка: к моменту подмены занавес обязан быть непрозрачным.
@@ -256,10 +305,11 @@ namespace FrostSpace.Core
             while (!operation.isDone)
                 yield return null;
 
-            // Один кадр новой сцены уже под белым, и только после него начинается проявление.
+            // Один кадр новой сцены уже под чёрным, и только после него начинается проявление.
             yield return null;
 
-            yield return FadeRoutine(1f, 0f, _fadeInSeconds);
+            var reveal = blackout.RevealSeconds > 0f ? blackout.RevealSeconds : _fadeInSeconds;
+            yield return FadeRoutine(1f, 0f, reveal);
 
             RestoreCurtainDefaults();
             IsBusy = false;

@@ -12,9 +12,9 @@ namespace FrostSpace.Features.Story
     /// <summary>
     /// Финал вагона (TR-09, TR-10): квест сдан, R13 уходит с грузом к боковому проёму
     /// и успевает увидеть, что тормоза не держат. Дальше кадром владеет авария
-    /// (<see cref="TrainCrashRig"/>): мир тормозит, корпус падает и кренится, свет
-    /// гаснет с искрой, снег бьёт внутрь, остаётся одна аварийная лампа. Затем кадр
-    /// уходит в чёрный — и чёрным владеет один <see cref="SceneController"/>.
+    /// (<see cref="TrainCrashRig"/>): мир теряет ход, но катится дальше, корпус
+    /// проседает, свет гаснет с искрой, снег бьёт внутрь, остаётся одна аварийная
+    /// лампа. Затем кадр уходит в чёрный — и чёрным владеет один <see cref="SceneController"/>.
     ///
     /// Поезд не встаёт у платформы целым: он дотягивает до депо уже подбитым, и
     /// прибытие — событие `Frontier`.
@@ -47,24 +47,35 @@ namespace FrostSpace.Features.Story
         [Tooltip("Авария: торможение, удар, тьма. Пусто — спокойная остановка")]
         [SerializeField] private TrainCrashRig _crash;
         [Tooltip("Сколько держим последний кадр до занавеса, с")]
-        [SerializeField] private float _holdSeconds = 0.8f;
+        [SerializeField] private float _holdSeconds = 1.4f;
 
         [Header("Звук прибытия заранее")]
         [Tooltip("Дальние тормоза: входят до склейки, а не после")]
         [SerializeField] private AudioClip _brakes;
         [SerializeField, Range(0f, 1f)] private float _farVolume = 0.3f;
 
-        [Header("Титул")]
+        [Header("Титул в чистом чёрном")]
+        [Tooltip("Пауза в чёрном после закрытия занавеса, до титра")]
+        [SerializeField] private float _blackLeadSeconds = 0.4f;
         [Tooltip("За сколько титул проявляется из темноты")]
-        [SerializeField] private float _titleFadeIn = 0.35f;
-        [Tooltip("За сколько титул гаснет после активации депо. Равен входу")]
-        [SerializeField] private float _titleFadeOut = 0.35f;
-        [Tooltip("Сколько ждём активацию новой сцены, прежде чем гасить титул принудительно")]
+        [SerializeField] private float _titleFadeIn = 0.6f;
+        [Tooltip("Сколько титул держится на чёрном")]
+        [SerializeField] private float _titleHoldSeconds = 1.8f;
+        [Tooltip("За сколько титул гаснет. Весь визуал титра умирает до активации депо")]
+        [SerializeField] private float _titleFadeOut = 0.5f;
+        [Tooltip("Пауза в чёрном после титра, до проявления депо")]
+        [SerializeField] private float _blackTailSeconds = 0.3f;
+        [Tooltip("За сколько гул титра гаснет уже в депо: под него набирает громкость ветер")]
+        [SerializeField] private float _droneOutSeconds = 1.2f;
+        [Tooltip("Сколько ждём активацию новой сцены, прежде чем гасить гул принудительно")]
         [SerializeField] private float _sceneWaitTimeout = 6f;
 
         [Header("Занавес")]
         [Tooltip("Цвет занавеса на переходе в депо: единственный чёрный этого кадра")]
         [SerializeField] private Color _curtainColor = new(0.0196f, 0.0314f, 0.0431f, 1f);
+        [Tooltip("За сколько открывается занавес депо. Длиннее общего проявления: " +
+                 "вставка 6 с стартует здесь и смотрится целиком")]
+        [SerializeField] private float _revealSeconds = 1.2f;
 
         private bool _running;
         private AudioSource _oneShotSource;
@@ -126,7 +137,8 @@ namespace FrostSpace.Features.Story
             }
 
             // R13 успевает дойти до проёма и увидеть, что тормоза не держат.
-            // Дальше кадром владеет авария: она же тормозит мир за окнами.
+            // Дальше кадром владеет авария: она сбрасывает ход мира за окнами, но
+            // не останавливает поезд — он доедет до депо.
             StartCoroutine(ExitR13());
             PlayFar(_brakes, 0.9f, 0.72f);
 
@@ -148,14 +160,24 @@ namespace FrostSpace.Features.Story
                 yield break;
             }
 
-            // Один владелец темноты: занавес уходит в чёрный за FadeOutSeconds и ровно
-            // за столько же возвращает кадр. Титул — только текст, снег и гул поверх.
-            controller.LoadScene(_nextScene, _curtainColor, string.Empty);
-            _titleCard?.Play(_titleFadeIn);
+            // Один владелец темноты: занавес уходит в чёрный, держит в нём титр и
+            // только потом проявляет депо. Титр — текст, снег и гул; подложки у него
+            // нет, иначе два независимых затемнения наложились бы друг на друга.
+            System.Func<IEnumerator> black = null;
+            if (_titleCard != null)
+            {
+                // Гул входит вместе с занавесом: пар вагона под чёрным ещё звучит,
+                // поэтому гул нарастает поверх него, а не в тишину.
+                _titleCard.StartDrone(controller.FadeOutSeconds);
+                black = () => _titleCard.PlayInsideBlack(_nextScene, _titleFadeIn,
+                    _titleHoldSeconds, _titleFadeOut, _droneOutSeconds, _sceneWaitTimeout);
+            }
 
-            // Гасит титул он сам: дождаться новой сцены здесь нельзя — этот объект
-            // уничтожается вместе со старой сценой, и чёрный остался бы на экране.
-            _titleCard?.FadeOutWhenScene(_nextScene, _titleFadeOut, _sceneWaitTimeout);
+            // Гасить титр отсюда нельзя: этот объект уничтожается вместе со старой
+            // сценой. Титр доживает гул сам — он на DontDestroyOnLoad.
+            controller.LoadScene(_nextScene, _curtainColor, string.Empty,
+                new SceneController.Blackout(_blackLeadSeconds, _blackTailSeconds,
+                    _revealSeconds, black));
             _running = false;
         }
 

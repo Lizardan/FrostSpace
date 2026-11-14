@@ -9,9 +9,13 @@
 // у них нет метки `CellMesh`. Поселение собрано так же, иначе выгрузка клетки
 // оставляла бы в мире пустой двор.
 //
-// Heights: пол узла держит одну отметку −0,175 м (ADR 0041), поэтому каждая
-// метка = пол + привычка. Привычки сняты с геометрии частей: стакан вышки
-// кончается на +1,05, настил загона — на уровне пола, ступенька крыльца — +0,15.
+// Heights: пол узла держит одну отметку −0,6194 м (ADR 0041, печатает
+// `Tools/Blender/reseat_marks.py`). Но пол — не единственная поверхность:
+// тропы `Hut_Paths` подняты на 0,10…0,13 (`settlement_parts._paths`, lift по
+// номеру маршрута), а корыто `Hut_Pen` — на 0,45. Посадка идёт по геометрии
+// клетки, а не по таблице: актёр, поставленный «на пол» под тропой, уходит в
+// снег по щиколотку. Стакан вышки — единственное исключение, у него своя
+// ступица (`settlement_parts._mast`).
 //
 // ВНИМАНИЕ: скрипт перезаписывает содержимое группы `Settlement` в префабе
 // клетки. Перед запуском — копия сцены в `Temp/backup/`.
@@ -21,7 +25,7 @@ const string ROBOTS = "Assets/_Project/Content/Prefabs/Robots/";
 const string ANIMALS = "Assets/_Project/Content/Prefabs/RobotAnimals/";
 const string DIALOGUES = "Assets/_Project/Content/Data/Dialogues/";
 const string MODELS = "Assets/_Project/Content/Models/Level/";
-float FLOOR = -0.175f;                       // пол узла: PAD_LEVEL0["settlement"]
+float FLOOR = -0.6194f;                      // пол узла: PAD_LEVEL0["settlement"]
 
 var tNpc = System.Type.GetType("FrostSpace.Features.Npc.NpcController, FrostSpace.Features");
 var tAir = System.Type.GetType("FrostSpace.Features.Npc.AirPatrolController, FrostSpace.Features");
@@ -49,6 +53,57 @@ System.Func<string, UnityEngine.Vector3, float, UnityEngine.Transform> Spawn =
     go.transform.position = at;
     go.transform.rotation = UnityEngine.Quaternion.Euler(0f, rotY, 0f);
     return go.transform;
+};
+
+// Опора под точкой — по коллайдерам самой клетки. Physics.Raycast здесь не
+// годится: сцена предпросмотра префаба в физический мир не входит, и луч бьёт
+// по клеткам активной сцены. 2026-11-12 луч из префаба поселения попадал в
+// Ground_-2_-2 депо — то есть мерил чужой узел. Collider.Raycast бьёт по
+// конкретному коллайдеру и от физического мира не зависит.
+var cellColliders = new System.Collections.Generic.List<UnityEngine.Collider>();
+foreach (var cm in root.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
+{
+    var c = cm.GetComponent<UnityEngine.Collider>();
+    if (c != null) cellColliders.Add(c);
+}
+
+// Луч начинается на потолке, поэтому всё выше него (кровли, навесы, корыто)
+// в посадку не попадает: актёр встаёт на пол, а не на предмет, стоящий на полу.
+System.Func<float, float, float, float> Surface = delegate (float x, float z, float ceiling)
+{
+    var ray = new UnityEngine.Ray(new UnityEngine.Vector3(x, ceiling, z), UnityEngine.Vector3.down);
+    float best = float.NegativeInfinity;
+    UnityEngine.RaycastHit h;
+    foreach (var c in cellColliders)
+        if (c.Raycast(ray, out h, 12f) && h.point.y > best) best = h.point.y;
+    return best;
+};
+
+// Нижняя точка rest-позы: `renderer.bounds` в редакторе отстаёт, считаем от меша.
+System.Func<UnityEngine.Transform, float> Low = delegate (UnityEngine.Transform t)
+{
+    float min = float.PositiveInfinity;
+    foreach (var sk in t.GetComponentsInChildren<UnityEngine.SkinnedMeshRenderer>(true))
+    {
+        if (sk.sharedMesh == null) continue;
+        var c = sk.transform.localToWorldMatrix.MultiplyPoint(sk.sharedMesh.bounds.min);
+        if (c.y < min) min = c.y;
+    }
+    foreach (var mf in t.GetComponentsInChildren<UnityEngine.MeshFilter>(true))
+    {
+        if (mf.sharedMesh == null) continue;
+        var c = mf.transform.localToWorldMatrix.MultiplyPoint(mf.sharedMesh.bounds.min);
+        if (c.y < min) min = c.y;
+    }
+    return min;
+};
+
+System.Action<UnityEngine.Transform, float> Seat = delegate (UnityEngine.Transform t, float surface)
+{
+    float low = Low(t);
+    if (float.IsPositiveInfinity(low)) return;
+    var p = t.position;
+    t.position = new UnityEngine.Vector3(p.x, p.y + (surface - low), p.z);
 };
 
 // Маршрут: четыре точки внутри зоны. NpcController берёт путь с детей, поэтому
@@ -88,7 +143,7 @@ var robots = new object[][]
     new object[] { "R3_Scout_Model", "R3_Weatherwatch", 46f, 40f, 200f, "SettlementWeather",
         "Пост метеонаблюдения", "ОБОРУДОВАНИЕ",
         new[] { 46f, -2f, 44f, -2f, 48f, -2f, 48f, 0f } },
-    new object[] { "R17_Hermit_Model", "R17_Keeper", 17f, 20f, 90f, "SettlementShelter",
+    new object[] { "R17_Hermit_Model", "R17_Keeper", 15f, 17f, 90f, "SettlementShelter",
         "Смотритель приюта", "ЛЮДИ",
         new[] { 14f, 14f, 20f, 14f, 20f, 24f, 14f, 24f } },
     new object[] { "R14_Medic_Model", "R14_Powerman", 18f, 36f, 180f, "SettlementPower",
@@ -103,8 +158,11 @@ int placed = 0;
 foreach (var r in robots)
 {
     float x = (float)r[2], z = (float)r[3];
-    var tr = Spawn(ROBOTS + r[0] + ".prefab", new UnityEngine.Vector3(x, FLOOR + 0.005f, z), (float)r[4]);
+    float seat = Surface(x, z, FLOOR + 0.30f);
+    if (float.IsNegativeInfinity(seat)) seat = FLOOR;
+    var tr = Spawn(ROBOTS + r[0] + ".prefab", new UnityEngine.Vector3(x, seat + 0.5f, z), (float)r[4]);
     if (tr == null) continue;
+    Seat(tr, seat + 0.005f);
     tr.gameObject.name = (string)r[1];
     var cc = tr.gameObject.AddComponent<UnityEngine.CharacterController>();
     cc.height = 1.7f; cc.radius = 0.34f; cc.center = new UnityEngine.Vector3(0f, 0.85f, 0f);
@@ -158,16 +216,26 @@ var beasts = new object[][]
 foreach (var b in beasts)
 {
     float x = (float)b[2], z = (float)b[3];
+    float seat = Surface(x, z, FLOOR + 0.30f);
+    if (float.IsNegativeInfinity(seat)) seat = FLOOR;
     var tr = Spawn(ANIMALS + b[0] + "/RA_" + b[0] + "_Model.prefab",
-                   new UnityEngine.Vector3(x, FLOOR + 0.01f, z), (float)b[4]);
+                   new UnityEngine.Vector3(x, seat + 0.5f, z), (float)b[4]);
     if (tr == null) continue;
+    Seat(tr, seat + 0.005f);
     tr.gameObject.name = (string)b[1];
+    // Unity проверяет шаг в сам момент AddComponent — по штатным величинам
+    // (рост 2, радиус 0.5, шаг 0.3) и масштабу корня. Модели животных приезжают
+    // со своим масштабом (кошка 0.14, кабан 0.1625), и предел оказывается ниже
+    // штатного шага: редактор логирует ошибку ещё до любых присваиваний.
+    // Замерено пошагово: +1 запись лога на AddComponent, +0 на всех остальных.
+    // Поэтому контроллер заводится при единичном масштабе, а масштаб модели
+    // возвращается после настройки — итоговые величины те же и проверены.
+    var modelScale = tr.localScale;
+    tr.localScale = UnityEngine.Vector3.one;
     var cc = tr.gameObject.AddComponent<UnityEngine.CharacterController>();
-    cc.height = 0.9f; cc.radius = 0.32f; cc.center = new UnityEngine.Vector3(0f, 0.45f, 0f);
-    // Шаг у мелкой модели обязан быть меньше половины её роста: модели животных
-    // приезжают со своим масштабом, и штатные 0,3 м Unity ругает прямо в
-    // `LoadPrefabContents` — тест на этом падает, а не игра.
     cc.stepOffset = 0.08f; cc.skinWidth = 0.03f;
+    cc.height = 0.9f; cc.radius = 0.32f; cc.center = new UnityEngine.Vector3(0f, 0.45f, 0f);
+    tr.localScale = modelScale;
     var anim = tr.GetComponentInChildren<UnityEngine.Animator>();
     var npc = tr.gameObject.AddComponent(tNpc);
     var pts = (float[])b[7];
@@ -224,8 +292,13 @@ foreach (var pr in new object[][]
     new object[] { "Prop_Crate", 37f, 32f },
 })
 {
-    var tr = Spawn(MODELS + pr[0] + ".fbx", new UnityEngine.Vector3((float)pr[1], FLOOR, (float)pr[2]), 30f);
-    if (tr != null) tr.gameObject.name = (string)pr[0];
+    float px = (float)pr[1], pz = (float)pr[2];
+    float seat = Surface(px, pz, FLOOR + 0.30f);
+    if (float.IsNegativeInfinity(seat)) seat = FLOOR;
+    var tr = Spawn(MODELS + pr[0] + ".fbx", new UnityEngine.Vector3(px, seat + 0.5f, pz), 30f);
+    if (tr == null) continue;
+    tr.gameObject.name = (string)pr[0];
+    Seat(tr, seat + 0.005f);
 }
 
 // Свет: крыльцо, четыре фонаря на створах ворот, подстанция и маяк вышки.

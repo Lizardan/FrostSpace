@@ -5,7 +5,7 @@
     "com.ramenvr.autopilot": "https://github.com/ramenvr/autopilot.git?path=/plugin/unity/com.ramenvr.autopilot#9e0fbb0f2a5ae18d68d1f1f5d6ec17aceb15a1d5",
     "com.unity.cinemachine": "6.6.0",
     "com.unity.cloud.gltfast": "6.20.0",
-    "com.unity.collab-proxy": "2.13.6",
+    "com.unity.collab-proxy": "2.14.0",
     "com.unity.feature.2d": "2.0.2",
     "com.unity.feature.characters-animation": "1.0.0",
     "com.unity.ide.rider": "3.1.0",

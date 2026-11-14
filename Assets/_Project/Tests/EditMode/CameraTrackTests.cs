@@ -38,7 +38,7 @@ namespace FrostSpace.Tests
         // всём подходе к депо держит ту же отметку). Место в вагоне — корень вагона
         // (+1,00 над головкой) плюс 0,20 локально, порог и точка на платформе — верх
         // настила (+1,04 над головкой: плита 0,90 плюс шапка снежного вала 0,14).
-        private const float RailHeadAtDoor = -1.06f;
+        private const float RailHeadAtDoor = -1.6606f;
 
         private static PathCurve PlayerCurve()
             => new PathCurve(DepotArrivalDirector.BuildRoute(

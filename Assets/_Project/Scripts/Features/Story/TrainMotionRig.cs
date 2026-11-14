@@ -12,9 +12,11 @@ namespace FrostSpace.Features.Story
     /// (столбы) идёт быстро, дальний (скалы) — медленно; разница скоростей и даёт
     /// глубину.
     ///
-    /// После сдачи квеста вызывается <see cref="Stop"/>: скорость плавно уходит в
-    /// ноль за <see cref="_stopSeconds"/>, снег перестаёт сносить назад. Это конец
-    /// рейса по GDD, а не пауза.
+    /// После сдачи квеста вызывается <see cref="SlowTo"/>: скорость плавно уходит к
+    /// остаточной доле за <see cref="_stopSeconds"/>, но не в ноль. Тормоза не держат,
+    /// поэтому поезд продолжает ехать и приезжает в депо подбитым, а не встаёт у
+    /// платформы. Снос снега назад гаснет пропорционально скорости. Полный стоп
+    /// (<see cref="Stop"/>) оставлен как отдельный приём.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(200)]
@@ -48,11 +50,13 @@ namespace FrostSpace.Features.Story
         [SerializeField] private float _stopSeconds = 3f;
 
         private float _speedScale = 1f;
+        private float _targetScale;
         private bool _stopping;
 
         /// <summary>Начать торможение: слои и снег плавно замирают.</summary>
         public void Stop()
         {
+            _targetScale = 0f;
             _stopping = true;
         }
 
@@ -63,6 +67,19 @@ namespace FrostSpace.Features.Story
         public void Stop(float seconds)
         {
             _stopSeconds = Mathf.Max(0.01f, seconds);
+            _targetScale = 0f;
+            _stopping = true;
+        }
+
+        /// <summary>
+        /// Сбросить ход к остаточной доле, а не в ноль: тормоза не держат, состав
+        /// продолжает ехать. Доля 0 — полный стоп, 1 — ход не теряется. Снег и
+        /// параллакс замедляются пропорционально и дальше катятся на этой доле.
+        /// </summary>
+        public void SlowTo(float scale, float seconds)
+        {
+            _stopSeconds = Mathf.Max(0.01f, seconds);
+            _targetScale = Mathf.Clamp01(scale);
             _stopping = true;
         }
 
@@ -70,13 +87,14 @@ namespace FrostSpace.Features.Story
         public void Resume()
         {
             _stopping = false;
+            _targetScale = 1f;
             _speedScale = 1f;
             ApplySnow(1f);
         }
 
         private void Update()
         {
-            var target = _stopping ? 0f : 1f;
+            var target = _stopping ? _targetScale : 1f;
             var step = Time.deltaTime / Mathf.Max(0.01f, _stopSeconds);
             _speedScale = Mathf.MoveTowards(_speedScale, target, step);
 

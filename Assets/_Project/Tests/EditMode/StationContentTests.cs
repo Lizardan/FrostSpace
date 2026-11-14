@@ -48,6 +48,9 @@ namespace FrostSpace.Tests
         private const float PlatformSouth = -50f;
         private const float PlatformNorth = 45f;
 
+        /// <summary>Пол узла: PAD_LEVEL0["station"], печатает Tools/Blender/reseat_marks.py.</summary>
+        private const float FloorLevel = -6.0882f;
+
         private static readonly BindingFlags Fields =
             BindingFlags.NonPublic | BindingFlags.Instance;
 
@@ -230,7 +233,7 @@ namespace FrostSpace.Tests
             var open = 0;
             var closed = 0;
             var verts = mesh.vertices;
-            var roofTop = -4.440f + 0.20f + 4.40f + 0.30f;
+            var roofTop = FloorLevel + 0.20f + 4.40f + 0.30f;
             for (var i = 0; i < verts.Length; i++)
             {
                 var v = verts[i];

@@ -35,7 +35,7 @@ namespace FrostSpace.Tests
         private const float CellSceneX = 800f;
 
         /// <summary>Пол узла: `PAD_LEVEL0["settlement"]`, ADR 0041.</summary>
-        private const float FloorLevel = -0.175f;
+        private const float FloorLevel = -0.6194f;
 
         private static readonly BindingFlags Fields =
             BindingFlags.NonPublic | BindingFlags.Instance;

@@ -16197,10 +16197,15 @@ MonoBehaviour:
   _holdSeconds: 1.4
   _brakes: {fileID: 8300000, guid: f974d7dedeb6f9140b66d6439ecbc293, type: 3}
   _farVolume: 0.3
-  _titleFadeIn: 0.5
+  _blackLeadSeconds: 0.4
+  _titleFadeIn: 0.6
+  _titleHoldSeconds: 1.8
   _titleFadeOut: 0.5
+  _blackTailSeconds: 0.3
+  _droneOutSeconds: 1.2
   _sceneWaitTimeout: 6
   _curtainColor: {r: 0.0196, g: 0.0314, b: 0.0431, a: 1}
+  _revealSeconds: 1.2
 --- !u!4 &807522709
 Transform:
   m_ObjectHideFlags: 0

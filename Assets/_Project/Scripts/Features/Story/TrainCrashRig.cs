@@ -21,8 +21,9 @@ namespace FrostSpace.Features.Story
     /// занавесом, потому что `Frontier` обязан принять подбитый состав, а не целый.
     ///
     /// Камера приходит сюда от режиссёра: в кинематографическом режиме риг её не
-    /// пишет, поэтому тряска — единственный владелец кадра. Тряска возвращается,
-    /// а сдвиг к дыму остаётся: финальный кадр смотрит на тлеющую обшивку.
+    /// пишет, поэтому кадром владеет авария. На торможении она доворачивает камеру
+    /// к кабине (квест могли сдать боком), дальше тряска и сдвиг к дыму. Тряска
+    /// возвращается, а сдвиг остаётся: финальный кадр смотрит на тлеющую обшивку.
     ///
     /// Числа тряски и сдвига — чистые функции (<see cref="ShakeOffset"/>,
     /// <see cref="ShakeRoll"/>, <see cref="DriftOffset"/>): их проверяют EditMode-тесты,
@@ -48,7 +49,7 @@ namespace FrostSpace.Features.Story
         [SerializeField] private Transform _body;
         [Tooltip("Лампы кабины: гаснут от удара, одна возвращается аварийной")]
         [SerializeField] private Light[] _lamps = new Light[0];
-        [Tooltip("Параллакс за окнами: тормозит до удара")]
+        [Tooltip("Параллакс за окнами: сбрасывает ход к остаточной доле, но поезд не встаёт")]
         [SerializeField] private TrainMotionRig _motion;
         [Tooltip("Системы снега у окон: удар выбивает из них залп внутрь")]
         [SerializeField] private ParticleSystem[] _snow = new ParticleSystem[0];
@@ -64,6 +65,12 @@ namespace FrostSpace.Features.Story
         [SerializeField] private AudioClip _steam;
         [SerializeField, Range(0f, 1f)] private float _volume = 0.9f;
         [SerializeField, Range(0f, 1f)] private float _steamVolume = 0.35f;
+
+        [Header("Ход и кадр")]
+        [Tooltip("Остаточная доля хода после торможения: тормоза не держат, поезд продолжает ехать и приезжает в депо. 0 — встал, 1 — ход не потерян")]
+        [SerializeField, Range(0f, 1f)] private float _rollResidual = 0.45f;
+        [Tooltip("За сколько торможения камера доворачивается к кабине, с. Доворот кончается до удара, чтобы пролом был в кадре")]
+        [SerializeField] private float _lookTurnSeconds = 0.9f;
 
         [Header("Удар")]
         [Tooltip("Первая просадка корпуса вниз, м")]
@@ -236,13 +243,15 @@ namespace FrostSpace.Features.Story
         {
             Recall();
 
+            // Тормоза не держат: ход сбрасывается к остаточной доле, но не в ноль —
+            // состав продолжает ехать и приезжает в депо подбитым.
             if (_motion != null)
-                _motion.Stop(BrakeSeconds);
+                _motion.SlowTo(_rollResidual, BrakeSeconds);
 
             // До удара дым уже есть: изоляция тлеет, и удар забирает не пустой салон.
             SetSmokeLevel(0.30f);
 
-            yield return Brake();
+            yield return Brake(camera);
             yield return Impact(camera);
             yield return Settle(camera);
 
@@ -255,11 +264,30 @@ namespace FrostSpace.Features.Story
         /// ещё пытается ехать. Провал короткий и неполный, чтобы это читалось как
         /// тревога, а не как уже случившаяся авария.
         ///
+        /// Здесь же камера доворачивается к кабине: квест могли сдать боком, и без
+        /// доворота пролом остался бы за кадром. Доворот кончается до удара, поэтому
+        /// удар и оседание считаются уже от повёрнутой позы.
+        ///
         /// Корпус на торможении не качается: наклон, оставшийся после удара,
         /// расходился бы с ровным составом, который приезжает в депо.
         /// </summary>
-        private IEnumerator Brake()
+        private IEnumerator Brake(Camera camera)
         {
+            var cameraTransform = camera != null ? camera.transform : null;
+            var turnFrom = cameraTransform != null ? cameraTransform.rotation : Quaternion.identity;
+            var turnTo = turnFrom;
+            var haveTurn = false;
+            if (cameraTransform != null && _cabinSmoke != null)
+            {
+                var aim = _cabinSmoke.transform.position - cameraTransform.position;
+                if (aim.sqrMagnitude > 1e-4f)
+                {
+                    turnTo = Quaternion.LookRotation(aim, Vector3.up);
+                    haveTurn = true;
+                }
+            }
+            var turnSeconds = Mathf.Clamp(_lookTurnSeconds, 0.01f, BrakeSeconds);
+
             var elapsed = 0f;
             while (elapsed < BrakeSeconds)
             {
@@ -270,10 +298,18 @@ namespace FrostSpace.Features.Story
                 var dip = Mathf.Sin(t * Mathf.PI * 4f);
                 var level = 1f - 0.75f * Mathf.Abs(dip);
                 SetLampLevel(level);
+
+                if (haveTurn)
+                {
+                    var k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / turnSeconds));
+                    cameraTransform.rotation = Quaternion.Slerp(turnFrom, turnTo, k);
+                }
                 yield return null;
             }
 
             SetLampLevel(1f);
+            if (haveTurn)
+                cameraTransform.rotation = turnTo;
         }
 
         /// <summary>Удар: корпус падает и кренится, свет гаснет, снег бьёт внутрь.</summary>

@@ -29,7 +29,7 @@ const string ROBOTS = "Assets/_Project/Content/Prefabs/Robots/";
 const string MODELS = "Assets/_Project/Content/Models/Level/";
 const string DIALOGUES = "Assets/_Project/Content/Data/Dialogues/";
 
-float FLOOR = -4.440f;                       // PAD_LEVEL0["station"]
+float FLOOR = -6.0882f;                      // PAD_LEVEL0["station"]
 float DECK = FLOOR + 1.04f;                  // настил платформы: плита + шапка
 float HANGAR_FLOOR = FLOOR + 0.14f;          // пол ангара: плита над снежным валом
 float COMPLEX_FLOOR = FLOOR + 0.26f;         // пол отсеков: бетон по общей плите
@@ -84,6 +84,36 @@ System.Action<UnityEngine.Transform, float> Seat = delegate (UnityEngine.Transfo
     if (float.IsPositiveInfinity(low)) return;
     var p = t.position;
     t.position = new UnityEngine.Vector3(p.x, p.y + (surface - low), p.z);
+};
+
+// Опора под точкой — по коллайдерам самой клетки. Physics.Raycast здесь не
+// годится: сцена предпросмотра префаба в физический мир не входит, и луч бьёт
+// по клеткам активной сцены (2026-11-12 луч из префаба поселения попадал в
+// Ground_-2_-2 депо). Collider.Raycast бьёт по конкретному коллайдеру и от
+// физического мира не зависит.
+//
+// Зачем это вместо таблицы: пол ангара не один. Плита даёт +0,14, а снежная
+// шапка у ворот (x 35,2…46,0) — +0,24 (`station_parts._hangar`). Четверо
+// роботов стояли на шапке, посаженные на плиту, и тонули на 9,5 см. Часовой у
+// ворот стоит на дороге, которая выше пола узла на 8 см. Таблица из четырёх
+// отметок такие поверхности не описывает.
+var cellColliders = new System.Collections.Generic.List<UnityEngine.Collider>();
+foreach (var cm in root.GetComponentsInChildren<FrostSpace.Features.Map.CellMesh>(true))
+{
+    var c = cm.GetComponent<UnityEngine.Collider>();
+    if (c != null) cellColliders.Add(c);
+}
+
+// Луч начинается на потолке, поэтому кровли, навесы и столы в посадку не
+// попадают: актёр встаёт на пол, а не на предмет, стоящий на полу.
+System.Func<float, float, float, float> Surface = delegate (float x, float z, float ceiling)
+{
+    var ray = new UnityEngine.Ray(new UnityEngine.Vector3(x, ceiling, z), UnityEngine.Vector3.down);
+    float best = float.NegativeInfinity;
+    UnityEngine.RaycastHit h;
+    foreach (var c in cellColliders)
+        if (c.Raycast(ray, out h, 12f) && h.point.y > best) best = h.point.y;
+    return best;
 };
 
 System.Action<UnityEngine.Component, string, object> Set = delegate (UnityEngine.Component c, string name, object val)
@@ -155,10 +185,12 @@ foreach (var r in crew)
 {
     float x = (float)r[2], z = (float)r[3];
     float floor = (float)r[5];
-    var tr = Spawn(ROBOTS + r[0] + "_Model.prefab", new UnityEngine.Vector3(x, floor + 0.5f, z), (float)r[4]);
+    float seat = Surface(x, z, floor + 0.30f);
+    if (float.IsNegativeInfinity(seat)) seat = floor;
+    var tr = Spawn(ROBOTS + r[0] + "_Model.prefab", new UnityEngine.Vector3(x, seat + 0.5f, z), (float)r[4]);
     if (tr == null) continue;
     tr.gameObject.name = (string)r[1];
-    Seat(tr, floor + 0.005f);
+    Seat(tr, seat + 0.005f);
     var cc = tr.gameObject.AddComponent<UnityEngine.CharacterController>();
     cc.height = 1.7f; cc.radius = 0.34f; cc.center = new UnityEngine.Vector3(0f, 0.85f, 0f);
     cc.stepOffset = 0.2f; cc.skinWidth = 0.06f;
@@ -215,6 +247,8 @@ foreach (var wr in new object[][]
                    new UnityEngine.Vector3((float)wr[1], HANGAR_FLOOR, (float)wr[2]), (float)wr[3]);
     if (tr == null) continue;
     tr.localScale = UnityEngine.Vector3.one * (float)wr[4];
+    // Утопление на 0,20 м — намеренное: агрегат лежит в снегу и обломках, а не
+    // стоит на них. Замер посадки показывает это как «тонет», и это не дефект.
     Seat(tr, HANGAR_FLOOR - 0.20f);
     var scan = tr.gameObject.AddComponent(tScan);
     Set(scan, "_displayName", (string)wr[5]);
