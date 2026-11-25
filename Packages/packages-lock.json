@@ -32,7 +32,7 @@
         "com.unity.inputsystem": "1.1.1",
         "com.unity.cloud.gltfast": "6.12.1"
       },
-      "hash": "f7786a8ecbff7d7d427d84e36bb0235e1432d529"
+      "hash": "f12ea86d5feb1e78bbb72dd70565df8c44c695ff"
     },
     "com.ramenvr.autopilot": {
       "version": "https://github.com/ramenvr/autopilot.git?path=/plugin/unity/com.ramenvr.autopilot#9e0fbb0f2a5ae18d68d1f1f5d6ec17aceb15a1d5",
