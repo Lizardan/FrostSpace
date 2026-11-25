@@ -1,0 +1,36 @@
+name: Deploy prebuilt WebGL
+
+# Пока game-ci не выпустил образ под Unity 6000.6.10f1, облачная сборка падает
+# до старта Unity. Этот workflow публикует уже собранный локально артефакт
+# из release-ассета webgl-latest/frostspace-webgl.zip.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download prebuilt
+        run: |
+          mkdir -p out
+          curl -fL -o /tmp/frostspace-webgl.zip \
+            https://github.com/Lizardan/FrostSpace/releases/download/webgl-latest/frostspace-webgl.zip
+          unzip -q /tmp/frostspace-webgl.zip -d out
+          test -f out/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+      - id: deployment
+        uses: actions/deploy-pages@v4
