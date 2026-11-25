@@ -29,8 +29,9 @@ jobs:
             https://github.com/Lizardan/FrostSpace/releases/download/webgl-latest/frostspace-webgl.zip
           unzip -q /tmp/frostspace-webgl.zip -d out
           test -f out/index.html
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: out
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
